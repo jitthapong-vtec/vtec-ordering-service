@@ -29,7 +29,7 @@ namespace VerticalTec.POS.Service.DataSync.Controllers
 
         [HttpGet]
         [Route("v1/sync/inv")]
-        public async Task<IHttpActionResult> SyncInvAsync(string docDate, int shopId)
+        public async Task<IHttpActionResult> SyncInvAsync(int shopId = 0, string docDate = "")
         {
             var result = new HttpActionResult<string>(Request);
             try
@@ -52,7 +52,7 @@ namespace VerticalTec.POS.Service.DataSync.Controllers
                         var httpClient = new HttpClient();
                         httpClient.DefaultRequestHeaders.Add("Pragma", "no-cache");
                         httpClient.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
-                        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
+                        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                         httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
                         var content = new StringContent(exportJson, Encoding.UTF8);

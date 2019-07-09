@@ -19,7 +19,7 @@ namespace VerticalTec.POS.Service.DataSync.Test
             // Start OWIN host 
             using (WebApp.Start<Startup>(url: baseAddress))
             {
-                var uri = baseAddress + "v1/sync/inv?docDate=2019-07-09&shopId=3";
+                var uri = baseAddress + "v1/sync/inv?docDate=&shopId=3";
                 Console.WriteLine("Send request " + uri);
                 HttpClient client = new HttpClient();
                 var respMessage = client.GetAsync(uri).Result;
