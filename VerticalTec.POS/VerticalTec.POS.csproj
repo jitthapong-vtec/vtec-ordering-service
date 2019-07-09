@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="MySql.Data">
+      <HintPath>..\CommonResources\Dll\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="vtecPOS">
+      <HintPath>..\CommonResources\Dll\vtecPOS.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
