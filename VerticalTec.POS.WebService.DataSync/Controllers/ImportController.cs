@@ -26,7 +26,7 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
 
         [HttpPost]
         [Route("v1/import/inv")]
-        public async Task<IHttpActionResult> ImportInventoryDataAsync(string json)
+        public async Task<IHttpActionResult> ImportInventoryDataAsync([FromBody]object data)
         {
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())
@@ -36,7 +36,7 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
                     var respText = "";
                     var syncJson = "";
                     var dataSet = new DataSet();
-                    var success = _posModule.ImportInventData(ref syncJson, ref respText, dataSet, json, conn as SqlConnection);
+                    var success = _posModule.ImportInventData(ref syncJson, ref respText, dataSet, data.ToString(), conn as SqlConnection);
                     if (success)
                     {
                         result.StatusCode = HttpStatusCode.Created;

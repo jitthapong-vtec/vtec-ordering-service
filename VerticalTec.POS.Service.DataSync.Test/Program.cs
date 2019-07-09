@@ -20,12 +20,12 @@ namespace VerticalTec.POS.Service.DataSync.Test
             using (WebApp.Start<Startup>(url: baseAddress))
             {
                 var uri = baseAddress + "v1/sync/inv?docDate=&shopId=3";
-                Console.WriteLine("Send request " + uri);
-                HttpClient client = new HttpClient();
-                var respMessage = client.GetAsync(uri).Result;
-                var respContent = respMessage.Content.ReadAsStringAsync().Result;
-                var respBody = JsonConvert.DeserializeObject<ResponseBody<string>>(respContent);
-                Console.WriteLine("Result " + respBody.Message);
+                //Console.WriteLine("Send request " + uri);
+                //HttpClient client = new HttpClient();
+                //var respMessage = client.GetAsync(uri).Result;
+                //var respContent = respMessage.Content.ReadAsStringAsync().Result;
+                //var respBody = JsonConvert.DeserializeObject<ResponseBody<string>>(respContent);
+                //Console.WriteLine("Result " + respBody.Message);
                 Console.ReadLine();
             }
         }

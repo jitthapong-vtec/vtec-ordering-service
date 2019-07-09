@@ -1,4 +1,5 @@
 ﻿using Owin;
+using Swashbuckle.Application;
 using System.Web.Http;
 using System.Web.Http.Cors;
 using Unity;
@@ -15,6 +16,7 @@ namespace VerticalTec.POS.Service.DataSync
         public void Configuration(IAppBuilder appBuilder)
         {
             HttpConfiguration config = new HttpConfiguration();
+
             var container = new UnityContainer();
 
             var dbServer = Config.GetDatabaseServer();
@@ -29,6 +31,7 @@ namespace VerticalTec.POS.Service.DataSync
             var cors = new EnableCorsAttribute("*", "*", "*");
             config.EnableCors(cors);
 
+            config.EnableSwagger(c => c.SingleApiVersion("v1", "Vtec DataSync Api Interface")).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
             config.MapHttpAttributeRoutes();

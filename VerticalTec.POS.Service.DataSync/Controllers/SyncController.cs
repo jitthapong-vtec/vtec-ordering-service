@@ -50,13 +50,13 @@ namespace VerticalTec.POS.Service.DataSync.Controllers
                     if (success)
                     {
                         var httpClient = new HttpClient();
-                        httpClient.DefaultRequestHeaders.Add("Pragma", "no-cache");
-                        httpClient.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
                         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                         httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
-                        var content = new StringContent(exportJson, Encoding.UTF8);
-                        var respMessage = await httpClient.PostAsync("", content);
+                        var content = new StringContent(exportJson);
+                        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                        var respMessage = await httpClient.PostAsync("https://localhost:44392/v1/import/inv", content);
                         var respContent = await respMessage.Content.ReadAsStringAsync();
                         var respBody = new ResponseBody<string>();
                         try
