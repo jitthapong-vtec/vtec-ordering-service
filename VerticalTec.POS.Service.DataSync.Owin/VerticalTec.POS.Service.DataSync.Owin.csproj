@@ -93,7 +93,6 @@
     <Compile Include="Models\GlobalExceptionHandler.cs" />
     <Compile Include="Models\HttpActionResult.cs" />
     <Compile Include="Models\HttpClientManager.cs" />
-    <Compile Include="Models\ImportExport.cs" />
     <Compile Include="Models\ResponseBody.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
@@ -107,6 +106,10 @@
     <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj">
       <Project>{5fb4b0f7-8b6c-4fa1-a7e8-4106e390dafc}</Project>
       <Name>VerticalTec.POS.Database</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj">
+      <Project>{2c5f4126-1a5e-4ca1-aa3b-b7bdcd6246ef}</Project>
+      <Name>VerticalTec.POS.Utils</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

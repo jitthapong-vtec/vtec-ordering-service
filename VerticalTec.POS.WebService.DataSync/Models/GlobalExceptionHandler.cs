@@ -1,7 +1,7 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Web.Http.Filters;
-using VerticalTec.POS.WebService.DataSync.Models;
 
 namespace VerticalTec.POS.WebService.DataSync.Models
 {
@@ -10,9 +10,9 @@ namespace VerticalTec.POS.WebService.DataSync.Models
         public override void OnException(HttpActionExecutedContext actionExecutedContext)
         {
             var msg = actionExecutedContext.Exception.Message;
-            var body = new ResponseBody<string>()
+            var body = new ResponseBody<Exception>()
             {
-                HttpCode = HttpStatusCode.InternalServerError,
+                Data = actionExecutedContext.Exception,
                 Message = msg
             };
             actionExecutedContext.Response = actionExecutedContext.Request.CreateResponse(HttpStatusCode.InternalServerError, body);

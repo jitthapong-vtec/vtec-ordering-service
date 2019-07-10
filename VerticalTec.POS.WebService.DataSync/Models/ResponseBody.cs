@@ -9,8 +9,8 @@ namespace VerticalTec.POS.WebService.DataSync.Models
 {
     public class ResponseBody<TResult>
     {
-        [JsonProperty("httpcode")]
-        public HttpStatusCode HttpCode { get; set; }
+        [JsonProperty("success")]
+        public bool Success { get; set; }
         [JsonProperty("data")]
         public TResult Data { get; set; }
         [JsonProperty("message")]

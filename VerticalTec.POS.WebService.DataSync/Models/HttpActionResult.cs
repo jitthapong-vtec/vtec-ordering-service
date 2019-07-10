@@ -13,6 +13,7 @@ namespace VerticalTec.POS.WebService.DataSync.Models
         TResult _data;
         HttpRequestMessage _request;
         HttpStatusCode _statusCode;
+        bool _success;
         string _message;
 
         public HttpActionResult(HttpRequestMessage request)
@@ -38,6 +39,14 @@ namespace VerticalTec.POS.WebService.DataSync.Models
             }
         }
 
+        public bool Success
+        {
+            set
+            {
+                _success = value;
+            }
+        }
+
         public string Message
         {
             set
@@ -50,7 +59,7 @@ namespace VerticalTec.POS.WebService.DataSync.Models
         {
             var body = new ResponseBody<TResult>()
             {
-                HttpCode = _statusCode,
+                Success = _success,
                 Data = _data,
                 Message = _message
             };

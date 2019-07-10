@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+using System.IO;
 using System.Web.Http;
-using System.Web.Routing;
+using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.WebService.DataSync
 {
@@ -12,6 +10,15 @@ namespace VerticalTec.POS.WebService.DataSync
         protected void Application_Start()
         {
             GlobalConfiguration.Configure(WebApiConfig.Register);
+
+            try
+            {
+                var path = Server.MapPath("~/Log");
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+                LogManager.Instance.InitLogManager(path, "log_");
+            }
+            catch (Exception) { }
         }
     }
 }

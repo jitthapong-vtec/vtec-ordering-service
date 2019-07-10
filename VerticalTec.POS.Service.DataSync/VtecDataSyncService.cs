@@ -1,16 +1,9 @@
 ﻿using Microsoft.Owin.Hosting;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.ServiceProcess;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Http.Services;
 using VerticalTec.POS.Service.DataSync.Owin;
+using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Service.DataSync
 {
@@ -27,9 +20,10 @@ namespace VerticalTec.POS.Service.DataSync
 
         protected override void OnStart(string[] args)
         {
-            string baseAddress = "http://+:9000/";
             var dbServer = Config.GetDatabaseServer();
             var dbName = Config.GetDatabaseName();
+            var port = Config.GetPort();
+            string baseAddress = $"http://+:{port}/";
             _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName).Configuration(appBuilder));
             LogManager.Instance.WriteLog("Start owin api");
         }

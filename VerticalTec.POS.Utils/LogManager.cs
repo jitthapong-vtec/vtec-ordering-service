@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VerticalTec.POS.Service.DataSync
+namespace VerticalTec.POS.Utils
 {
     public class LogManager
     {
@@ -55,25 +53,46 @@ namespace VerticalTec.POS.Service.DataSync
             catch (Exception) { }
         }
 
-        public void WriteLog(string log)
-        {
-            WriteLog(log, LogTypes.Information);
-        }
+        public bool EnableLog { get; set; } = true;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void WriteLog(string log, LogTypes logType)
+        public void WriteLog(string log, LogTypes logType = LogTypes.Information)
         {
+            if (!EnableLog) return;
             try
             {
-                string logFile = $"{_logPath}{_prefixFileName}: {DateTime.Now.ToString("yyyy-MM-dd", new CultureInfo("en-US"))}.txt";
+                string logFile = GetFilePath();
                 using (StreamWriter sw = new StreamWriter(logFile, true))
                 {
                     if (logType == LogTypes.Error)
                         log = $"ERR! {log}";
-                    sw.WriteLine($"{DateTime.Now.ToShortTimeString()}{log}");
+                    sw.WriteLine($"[{DateTime.Now.ToShortTimeString()}]: {log}");
                 }
             }
             catch (Exception) { }
+        }
+
+        public async Task WriteLogAsync(string log, LogTypes logType = LogTypes.Information)
+        {
+            if (!EnableLog) return;
+            var logFile = GetFilePath();
+            if (logType == LogTypes.Error)
+                log = $"ERR! {log}";
+            log = $"[{ DateTime.Now.ToShortTimeString()}]: {log}\n\r";
+            try
+            {
+                byte[] encodedText = Encoding.Unicode.GetBytes(log);
+                using (FileStream sourceStream = new FileStream(logFile, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+                {
+                    await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
+                };
+            }
+            catch (Exception) { }
+        }
+
+        string GetFilePath()
+        {
+            return $"{_logPath}{_prefixFileName}{DateTime.Now.ToString("yyyy-MM-dd", new CultureInfo("en-US"))}.txt";
         }
     }
 }

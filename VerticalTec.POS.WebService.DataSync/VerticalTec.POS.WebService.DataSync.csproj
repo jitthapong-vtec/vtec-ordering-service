@@ -145,6 +145,10 @@
       <Project>{5fb4b0f7-8b6c-4fa1-a7e8-4106e390dafc}</Project>
       <Name>VerticalTec.POS.Database</Name>
     </ProjectReference>
+    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj">
+      <Project>{2C5F4126-1A5E-4CA1-AA3B-B7BDCD6246EF}</Project>
+      <Name>VerticalTec.POS.Utils</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

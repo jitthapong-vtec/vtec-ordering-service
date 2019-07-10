@@ -17,6 +17,12 @@ namespace VerticalTec.POS.Service.DataSync
             return config.AppSettings.Settings["DBName"].Value;
         }
 
+        public static string GetPort()
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
+            return config.AppSettings.Settings["Port"].Value;
+        }
+
         public static string GetExecPath()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().Location;
