@@ -5,7 +5,7 @@ using System.Web;
 using System.Web.Http.Dependencies;
 using Unity;
 
-namespace VerticalTec.POS.Service.DataSync
+namespace VerticalTec.POS.Service.DataSync.Owin
 {
     public class UnityResolver : IDependencyResolver
     {

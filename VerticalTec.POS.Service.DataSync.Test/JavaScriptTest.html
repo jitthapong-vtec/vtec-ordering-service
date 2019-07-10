@@ -1,0 +1,25 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Page Title</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <script type="text/javascript">
+        function syncInv() {
+            $.ajax('http://192.168.1.57:9000/v1/sync/inv?docDate=&shopId=3',
+                {
+                    dataType: 'json',
+                    success: function (data, status, xhr) {
+                        alert(data.message);
+                    },
+                    error: function (jqXhr, textStatus, errorMessage) {
+                        alert(jqXhr.responseText + ' ' + textStatus + ' ' + errorMessage);
+                    }
+                });
+        }
+    </script>
+</head>
+<body>
+    <button onclick="syncInv();">Sync</button>
+</body>
+</html>

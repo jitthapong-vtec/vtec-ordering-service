@@ -11,10 +11,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
-using VerticalTec.POS.Service.DataSync.Models;
+using VerticalTec.POS.Service.DataSync.Owin.Models;
 using vtecPOS.GlobalFunctions;
 
-namespace VerticalTec.POS.Service.DataSync.Controllers
+namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 {
     public class SyncController : ApiController
     {
@@ -49,39 +49,35 @@ namespace VerticalTec.POS.Service.DataSync.Controllers
                         documentId, keyShopId, merchantId, brandId, conn as MySqlConnection);
                     if (success)
                     {
-                        var httpClient = new HttpClient();
-                        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                        httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-
-                        var content = new StringContent(exportJson);
-                        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-                        var respMessage = await httpClient.PostAsync("https://localhost:44392/v1/import/inv", content);
-                        var respContent = await respMessage.Content.ReadAsStringAsync();
-                        var respBody = new ResponseBody<string>();
+                        var url = "http://localhost/syncapi/v1/import/inv";
                         try
                         {
-                            respBody = await Task.Run(() => JsonConvert.DeserializeObject<ResponseBody<string>>(respContent));
-                        }
-                        catch (Exception) { }
-                        if (respMessage.IsSuccessStatusCode)
-                        {
-                            var syncJson = respBody.Data;
+                            var syncJson = await HttpClientManager.Instance.PostAsync<string>(url, exportJson);
                             success = _posModule.SyncInventUpdate(ref respText, syncJson, conn as MySqlConnection);
-                            if (!success)
+                            result.Success = success;
+                            if (success)
                             {
-
+                                result.Message = "Sync inventory data successfully";
+                            }
+                            else
+                            {
+                                result.Message = respText;
                             }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            result.StatusCode = respMessage.StatusCode;
-                            result.Message = respBody.Message;
+                            result.StatusCode = HttpStatusCode.RequestTimeout;
+                            if (ex is HttpRequestException)
+                                result.Message = $"Connecton timeout {url}";
+                            else if (ex is HttpResponseException)
+                                result.Message = (ex as HttpResponseException).Response.ReasonPhrase;
+                            else
+                                result.Message = ex.Message;
                         }
                     }
                     else
                     {
-                        result.StatusCode = HttpStatusCode.InternalServerError;
+                        result.StatusCode = HttpStatusCode.OK;
                         result.Message = respText;
                     }
                 }

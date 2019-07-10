@@ -5,12 +5,12 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace VerticalTec.POS.Service.DataSync.Models
+namespace VerticalTec.POS.Service.DataSync.Owin.Models
 {
     public class ResponseBody<TResult>
     {
-        [JsonProperty("httpcode")]
-        public HttpStatusCode HttpCode { get; set; }
+        [JsonProperty("success")]
+        public bool Success { get; set; }
         [JsonProperty("data")]
         public TResult Data { get; set; }
         [JsonProperty("message")]

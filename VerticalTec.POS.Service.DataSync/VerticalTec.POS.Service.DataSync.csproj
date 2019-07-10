@@ -95,19 +95,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
-    <Compile Include="Controllers\SyncController.cs" />
-    <Compile Include="Models\ImportExport.cs" />
-    <Compile Include="Models\GlobalExceptionHandler.cs" />
-    <Compile Include="Models\HttpActionResult.cs" />
-    <Compile Include="Models\ResponseBody.cs" />
+    <Compile Include="LogManager.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ProjectInstaller.Designer.cs">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </Compile>
-    <Compile Include="Startup.cs" />
-    <Compile Include="UnityResolver.cs" />
     <Compile Include="VtecDataSyncService.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -134,6 +128,10 @@
     <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj">
       <Project>{5fb4b0f7-8b6c-4fa1-a7e8-4106e390dafc}</Project>
       <Name>VerticalTec.POS.Database</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\VerticalTec.POS.Service.DataSync.Owin\VerticalTec.POS.Service.DataSync.Owin.csproj">
+      <Project>{A0049E0C-5046-417A-9398-9D16565F7E8D}</Project>
+      <Name>VerticalTec.POS.Service.DataSync.Owin</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

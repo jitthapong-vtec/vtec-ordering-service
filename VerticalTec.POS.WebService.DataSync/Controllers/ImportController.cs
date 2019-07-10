@@ -31,26 +31,19 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())
             {
-                try
+                var respText = "";
+                var syncJson = "";
+                var dataSet = new DataSet();
+                var success = _posModule.ImportInventData(ref syncJson, ref respText, dataSet, data.ToString(), conn as SqlConnection);
+                if (success)
                 {
-                    var respText = "";
-                    var syncJson = "";
-                    var dataSet = new DataSet();
-                    var success = _posModule.ImportInventData(ref syncJson, ref respText, dataSet, data.ToString(), conn as SqlConnection);
-                    if (success)
-                    {
-                        result.StatusCode = HttpStatusCode.Created;
-                        result.Data = syncJson;
-                    }
-                    else
-                    {
-                        result.StatusCode = HttpStatusCode.InternalServerError;
-                        result.Message = respText;
-                    }
+                    result.StatusCode = HttpStatusCode.Created;
+                    result.Data = syncJson;
                 }
-                catch (Exception ex)
+                else
                 {
-                    result.Message = ex.Message;
+                    result.StatusCode = HttpStatusCode.InternalServerError;
+                    result.Message = respText;
                 }
             }
             return result;

@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using vtecPOS.GlobalFunctions;
 
-namespace VerticalTec.POS.Service.DataSync.Models
+namespace VerticalTec.POS.Service.DataSync.Owin.Models
 {
     public class ImportExport
     {

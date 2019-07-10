@@ -40,7 +40,7 @@
             // serviceInstaller1
             // 
             this.serviceInstaller1.DisplayName = "Vtec Data Synchronization";
-            this.serviceInstaller1.ServiceName = "VtecDataSync";
+            this.serviceInstaller1.ServiceName = "VtecDataSyncService";
             this.serviceInstaller1.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // ProjectInstaller

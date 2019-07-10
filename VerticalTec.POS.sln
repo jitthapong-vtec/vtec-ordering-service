@@ -23,6 +23,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Dat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.DataSync.Test", "VerticalTec.POS.Service.DataSync.Test\VerticalTec.POS.Service.DataSync.Test.csproj", "{17400C10-2469-4869-AA98-1D138C7D5EBE}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "VerticalTec.POS.Service.DataSync.Setup", "VerticalTec.POS.Service.DataSync.Setup\VerticalTec.POS.Service.DataSync.Setup.vdproj", "{A0879904-1E1C-4560-A83E-B6F9963316CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.DataSync.Owin", "VerticalTec.POS.Service.DataSync.Owin\VerticalTec.POS.Service.DataSync.Owin.csproj", "{A0049E0C-5046-417A-9398-9D16565F7E8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +61,12 @@ Global
 		{17400C10-2469-4869-AA98-1D138C7D5EBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17400C10-2469-4869-AA98-1D138C7D5EBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17400C10-2469-4869-AA98-1D138C7D5EBE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0879904-1E1C-4560-A83E-B6F9963316CA}.Debug|Any CPU.ActiveCfg = Debug
+		{A0879904-1E1C-4560-A83E-B6F9963316CA}.Release|Any CPU.ActiveCfg = Release
+		{A0049E0C-5046-417A-9398-9D16565F7E8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0049E0C-5046-417A-9398-9D16565F7E8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0049E0C-5046-417A-9398-9D16565F7E8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0049E0C-5046-417A-9398-9D16565F7E8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -66,6 +76,8 @@ Global
 		{8EC23075-243A-4633-8606-4F227EDBF2D8} = {568A693B-4D82-4F52-8CC7-D4EB5792CF7A}
 		{9D064E00-DA51-4CA4-85F0-97B55C499B09} = {81251C0C-16B3-40C2-A163-F67DFDD84E2B}
 		{17400C10-2469-4869-AA98-1D138C7D5EBE} = {0ABC6513-0FCA-43DE-8489-6A6F35FC6FFA}
+		{A0879904-1E1C-4560-A83E-B6F9963316CA} = {81251C0C-16B3-40C2-A163-F67DFDD84E2B}
+		{A0049E0C-5046-417A-9398-9D16565F7E8D} = {81251C0C-16B3-40C2-A163-F67DFDD84E2B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {78C7C73D-61E1-4D50-8A64-4A27D7E782F9}

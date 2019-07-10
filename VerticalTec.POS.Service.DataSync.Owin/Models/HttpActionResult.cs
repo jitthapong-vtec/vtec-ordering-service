@@ -5,13 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 
-namespace VerticalTec.POS.Service.DataSync.Models
+namespace VerticalTec.POS.Service.DataSync.Owin.Models
 {
     public class HttpActionResult<TResult> : IHttpActionResult
     {
         TResult _data;
         HttpRequestMessage _request;
         HttpStatusCode _statusCode;
+        bool _success;
         string _message;
 
         public HttpActionResult(HttpRequestMessage request)
@@ -37,6 +38,14 @@ namespace VerticalTec.POS.Service.DataSync.Models
             }
         }
 
+        public bool Success
+        {
+            set
+            {
+                _success = value;
+            }
+        }
+
         public string Message
         {
             set
@@ -49,7 +58,7 @@ namespace VerticalTec.POS.Service.DataSync.Models
         {
             var body = new ResponseBody<TResult>()
             {
-                HttpCode = _statusCode,
+                Success = _success,
                 Data = _data,
                 Message = _message
             };

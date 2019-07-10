@@ -6,24 +6,31 @@ using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
 using VerticalTec.POS.Database;
-using VerticalTec.POS.Service.DataSync.Models;
+using VerticalTec.POS.Service.DataSync.Owin.Models;
 using vtecPOS.GlobalFunctions;
 
-namespace VerticalTec.POS.Service.DataSync
+namespace VerticalTec.POS.Service.DataSync.Owin
 {
     public class Startup
     {
+        string _dbServer;
+        string _dbName;
+
+        public Startup(string dbServer, string dbName)
+        {
+            _dbServer = dbServer;
+            _dbName = dbName;
+        }
+
         public void Configuration(IAppBuilder appBuilder)
         {
             HttpConfiguration config = new HttpConfiguration();
 
             var container = new UnityContainer();
 
-            var dbServer = Config.GetDatabaseServer();
-            var dbName = Config.GetDatabaseName();
             container.RegisterType<IDatabase, MySqlDatabase>(
                 new ContainerControlledLifetimeManager(),
-                new InjectionConstructor(dbServer, dbName, "3308"));
+                new InjectionConstructor(_dbServer, _dbName, "3308"));
             container.RegisterSingleton<POSModule>();
 
             config.DependencyResolver = new UnityResolver(container);
