@@ -23,6 +23,12 @@ namespace VerticalTec.POS.Service.DataSync
             return config.AppSettings.Settings["Port"].Value;
         }
 
+        public static bool IsEnableLog()
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
+            return Convert.ToBoolean(config.AppSettings.Settings["EnableLog"].Value);
+        }
+
         public static string GetExecPath()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().Location;

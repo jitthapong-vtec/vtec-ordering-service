@@ -35,14 +35,12 @@ namespace VerticalTec.POS.Utils
         }
 
         private string _logPath;
-        private string _prefixFileName;
 
         private LogManager() { }
 
-        public void InitLogManager(string logPath, string prefixFileName)
+        public void InitLogManager(string logPath)
         {
             _logPath = logPath;
-            _prefixFileName = prefixFileName;
             if (!_logPath.EndsWith("/"))
                 _logPath += "/";
             try
@@ -56,12 +54,12 @@ namespace VerticalTec.POS.Utils
         public bool EnableLog { get; set; } = true;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void WriteLog(string log, LogTypes logType = LogTypes.Information)
+        public void WriteLog(string log, string prefixFileName = "", LogTypes logType = LogTypes.Information)
         {
             if (!EnableLog) return;
             try
             {
-                string logFile = GetFilePath();
+                string logFile = GetFilePath(prefixFileName);
                 using (StreamWriter sw = new StreamWriter(logFile, true))
                 {
                     if (logType == LogTypes.Error)
@@ -72,10 +70,10 @@ namespace VerticalTec.POS.Utils
             catch (Exception) { }
         }
 
-        public async Task WriteLogAsync(string log, LogTypes logType = LogTypes.Information)
+        public async Task WriteLogAsync(string log, string prefixFileName = "", LogTypes logType = LogTypes.Information)
         {
             if (!EnableLog) return;
-            var logFile = GetFilePath();
+            var logFile = GetFilePath(prefixFileName);
             if (logType == LogTypes.Error)
                 log = $"ERR! {log}";
             log = $"[{ DateTime.Now.ToShortTimeString()}]: {log}\n\r";
@@ -90,9 +88,9 @@ namespace VerticalTec.POS.Utils
             catch (Exception) { }
         }
 
-        string GetFilePath()
+        string GetFilePath(string prefixFileName)
         {
-            return $"{_logPath}{_prefixFileName}{DateTime.Now.ToString("yyyy-MM-dd", new CultureInfo("en-US"))}.txt";
+            return $"{_logPath}{prefixFileName}{DateTime.Now.ToString("yyyy-MM-dd", new CultureInfo("en-US"))}.txt";
         }
     }
 }

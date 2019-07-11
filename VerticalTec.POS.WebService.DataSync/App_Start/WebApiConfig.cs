@@ -1,10 +1,12 @@
-﻿using System.Configuration;
+﻿using System;
+using System.Configuration;
 using System.Web.Http;
 using System.Web.Http.Cors;
 using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.Utils;
 using VerticalTec.POS.WebService.DataSync.Models;
 using vtecPOS_SQL.POSControl;
 

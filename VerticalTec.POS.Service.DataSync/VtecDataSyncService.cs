@@ -15,7 +15,9 @@ namespace VerticalTec.POS.Service.DataSync
         {
             InitializeComponent();
             var logPath = $"{Path.GetDirectoryName(Config.GetExecPath())}/Log/";
-            LogManager.Instance.InitLogManager(logPath, "vt_sync_service_");
+            LogManager.Instance.InitLogManager(logPath);
+            var enableLog = Config.IsEnableLog();
+            LogManager.Instance.EnableLog = enableLog;
         }
 
         protected override void OnStart(string[] args)

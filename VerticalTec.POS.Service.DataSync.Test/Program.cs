@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using VerticalTec.POS.Service.DataSync.Owin;
 using VerticalTec.POS.Service.DataSync.Owin.Models;
+using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Service.DataSync.Test
 {
@@ -12,6 +13,8 @@ namespace VerticalTec.POS.Service.DataSync.Test
     {
         static void Main(string[] args)
         {
+            LogManager.Instance.InitLogManager("Log/");
+
             string baseAddress = "http://localhost:9001/";
 
             // Start OWIN host 
@@ -28,7 +31,8 @@ namespace VerticalTec.POS.Service.DataSync.Test
         private static async Task TestSyncInv(string baseAddress)
         {
             HttpClient client = new HttpClient();
-            var uri = baseAddress + "v1/inv/sendtohq?docDate=&shopId=3";
+            //var uri = baseAddress + "v1/inv/sendtohq?docDate=&shopId=3";
+            var uri = baseAddress + "v1/sale/sendtohq?shopid=3";
             //for (int i = 0; i < 100; i++)
             //{
             //    Console.WriteLine($"Send request #{i + 1}");

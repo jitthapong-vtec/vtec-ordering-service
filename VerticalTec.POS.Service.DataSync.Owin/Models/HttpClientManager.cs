@@ -40,13 +40,13 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
             _httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
         }
 
-        public async Task<TResult> PostAsync<TResult>(string url, string data)
+        public async Task<TResult> PostAsync<TResult>(string url, object payload)
         {
-            var content = new StringContent(data);
+            var content = new StringContent(payload.ToString());
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             var respMessage = await _httpClient.PostAsync(url, content);
             var respContent = await respMessage.Content.ReadAsStringAsync();
-            var respBody = new ResponseBody<TResult>();
+            ResponseBody<TResult> respBody = null;
             try
             {
                 respBody = await Task.Run(() => JsonConvert.DeserializeObject<ResponseBody<TResult>>(respContent));
@@ -58,6 +58,8 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
             }
             else
             {
+                if (respBody != null)
+                    respMessage.ReasonPhrase = respBody.Message;
                 throw new HttpResponseException(respMessage);
             }
         }

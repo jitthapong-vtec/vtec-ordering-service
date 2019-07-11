@@ -48,6 +48,10 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
 
         public string Message
         {
+            get
+            {
+                return _message;
+            }
             set
             {
                 _message = value;

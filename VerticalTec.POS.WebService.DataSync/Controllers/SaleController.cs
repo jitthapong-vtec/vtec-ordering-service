@@ -15,25 +15,25 @@ using vtecPOS_SQL.POSControl;
 
 namespace VerticalTec.POS.WebService.DataSync.Controllers
 {
-    public class InventoryController : ApiController
+    public class SaleController : ApiController
     {
-        const string LogPrefix = "Inv_";
+        const string LogPrefix = "Sale_";
 
         IDatabase _database;
         POSModule _posModule;
 
-        public InventoryController(IDatabase database, POSModule posModule)
+        public SaleController(IDatabase database, POSModule posModule)
         {
             _database = database;
             _posModule = posModule;
         }
 
         [HttpPost]
-        [Route("v1/inv/import")]
-        public async Task<IHttpActionResult> ImportInventoryDataAsync([FromBody]object data)
+        [Route("v1/sale/import")]
+        public async Task<IHttpActionResult> ImportSaleAsync([FromBody] object payload)
         {
             var result = new HttpActionResult<string>(Request);
-            if (data == null)
+            if (payload == null)
             {
                 var msg = $"Invalid json format!";
                 await LogManager.Instance.WriteLogAsync(msg, LogPrefix);
@@ -43,32 +43,32 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
             }
             try
             {
-                await LogManager.Instance.WriteLogAsync($"Incoming inventory import data {JsonConvert.SerializeObject(data, formatting: Formatting.None)}", LogPrefix);
+                await LogManager.Instance.WriteLogAsync($"Incoming sale import data {JsonConvert.SerializeObject(payload, formatting: Formatting.None)}", LogPrefix);
             }
             catch (Exception ex)
             {
                 await LogManager.Instance.WriteLogAsync($"Invalid json format of inventory data {ex.Message}", LogPrefix, LogManager.LogTypes.Error);
             }
-            using (var conn = await _database.ConnectAsync())
+            using (var conn = await _database.ConnectAsync() as SqlConnection)
             {
-                var respText = "";
                 var importJson = "";
+                var respText = "";
                 var dataSet = new DataSet();
-                var success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, data.ToString(), conn as SqlConnection);
+                var success = _posModule.ImportData(ref importJson, ref respText, dataSet, payload.ToString(), conn);
                 if (success)
                 {
                     result.Success = success;
                     result.StatusCode = HttpStatusCode.Created;
                     result.Data = importJson;
 
-                    await LogManager.Instance.WriteLogAsync("Import inventory data successfully", LogPrefix);
+                    await LogManager.Instance.WriteLogAsync("Import sale data successfully", LogPrefix);
                 }
                 else
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = respText;
 
-                    await LogManager.Instance.WriteLogAsync($"Import inventory data {respText}", LogPrefix, LogManager.LogTypes.Error);
+                    await LogManager.Instance.WriteLogAsync($"Import sale data {respText}", LogPrefix, LogManager.LogTypes.Error);
                 }
             }
             return result;

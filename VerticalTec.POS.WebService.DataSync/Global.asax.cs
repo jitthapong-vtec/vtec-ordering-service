@@ -1,4 +1,5 @@
 using System;
+using System.Configuration;
 using System.IO;
 using System.Web.Http;
 using VerticalTec.POS.Utils;
@@ -16,7 +17,9 @@ namespace VerticalTec.POS.WebService.DataSync
                 var path = Server.MapPath("~/Log");
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
-                LogManager.Instance.InitLogManager(path, "log_");
+                LogManager.Instance.InitLogManager(path);
+                var isEnableLog = Convert.ToBoolean(ConfigurationManager.AppSettings["EnableLog"]);
+                LogManager.Instance.EnableLog = isEnableLog;
             }
             catch (Exception) { }
         }

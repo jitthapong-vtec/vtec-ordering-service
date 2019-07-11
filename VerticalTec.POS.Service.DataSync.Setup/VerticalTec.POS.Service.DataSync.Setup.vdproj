@@ -3846,7 +3846,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Vtec Data Sync Service"
         "ProductCode" = "8:{47F5F197-CD3D-4A1A-B971-2335918B57BC}"
-        "PackageCode" = "8:{A8A63AEA-C20F-45DD-B724-AF61479BFB51}"
+        "PackageCode" = "8:{86C0EB89-6D71-41F6-ACEE-349B47606681}"
         "UpgradeCode" = "8:{6ACA0738-4DC1-45CD-AC56-F06D16FF4C5B}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -4135,7 +4135,7 @@
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
                             "Setting" = "3:2"
-                            "Value" = "8:Port"
+                            "Value" = "8:Local api port"
                             "DefaultValue" = "8:#1248"
                             "UsePlugInResources" = "11:TRUE"
                             }
