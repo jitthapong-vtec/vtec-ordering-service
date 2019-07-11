@@ -33,31 +33,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_047AC3AB28EAB2BD044150E981AB8988"
+        "MsmKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_047AC3AB28EAB2BD044150E981AB8988"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_0DD5EA8FEB083DAE1667F9366451E449"
-        "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_0FDBFFF43C83C7CA6D0700A2D7C74672"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_0FDBFFF43C83C7CA6D0700A2D7C74672"
         "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -76,7 +58,7 @@
         "Entry"
         {
         "MsmKey" = "8:_1114FCC575E0C56B3FEE29136EC5309B"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -166,7 +148,7 @@
         "Entry"
         {
         "MsmKey" = "8:_30B735ABA088389DE192C7DDB4489A29"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -226,7 +208,7 @@
         "Entry"
         {
         "MsmKey" = "8:_4109DFB580355924C1C1F1A03FEFA717"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -250,7 +232,7 @@
         "Entry"
         {
         "MsmKey" = "8:_444B1086B14C8D1875DB7BBF35E136A7"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -346,7 +328,7 @@
         "Entry"
         {
         "MsmKey" = "8:_625EEFB0B8EF2287BF773E313288A0B4"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -364,7 +346,7 @@
         "Entry"
         {
         "MsmKey" = "8:_6576E478BBE44D76E885FF12355F612A"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -448,19 +430,31 @@
         "Entry"
         {
         "MsmKey" = "8:_7C174A48AF5CEE0A5A3F24E1D6DC5829"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_7C174A48AF5CEE0A5A3F24E1D6DC5829"
-        "OwnerKey" = "8:_047AC3AB28EAB2BD044150E981AB8988"
+        "OwnerKey" = "8:_7F0874786859FFA9BFF7C4CE50D98430"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_7C174A48AF5CEE0A5A3F24E1D6DC5829"
         "OwnerKey" = "8:_D08D6BA8FC35CC59D541C08BDF28A009"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_7F0874786859FFA9BFF7C4CE50D98430"
+        "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_7F0874786859FFA9BFF7C4CE50D98430"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -501,12 +495,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
-        "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_92E1F6EE134923F15DF75EC3510717FD"
         "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
         "MsmSig" = "8:_UNDEFINED"
@@ -538,7 +526,7 @@
         "Entry"
         {
         "MsmKey" = "8:_97465619D70B60341BE8F2A9164BFDA5"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -562,6 +550,18 @@
         "Entry"
         {
         "MsmKey" = "8:_A9A5F4C70D690DC804F77EE60B4B3A3F"
+        "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_AA12173D59B685CB3B1772E8B15CDFA7"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_AA12173D59B685CB3B1772E8B15CDFA7"
         "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -622,7 +622,7 @@
         "Entry"
         {
         "MsmKey" = "8:_C15D74C037FD9D6474E7DC4B2EEBE4F2"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -634,7 +634,7 @@
         "Entry"
         {
         "MsmKey" = "8:_C2F25539D26E30685EE8F4F02479E152"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -712,7 +712,7 @@
         "Entry"
         {
         "MsmKey" = "8:_CD04909873EB63DB81DBB37C6C7A788F"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -778,7 +778,7 @@
         "Entry"
         {
         "MsmKey" = "8:_D08D6BA8FC35CC59D541C08BDF28A009"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -820,31 +820,25 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_4D4D0CA586E8FDF3F8293988B4A7CFB8"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_DE907CBD0467418E9F1E94E631C8B826"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
+        "OwnerKey" = "8:_0A4DE225A9C2B65B75EA1EC3A61CB697"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_0FDBFFF43C83C7CA6D0700A2D7C74672"
+        "OwnerKey" = "8:_AA12173D59B685CB3B1772E8B15CDFA7"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_047AC3AB28EAB2BD044150E981AB8988"
+        "OwnerKey" = "8:_7F0874786859FFA9BFF7C4CE50D98430"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1279,6 +1273,12 @@
         "OwnerKey" = "8:_57611CBEE64A1213A223E6738E1261F1"
         "MsmSig" = "8:_UNDEFINED"
         }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_4D4D0CA586E8FDF3F8293988B4A7CFB8"
+        "MsmSig" = "8:_UNDEFINED"
+        }
     }
     "Configurations"
     {
@@ -1495,20 +1495,20 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_047AC3AB28EAB2BD044150E981AB8988"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_0A4DE225A9C2B65B75EA1EC3A61CB697"
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:VerticalTec.POS.Database, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:VerticalTec.POS.Service.DataSync.Owin, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_047AC3AB28EAB2BD044150E981AB8988"
+                    "_0A4DE225A9C2B65B75EA1EC3A61CB697"
                     {
-                    "Name" = "8:VerticalTec.POS.Database.dll"
+                    "Name" = "8:VerticalTec.POS.Service.DataSync.Owin.dll"
                     "Attributes" = "3:512"
                     }
                 }
-            "SourcePath" = "8:VerticalTec.POS.Database.dll"
+            "SourcePath" = "8:VerticalTec.POS.Service.DataSync.Owin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"
@@ -1540,37 +1540,6 @@
                     }
                 }
             "SourcePath" = "8:System.Linq.Expressions.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_0FDBFFF43C83C7CA6D0700A2D7C74672"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:VerticalTec.POS.Utils, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_0FDBFFF43C83C7CA6D0700A2D7C74672"
-                    {
-                    "Name" = "8:VerticalTec.POS.Utils.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:VerticalTec.POS.Utils.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"
@@ -2766,6 +2735,37 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_7F0874786859FFA9BFF7C4CE50D98430"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:VerticalTec.POS.Database, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_7F0874786859FFA9BFF7C4CE50D98430"
+                    {
+                    "Name" = "8:VerticalTec.POS.Database.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:VerticalTec.POS.Database.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_82FAC1360358497687CC93160434DC99"
             {
             "AssemblyRegister" = "3:1"
@@ -2904,37 +2904,6 @@
                     }
                 }
             "SourcePath" = "8:System.ServiceModel.Http.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_8EF49D4DBC8B6DEC0F8026B8E62184C8"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:VerticalTec.POS.Service.DataSync.Owin, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_8EF49D4DBC8B6DEC0F8026B8E62184C8"
-                    {
-                    "Name" = "8:VerticalTec.POS.Service.DataSync.Owin.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:VerticalTec.POS.Service.DataSync.Owin.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"
@@ -3183,6 +3152,37 @@
                     }
                 }
             "SourcePath" = "8:System.Runtime.Serialization.Json.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_AA12173D59B685CB3B1772E8B15CDFA7"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:VerticalTec.POS.Utils, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_AA12173D59B685CB3B1772E8B15CDFA7"
+                    {
+                    "Name" = "8:VerticalTec.POS.Utils.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:VerticalTec.POS.Utils.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"
@@ -3844,9 +3844,9 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:Vtec Data Synchronization Service"
+        "ProductName" = "8:Vtec Data Sync Service"
         "ProductCode" = "8:{47F5F197-CD3D-4A1A-B971-2335918B57BC}"
-        "PackageCode" = "8:{542F4BEE-2D0D-42EB-A2DC-3FBEF1C5D8F9}"
+        "PackageCode" = "8:{A8A63AEA-C20F-45DD-B724-AF61479BFB51}"
         "UpgradeCode" = "8:{6ACA0738-4DC1-45CD-AC56-F06D16FF4C5B}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -3857,7 +3857,7 @@
         "Manufacturer" = "8:Vertical Tec"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
-        "Title" = "8:Vtec Data Synchronization Service"
+        "Title" = "8:Vtec Data Sync Service"
         "Subject" = "8:"
         "ARPCONTACT" = "8:Jitthapong Arjsalee"
         "Keywords" = "8:"
@@ -4623,7 +4623,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_DE907CBD0467418E9F1E94E631C8B826"
             {
-            "SourcePath" = "8:..\\VerticalTec.POS.Service.DataSync\\obj\\Debug\\VerticalTec.POS.Service.DataSync.exe"
+            "SourcePath" = "8:..\\VerticalTec.POS.Service.DataSync\\obj\\Release\\VerticalTec.POS.Service.DataSync.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_11353D4D27AD4537AD07ADFEFDCAE6E9"

@@ -31,6 +31,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>sync.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.IdentityModel.Logging, Version=5.2.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.IdentityModel.Logging.5.2.1\lib\net45\Microsoft.IdentityModel.Logging.dll</HintPath>
@@ -141,7 +144,9 @@
       <DependentUpon>VtecDataSyncService.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="sync.ico" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj">
       <Project>{5fb4b0f7-8b6c-4fa1-a7e8-4106e390dafc}</Project>

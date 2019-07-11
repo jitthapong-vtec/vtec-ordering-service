@@ -17,20 +17,20 @@ using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 {
-    public class SyncController : ApiController
+    public class InventoryController : ApiController
     {
         IDatabase _database;
         POSModule _posModule;
 
-        public SyncController(IDatabase database, POSModule posModule)
+        public InventoryController(IDatabase database, POSModule posModule)
         {
             _database = database;
             _posModule = posModule;
         }
 
         [HttpGet]
-        [Route("v1/sync/inv")]
-        public async Task<IHttpActionResult> SyncInvAsync(int shopId = 0, string docDate = "")
+        [Route("v1/inv/sendtohq")]
+        public async Task<IHttpActionResult> SendInvAsync(int shopId = 0, string docDate = "")
         {
             var result = new HttpActionResult<string>(Request);
             try
@@ -50,34 +50,34 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         documentId, keyShopId, merchantId, brandId, conn as MySqlConnection);
                     if (success)
                     {
-                        var url = "";
+                        var importApiUrl = "";
+                        var vdsUrl = "";
                         try
                         {
-                            var vdsUrl = GetPropertyValue(conn, 1050, "vdsurl");
-                            vdsUrl = $"{vdsUrl}/v1/import/inv";
+                            vdsUrl = GetPropertyValue(conn, 1050, "vdsurl");
                             Uri uriResult;
                             var isValidUrl = Uri.TryCreate(vdsUrl, UriKind.Absolute, out uriResult)
                                 && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
-                            url = vdsUrl;
+                            importApiUrl = $"{vdsUrl}/v1/inv/import";
                             if (!isValidUrl)
-                                url = $"http://{vdsUrl}";
+                                importApiUrl = $"http://{vdsUrl}";
                         }
                         catch (Exception) { }
-                        if (string.IsNullOrEmpty(url))
+                        if (string.IsNullOrEmpty(importApiUrl))
                         {
                             result.StatusCode = HttpStatusCode.InternalServerError;
-                            result.Message = "vds parameter in property 1050 is not set or did not enabled this property";
+                            result.Message = "vdsurl parameter in property 1050 is not set or did not enabled this property";
                             return result;
                         }
 
                         try
                         {
-                            var syncJson = await HttpClientManager.Instance.PostAsync<string>(url, exportJson);
+                            var syncJson = await HttpClientManager.Instance.PostAsync<string>(importApiUrl, exportJson);
                             success = _posModule.SyncInventUpdate(ref respText, syncJson, conn as MySqlConnection);
                             result.Success = success;
                             if (success)
                             {
-                                result.Message = $"Sync inventory data {exportType} successfully";
+                                result.Message = $"Send inventory data successfully";
                             }
                             else
                             {
@@ -86,13 +86,22 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         }
                         catch (Exception ex)
                         {
-                            result.StatusCode = HttpStatusCode.RequestTimeout;
                             if (ex is HttpRequestException)
-                                result.Message = $"Connecton timeout {url}";
+                            {
+                                var reqEx = (ex as HttpRequestException);
+                                result.StatusCode = HttpStatusCode.RequestTimeout;
+                                result.Message = $"{reqEx.InnerException.Message} {vdsUrl}";
+                            }
                             else if (ex is HttpResponseException)
-                                result.Message = (ex as HttpResponseException).Response.ReasonPhrase;
+                            {
+                                var respEx = (ex as HttpResponseException);
+                                result.StatusCode = respEx.Response.StatusCode;
+                                result.Message = $"{(ex as HttpResponseException).Response.ReasonPhrase} {vdsUrl}";
+                            }
                             else
+                            {
                                 result.Message = ex.Message;
+                            }
                         }
                     }
                     else

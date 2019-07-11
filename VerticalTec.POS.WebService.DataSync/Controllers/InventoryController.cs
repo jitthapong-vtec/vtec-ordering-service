@@ -15,19 +15,19 @@ using vtecPOS_SQL.POSControl;
 
 namespace VerticalTec.POS.WebService.DataSync.Controllers
 {
-    public class ImportController : ApiController
+    public class InventoryController : ApiController
     {
         IDatabase _database;
         POSModule _posModule;
 
-        public ImportController(IDatabase database, POSModule posModule)
+        public InventoryController(IDatabase database, POSModule posModule)
         {
             _database = database;
             _posModule = posModule;
         }
 
         [HttpPost]
-        [Route("v1/import/inv")]
+        [Route("v1/inv/import")]
         public async Task<IHttpActionResult> ImportInventoryDataAsync([FromBody]object data)
         {
             var result = new HttpActionResult<string>(Request);

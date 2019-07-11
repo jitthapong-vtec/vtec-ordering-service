@@ -6,7 +6,7 @@
 
     <script type="text/javascript">
         function syncInv() {
-            $.ajax('http://192.168.1.57:9000/v1/sync/inv?docDate=&shopId=3',
+            $.ajax('http://192.168.1.57:9000/v1/inv/sendtohq?docDate=&shopId=3',
                 {
                     dataType: 'json',
                     success: function (data, status, xhr) {

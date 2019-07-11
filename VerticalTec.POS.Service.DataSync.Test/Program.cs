@@ -19,34 +19,59 @@ namespace VerticalTec.POS.Service.DataSync.Test
             {
                 Task.Run(async () =>
                 {
-                    HttpClient client = new HttpClient();
-                    var uri = baseAddress + "v1/sync/inv?docDate=&shopId=3";
-                    for (int i = 0; i < 100; i++)
-                    {
-                        Console.WriteLine($"Send request #{i + 1}");
-                        var respMessage = await client.GetAsync(uri);
-                        var respContent = await respMessage.Content.ReadAsStringAsync();
-                        var respBody = JsonConvert.DeserializeObject<ResponseBody<string>>(respContent);
-                        if (respMessage.IsSuccessStatusCode)
-                        {
-                            if (respBody.Success)
-                            {
-                                Console.WriteLine($"Result #{i + 1} {respBody.Message}");
-                            }
-                            else
-                            {
-                                Console.WriteLine("All done!");
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine(respBody.Message);
-                            break;
-                        }
-                    }
+                    await TestSyncInv(baseAddress);
                 }).Wait();
                 Console.ReadLine();
+            }
+        }
+
+        private static async Task TestSyncInv(string baseAddress)
+        {
+            HttpClient client = new HttpClient();
+            var uri = baseAddress + "v1/inv/sendtohq?docDate=&shopId=3";
+            //for (int i = 0; i < 100; i++)
+            //{
+            //    Console.WriteLine($"Send request #{i + 1}");
+            //    var respMessage = await client.GetAsync(uri);
+            //    var respContent = await respMessage.Content.ReadAsStringAsync();
+            //    var respBody = JsonConvert.DeserializeObject<ResponseBody<string>>(respContent);
+            //    if (respMessage.IsSuccessStatusCode)
+            //    {
+            //        if (respBody.Success)
+            //        {
+            //            Console.WriteLine($"Result #{i + 1} {respBody.Message}");
+            //        }
+            //        else
+            //        {
+            //            Console.WriteLine("All done!");
+            //            break;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine(respBody.Message);
+            //        break;
+            //    }
+            //}
+
+            Console.WriteLine($"Send request {uri}");
+            var respMessage = await client.GetAsync(uri);
+            var respContent = await respMessage.Content.ReadAsStringAsync();
+            var respBody = JsonConvert.DeserializeObject<ResponseBody<string>>(respContent);
+            if (respMessage.IsSuccessStatusCode)
+            {
+                if (respBody.Success)
+                {
+                    Console.WriteLine($"Result: {respBody.Message}");
+                }
+                else
+                {
+                    Console.WriteLine("All done!");
+                }
+            }
+            else
+            {
+                Console.WriteLine(respBody.Message);
             }
         }
     }
