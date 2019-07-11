@@ -9,6 +9,8 @@ namespace VerticalTec.POS.Service.DataSync
 {
     public partial class VtecDataSyncService : ServiceBase
     {
+        const string LogPrefix = "Service_";
+
         IDisposable _server;
 
         public VtecDataSyncService()
@@ -27,13 +29,13 @@ namespace VerticalTec.POS.Service.DataSync
             var port = Config.GetPort();
             string baseAddress = $"http://+:{port}/";
             _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName).Configuration(appBuilder));
-            LogManager.Instance.WriteLog("Start owin api");
+            LogManager.Instance.WriteLog("Start owin api", LogPrefix);
         }
 
         protected override void OnStop()
         {
             _server?.Dispose();
-            LogManager.Instance.WriteLog("Service already stop");
+            LogManager.Instance.WriteLog("Service already stop", LogPrefix);
         }
     }
 }

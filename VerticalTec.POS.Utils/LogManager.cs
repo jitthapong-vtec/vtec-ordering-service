@@ -64,7 +64,7 @@ namespace VerticalTec.POS.Utils
                 {
                     if (logType == LogTypes.Error)
                         log = $"ERR! {log}";
-                    sw.WriteLine($"[{DateTime.Now.ToShortTimeString()}]: {log}");
+                    sw.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss")}]: {log}");
                 }
             }
             catch (Exception) { }
@@ -76,7 +76,7 @@ namespace VerticalTec.POS.Utils
             var logFile = GetFilePath(prefixFileName);
             if (logType == LogTypes.Error)
                 log = $"ERR! {log}";
-            log = $"[{ DateTime.Now.ToShortTimeString()}]: {log}\n\r";
+            log = $"[{ DateTime.Now.ToString("HH:mm:ss")}]: {log}\n\r";
             try
             {
                 byte[] encodedText = Encoding.Unicode.GetBytes(log);

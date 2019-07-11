@@ -63,8 +63,16 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                     var exportType = 100;
                     var documentId = 0;
                     var keyShopId = 0;
+                    var shopData = new ShopData(_database);
                     var merchantId = 0;
                     var brandId = 0;
+                    try
+                    {
+                        var shop = await shopData.GetShopDataAsync(conn, shopId);
+                        merchantId = shop.GetValue<int>("MerchantID");
+                        brandId = shop.GetValue<int>("BrandID");
+                    }
+                    catch (Exception) { }
 
                     var success = _posModule.ExportInventData(ref respText, ref dataSet, ref exportJson, exportType, docDate, shopId,
                         documentId, keyShopId, merchantId, brandId, conn);

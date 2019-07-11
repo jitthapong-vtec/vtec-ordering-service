@@ -33,6 +33,8 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
         [Route("v1/sale/sendtohq")]
         public async Task<IHttpActionResult> SendSaleAsync(int shopId)
         {
+            await LogManager.Instance.WriteLogAsync($"Call v1/sale/sendtohq?shopId={shopId}", LogPrefix);
+
             var result = new HttpActionResult<string>(Request);
             try
             {
@@ -52,13 +54,19 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                     }
 
                     var importApiUrl = $"{vdsUrl}/v1/sale/import";
-                    var shopData = new ShopData(_database);
-                    var shop = await shopData.GetShopDataAsync(conn, shopId);
                     var respText = "";
                     var dtSale = new DataTable();
                     var actionType = 0;
-                    var merchantId = shop.GetValue<int>("MerchantID");
-                    var brandId = shop.GetValue<int>("BrandID");
+                    var shopData = new ShopData(_database);
+                    var merchantId = 0;
+                    var brandId = 0;
+                    try
+                    {
+                        var shop = await shopData.GetShopDataAsync(conn, shopId);
+                        merchantId = shop.GetValue<int>("MerchantID");
+                        brandId = shop.GetValue<int>("BrandID");
+                    }
+                    catch (Exception) { }
                     var success = _posModule.SaleLogBranch(ref respText, ref dtSale, shopId, actionType, conn);
                     if (!success)
                     {
@@ -90,7 +98,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                             await LogManager.Instance.WriteLogAsync($"Begin send {exportSale.Key}", LogPrefix);
                             var syncJsonSale = await HttpClientManager.Instance.PostAsync<string>(importApiUrl, exportSale.Value);
                             success = _posModule.SyncUpdate(ref respText, syncJsonSale, conn);
-                            if(success)
+                            if (success)
                                 await LogManager.Instance.WriteLogAsync($"Import {exportSale.Key} successfully", LogPrefix);
                             else
                                 await LogManager.Instance.WriteLogAsync($"Import {exportSale.Key} fail", LogPrefix, LogManager.LogTypes.Error);
