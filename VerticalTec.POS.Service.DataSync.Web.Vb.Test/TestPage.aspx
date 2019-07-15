@@ -1,6 +1,6 @@
 ﻿<%@ Page Language="vb"%>
-<%@ Import Namespace="Newtonsoft.Json" %>
 <%@ Import Namespace="System.Net.Http" %>
+<%@ Import Namespace="Newtonsoft.Json" %>
 <!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -22,14 +22,13 @@
 
     Private Sub SendData(ByVal url)
         Dim client As HttpClient = New HttpClient()
-        client.GetAsync(url)
-        'Dim respMessage = client.GetAsync(url).Result
-        'Dim respContent = respMessage.Content.ReadAsStringAsync.Result
-        'Dim respBody = JsonConvert.DeserializeObject(Of Object)(respContent)
-        'If respMessage.IsSuccessStatusCode Then
-        '    info.InnerHtml = respBody("message")
-        'Else
-        '    info.InnerHtml = respBody("message")
-        'End If
+        Dim respMessage = client.GetAsync(url).Result
+        Dim respContent = respMessage.Content.ReadAsStringAsync.Result
+        Dim respBody = JsonConvert.DeserializeObject(Of Object)(respContent)
+        If respMessage.IsSuccessStatusCode Then
+            info.InnerHtml = respBody("message")
+        Else
+            info.InnerHtml = respBody("message")
+        End If
     End Sub
 </script>
