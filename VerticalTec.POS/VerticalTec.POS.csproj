@@ -5,11 +5,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="MySql.Data">
-      <HintPath>..\CommonResources\Dll\MySql.Data.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj" />
+    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="vtecPOS">
-      <HintPath>..\CommonResources\Dll\vtecPOS.dll</HintPath>
+      <HintPath>..\DLLs\vtecPOS.dll</HintPath>
+    </Reference>
+    <Reference Include="vtecPOS_SQL">
+      <HintPath>..\DLLs\vtecPOS_SQL.dll</HintPath>
     </Reference>
   </ItemGroup>
 

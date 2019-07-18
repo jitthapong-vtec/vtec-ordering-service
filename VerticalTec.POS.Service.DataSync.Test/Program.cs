@@ -18,7 +18,7 @@ namespace VerticalTec.POS.Service.DataSync.Test
             string baseAddress = "http://localhost:9001/";
 
             // Start OWIN host 
-            using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "srifa").Configuration(appBuilder)))
+            using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "jmart_08").Configuration(appBuilder)))
             {
                 Task.Run(async () =>
                 {
@@ -31,8 +31,8 @@ namespace VerticalTec.POS.Service.DataSync.Test
         private static async Task TestSyncInv(string baseAddress)
         {
             HttpClient client = new HttpClient();
-            //var uri = baseAddress + "v1/inv/sendtohq?docDate=&shopId=3";
-            var uri = baseAddress + "v1/sale/sendtohq?shopid=3";
+            var uri = baseAddress + "v1/inv/sendtohq?docDate=&shopId=4";
+            //var uri = baseAddress + "v1/sale/sendtohq?shopid=4";
             //for (int i = 0; i < 100; i++)
             //{
             //    Console.WriteLine($"Send request #{i + 1}");

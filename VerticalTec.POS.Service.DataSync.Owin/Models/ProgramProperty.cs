@@ -46,7 +46,8 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
                 else if (propLevel == 2)
                     keyId = computerId;
 
-                var propLevelShop = dtProp.AsEnumerable().Where(row => row.GetValue<int>("KeyID") == keyId).FirstOrDefault();
+                var propLevelShop = dtProp.Select($"KeyID = {keyId}").FirstOrDefault();
+                    //dtProp.AsEnumerable().Where(row => row.GetValue<int>("KeyID") == keyId).FirstOrDefault();
                 if (propLevelShop != null)
                     propRow = propLevelShop;
             }

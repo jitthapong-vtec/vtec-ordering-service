@@ -1,5 +1,4 @@
-﻿using MySql.Data.MySqlClient;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -15,6 +14,7 @@ using VerticalTec.POS.Service.DataSync.Owin.Models;
 using vtecPOS.GlobalFunctions;
 using VerticalTec.POS.Utils;
 using VerticalTec.POS.Service.DataSync.Owin.Utils;
+using MySql.Data.MySqlClient;
 
 namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 {
