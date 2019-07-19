@@ -16,6 +16,13 @@ namespace VerticalTec.POS.Database
             _connectionString = $"Data Source={dbAddr}; Initial Catalog={dbName};User ID=vtecPOS; Password=vtecpwnet";
         }
 
+        public IDbConnection Connect()
+        {
+            var conn = new SqlConnection(_connectionString);
+            conn.Open();
+            return conn;
+        }
+
         public async Task<IDbConnection> ConnectAsync()
         {
             var conn = new SqlConnection(_connectionString);

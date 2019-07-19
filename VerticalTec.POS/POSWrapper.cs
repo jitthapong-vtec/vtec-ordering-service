@@ -9,7 +9,7 @@ using VerticalTec.POS.Database;
 using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
 
-namespace VerticalTec.POS.Core
+namespace VerticalTec.POS
 {
     public class POSWrapper
     {
@@ -17,18 +17,20 @@ namespace VerticalTec.POS.Core
 
         IDatabase _database;
         POSModule _posModule;
+        VtecRepo _vtecRepo;
 
         public POSWrapper(IDatabase database)
         {
             _database = database;
             _posModule = new POSModule();
+            _vtecRepo = new VtecRepo(database);
         }
 
         public async Task AddOrderAsync(IDbConnection conn, List<Order> orders)
         {
             var responseText = "";
-            var decimalDigit = await GetDecimalDigitAsync(conn);
-            var saleDate = await GetSaleDateAsync(conn, orders[0].ShopId, withBracket: true);
+            var decimalDigit = await _vtecRepo.GetDecimalDigitAsync(conn);
+            var saleDate = await _vtecRepo.GetSaleDateAsync(conn, orders[0].ShopId, withBracket: true);
 
             foreach (var order in orders)
             {
@@ -58,14 +60,14 @@ namespace VerticalTec.POS.Core
                 }
                 else
                 {
-                    throw new POSModuleException("OrderDetail", responseText);
+                    throw new VtecPOSException("OrderDetail", responseText);
                 }
             }
         }
 
         public async Task AddPaymentAsync(IDbConnection conn, Payment payment)
         {
-            var saleDate = await GetSaleDateAsync(conn, payment.ShopId);
+            var saleDate = await _vtecRepo.GetSaleDateAsync(conn, payment.ShopId);
             var tranIdParam = _database.CreateParameter("@transactionId", payment.TransactionId);
             var compIdParam = _database.CreateParameter("@computerId", payment.ComputerId);
             var shopIdParam = _database.CreateParameter("@shopId", payment.ShopId);
@@ -192,18 +194,18 @@ namespace VerticalTec.POS.Core
             }
             catch (Exception ex)
             {
-                throw new POSModuleException("AddPayment", ex.Message, ex);
+                throw new VtecPOSException("AddPayment", ex.Message, ex);
             }
         }
 
         public async Task CalculateBillAsync(IDbConnection conn, int shopId, int transactionId, int computerId)
         {
-            var decimalDigit = await GetDecimalDigitAsync(conn);
+            var decimalDigit = await _vtecRepo.GetDecimalDigitAsync(conn);
             var responseText = "";
             _posModule.OrderDetail_CalBill(ref responseText, transactionId, computerId, shopId,
                 decimalDigit, TableSubffix, conn as MySqlConnection);
             if (!string.IsNullOrEmpty(responseText))
-                throw new POSModuleException("OrderDetail_CalBill", responseText);
+                throw new VtecPOSException("OrderDetail_CalBill", responseText);
         }
 
         public async Task DeletePaymentAsync(IDbConnection conn, int paymentId, int transactionId, int computerId)
@@ -220,17 +222,17 @@ namespace VerticalTec.POS.Core
 
         public async Task FinalizeAsync(IDbConnection conn, int shopId, int transactionId, int computerId, int staffId, int terminalId)
         {
-            var decimalDigit = await GetDecimalDigitAsync(conn);
-            var saleDate = await GetSaleDateAsync(conn, shopId, withBracket: true);
+            var decimalDigit = await _vtecRepo.GetDecimalDigitAsync(conn);
+            var saleDate = await _vtecRepo.GetSaleDateAsync(conn, shopId, withBracket: true);
             var responseText = "";
             var success = _posModule.OrderDetail_FinalizeBill(ref responseText, TableSubffix, transactionId, computerId,
                 decimalDigit, staffId, terminalId, conn as MySqlConnection);
             if (!success)
-                throw new POSModuleException("OrderDetail_FinalizeBill", responseText);
+                throw new VtecPOSException("OrderDetail_FinalizeBill", responseText);
             success = _posModule.OrderDetail_Final(ref responseText, TableSubffix, transactionId, computerId, shopId,
                 saleDate, decimalDigit, conn as MySqlConnection);
             if (!success)
-                throw new POSModuleException("OrderDetail_Final", responseText);
+                throw new VtecPOSException("OrderDetail_Final", responseText);
         }
 
         public async Task<DataTable> GetOrderDetailAsync(IDbConnection conn, int transactionId, int computerId, int orderDetailId = 0, int langId = 0)
@@ -246,7 +248,7 @@ namespace VerticalTec.POS.Core
                 bool success = _posModule.GetOrderDetail_View(ref responseText, ref dtOrderData, ref dtPromotion, ref dtBill,
                     ref dtPayment, 0, TableSubffix, transactionId, computerId, "ASC", conn as MySqlConnection);
                 if (!success)
-                    throw new POSModuleException("GetOrderDetail_View", responseText);
+                    throw new VtecPOSException("GetOrderDetail_View", responseText);
             });
 
             return dtOrderData;
@@ -254,7 +256,7 @@ namespace VerticalTec.POS.Core
 
         public async Task<Transaction> OpenTransactionAsync(IDbConnection conn, Transaction transaction)
         {
-            var saleDate = await GetSaleDateAsync(conn, transaction.ShopId, withBracket: true);
+            var saleDate = await _vtecRepo.GetSaleDateAsync(conn, transaction.ShopId, withBracket: true);
             var responseText = "";
             var transactionId = 0;
             var computerId = 0;
@@ -272,117 +274,19 @@ namespace VerticalTec.POS.Core
             }
             else
             {
-                throw new POSModuleException("Tran_Open", responseText);
+                throw new VtecPOSException("Tran_Open", responseText);
             }
             return transaction;
         }
 
         public async Task RefreshPromoAsync(IDbConnection conn, int transactionId, int computerId)
         {
-            var decimalDigit = await GetDecimalDigitAsync(conn);
+            var decimalDigit = await _vtecRepo.GetDecimalDigitAsync(conn);
             var responseText = "";
             var success = _posModule.OrderDetail_RefreshPromo(ref responseText, TableSubffix,
                 transactionId, computerId, decimalDigit, conn as MySqlConnection);
             if (!success)
-                throw new POSModuleException("OrderDetail_RefreshPromo", responseText);
-        }
-
-        public async Task<string> GetSaleDateAsync(IDbConnection conn, int shopId, bool chkCurrDate = false, bool withBracket = false)
-        {
-            string saleDate = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            MySqlConnection myConn = conn as MySqlConnection;
-            MySqlCommand cmd = new MySqlCommand("select SessionDate from sessionenddaydetail " +
-                "where ShopID=@shopId and IsEndDay=@isEndDay order by sessiondate desc limit 1", myConn);
-            cmd.Parameters.AddWithValue("@shopId", shopId);
-            cmd.Parameters.AddWithValue("@isEndDay", 0);
-            using (var reader = await _database.ExecuteReaderAsync(cmd))
-            {
-                if (reader.Read())
-                {
-                    DateTime currentDate = DateTime.Now;
-                    DateTime lastSaleDate = reader.GetDateTime(0);
-                    var lastSaleDateEarlyNow = DateTime.Compare(lastSaleDate.Date, currentDate.Date) < 0;
-                    if (chkCurrDate == false && lastSaleDateEarlyNow)
-                        throw new POSModuleException("The front program did not open sale day!");
-
-                    if (lastSaleDateEarlyNow)
-                        saleDate = currentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    else
-                        saleDate = lastSaleDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                }
-            }
-            if (withBracket)
-                saleDate = "{ d '" + saleDate + "' }";
-            return saleDate;
-        }
-
-        public async Task<int> GetDecimalDigitAsync(IDbConnection conn)
-        {
-            int decimalDigit = 0;
-            try
-            {
-                DataTable dtProperty = await GetProgramPropertyAsync(conn, 24);
-                decimalDigit = dtProperty.Rows[0].GetValue<int>("PropertyValue");
-            }
-            catch (Exception) { }
-            return decimalDigit;
-        }
-
-        public async Task<string> GetPropertyValueAsync(IDbConnection conn, int propertyId, string param, int shopId = 0, int computerId = 0)
-        {
-            var dtProp = await GetProgramPropertyAsync(conn, propertyId);
-            if (dtProp.Rows.Count == 0)
-                return "";
-            var propRow = dtProp.Rows[0];
-            if (dtProp.Rows.Count > 1)
-            {
-                var keyId = 0;
-                var propLevel = propRow.GetValue<int>("PropertyLevelID");
-
-                if (propLevel == 1)
-                    keyId = shopId;
-                else if (propLevel == 2)
-                    keyId = computerId;
-
-                var propLevelShop = dtProp.Select($"KeyID = {keyId}").FirstOrDefault();
-                if (propLevelShop != null)
-                    propRow = propLevelShop;
-            }
-            var dict = ExtractPropertyParameter(propRow.GetValue<string>("PropertyTextValue"));
-            var val = dict.FirstOrDefault(x => x.Key == param).Value;
-            return val;
-        }
-
-        public async Task<DataTable> GetProgramPropertyAsync(IDbConnection conn, int propertyId)
-        {
-            string sqlQuery = "select a.*, b.PropertyLevelID from programpropertyvalue a" +
-                " left join programproperty b" +
-                " on a.PropertyID=b.PropertyID" +
-                " where a.PropertyID=@propertyId";
-            IDbCommand cmd = _database.CreateCommand(sqlQuery, conn);
-            cmd.Parameters.Add(_database.CreateParameter("@propertyId", propertyId));
-            DataTable dtResult = new DataTable();
-            using (IDataReader reader = await _database.ExecuteReaderAsync(cmd))
-            {
-                dtResult.Load(reader);
-            }
-            return dtResult;
-        }
-
-        Dictionary<string, string> ExtractPropertyParameter(string propParams)
-        {
-            var props = propParams.Split(';').AsParallel().Select(x => x.Split('=')).ToArray();
-            var dict = new Dictionary<string, string>();
-            foreach (var prop in props)
-            {
-                try
-                {
-                    if (!dict.Keys.Contains(prop[0]))
-                        dict.Add(prop[0], prop[1]);
-                }
-                catch (Exception) { }
-            }
-            return dict;
+                throw new VtecPOSException("OrderDetail_RefreshPromo", responseText);
         }
     }
 }

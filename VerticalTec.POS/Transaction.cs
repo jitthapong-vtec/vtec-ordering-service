@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace VerticalTec.POS.Core
+namespace VerticalTec.POS
 {
     public class Transaction
     {

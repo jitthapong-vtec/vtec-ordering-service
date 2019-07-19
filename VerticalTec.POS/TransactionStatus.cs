@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace VerticalTec.POS.Core
+namespace VerticalTec.POS
 {
     public enum TransactionStatus
     {

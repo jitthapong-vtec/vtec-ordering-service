@@ -4,18 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VerticalTec.POS.Core
+namespace VerticalTec.POS
 {
-    public class Order
+    public class Order : Product
     {
         public int TransactionId { get; set; }
         public int ComputerId { get; set; }
+        public int ShopId { get; set; }
         public int OrderDetailId { get; set; }
         public int OrderDetailLinkId { get; set; }
         public int IndentLevel { get; set; }
-        public int ProductId { get; set; }
-        public int ParentProductId { get; set; }
-        public int PGroupId { get; set; }
         public string OtherFoodName { get; set; } = "";
         public int OtherProductGroupId { get; set; }
         public string OtherPrinterId { get; set; }
@@ -28,12 +26,8 @@ namespace VerticalTec.POS.Core
         public int OtherProductTypeId { get; set; }
         public int StaffId { get; set; }
         public int TableId { get; set; }
-        public int SetGroupNo { get; set; }
         public double QtyRatio { get; set; }
-        public SaleModes SaleMode { get; set; } = SaleModes.DineIn;
-        public double TotalQty { get; set; }
+        public double TotalQty { get; set; } = 1;
         public double OpenPrice { get; set; }
-        public int ShopId { get; set; }
-        public bool IsComponentProduct { get; set; }
     }
 }
