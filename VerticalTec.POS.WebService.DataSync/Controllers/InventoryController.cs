@@ -35,7 +35,7 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
             var result = new HttpActionResult<string>(Request);
             if (payload == null)
             {
-                var msg = $"Invalid json format!";
+                var msg = $"Very large JSON or invalid format!";
                 await LogManager.Instance.WriteLogAsync(msg, LogPrefix);
                 result.StatusCode = HttpStatusCode.BadRequest;
                 result.Message = msg;
@@ -72,6 +72,13 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
                 }
             }
             return result;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            GC.Collect();
         }
     }
 }

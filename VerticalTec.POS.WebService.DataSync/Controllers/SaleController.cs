@@ -73,5 +73,12 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
             }
             return result;
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            GC.Collect();
+        }
     }
 }
