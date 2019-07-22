@@ -23,6 +23,11 @@ namespace VerticalTec_POS_Report_Dashboard
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<IISServerOptions>(options =>
+            {
+                options.AutomaticAuthentication = false;
+            });
+
             services.AddSingleton<IDbHelper>(new SqlServerDatabase("Data Source=203.151.32.203;Initial Catalog=VTEC_HQ_ITN;User ID=vtecPOS; Password=vtecpwnet"));
 
             services

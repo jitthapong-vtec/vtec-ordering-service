@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Report</title>
+    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+
+    <link href="~/css/devextreme/bootstrap.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link href="~/css/devextreme/dx.common.css" rel="stylesheet" />
+    <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />
+
+    <script src="~/js/devextreme/jquery.js"></script>
+    <script src="~/js/devextreme/bootstrap.js"></script>
+
+    <script src="~/js/devextreme/cldr.js"></script>
+    <script src="~/js/devextreme/cldr/event.js"></script>
+    <script src="~/js/devextreme/cldr/supplemental.js"></script>
+    <script src="~/js/devextreme/cldr/unresolved.js"></script>
+
+    <script src="~/js/devextreme/globalize.js"></script>
+    <script src="~/js/devextreme/globalize/message.js"></script>
+    <script src="~/js/devextreme/globalize/number.js"></script>
+    <script src="~/js/devextreme/globalize/currency.js"></script>
+    <script src="~/js/devextreme/globalize/date.js"></script>
+
+    @* JSZip for client side export *@
+    @*<script src="~/js/devextreme/jszip.js"></script>*@
+
+    <script src="~/js/devextreme/dx.all.js"></script>
+    <script src="~/js/devextreme/vectormap-data/world.js"></script>
+    <script src="~/js/devextreme/aspnet/dx.aspnet.data.js"></script>
+    <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            //loadReport();
+        });
+
+        function loadReport() {
+            new DevExpress.data.DataSource('@Url.Action("Summary", "Report")')
+                .load()
+                .done(function (result) {
+                    $("#summary").html(result);
+                })
+                .fail(function (err) {
+                    console.log(err);
+                });
+
+            new DevExpress.data.DataSource('@Url.Action("Tender", "Report")')
+                .load()
+                .done(function (result) {
+                    $("#tender").html(result);
+                })
+                .fail(function (err) {
+                    console.log(err);
+                });
+
+            new DevExpress.data.DataSource('@Url.Action("Audit", "Report")')
+                .load()
+                .done(function (result) {
+                    $("#audit").html(result);
+                })
+                .fail(function (err) {
+                    console.log(err);
+                });
+        }
+
+    </script>
+</head>
+
+<body>
+    @(Html.DevExtreme().Toolbar()
+     .ID("layout-toolbar")
+     .Items(items => {
+         items.Add().Widget(w => w.Button()
+             .Icon("menu")
+             .OnClick("button_clickHandler")
+         ).Location(ToolbarItemLocation.Before);
+     })
+    )
+
+    @(Html.DevExtreme().Drawer()
+        .ID("layout-drawer")
+        .MinSize(37)
+        .Height(250)
+        .Opened(new JS("JSON.parse(sessionStorage.getItem('drawerOpened'))"))
+        .RevealMode(DrawerRevealMode.Expand)
+        .OpenedStateMode(DrawerOpenedStateMode.Overlap)
+        .Template(@<text>
+            @(Html.DevExtreme().List()
+               .Width(200)
+               .OnInitialized("list_onInitialized")
+               .Items(items => {
+                   items.Add().Text("Inbox").Icon("message").Option("path", @Url.Action("Index"));
+                   items.Add().Text("Sent Mail").Icon("check").Option("path", @Url.Action("Sent"));
+                   items.Add().Text("Deleted").Icon("trash").Option("path", @Url.Action("Deleted"));
+                   items.Add().Text("Spam").Icon("mention").Option("path", @Url.Action("Spam"));
+               })
+               .KeyExpr("path")
+               .SelectionMode(ListSelectionMode.Single)
+               .OnSelectionChanged("list_onSelectionChanged")
+            )
+        </text>)
+ .Content(@<text>@RenderBody()</text>)
+    )
+
+    <script type="text/javascript">
+    function button_clickHandler() {
+        var drawer = $("#layout-drawer").dxDrawer("instance");
+        drawer.toggle();
+        sessionStorage.setItem("drawerOpened", JSON.stringify(drawer.option("opened")));
+    }
+
+    function list_onSelectionChanged(e) {
+        document.location.pathname = e.addedItems[0].path;
+    }
+
+    function list_onInitialized(e) {
+        var t = "@Url.Action()";
+        e.component.option("selectedItemKeys", [ "@Url.Action()" ])
+    }
+    </script>
+
+    @*@(Html.DevExtreme().ResponsiveBox()
+                   .ID("responsiveBox")
+                   .Rows(rows => {
+                       rows.Add().Ratio(1);
+                       rows.Add().Ratio(2);
+                       rows.Add().Ratio(0.7);
+                   })
+                   .Cols(cols => {
+                       cols.Add().Ratio(1);
+                   })
+                   .Items(items => {
+                       items.Add()
+                           .Template(@<text><div id="summary">
+                        @(Html.DevExtreme().LoadIndicator().Visible(true))
+                    </div></text>)
+         .Location(locations => {
+             locations.Add().Row(0).Col(0);
+         });
+        items.Add()
+         .Template(@<text><div id="tender">
+                                @(Html.DevExtreme().LoadIndicator().Visible(true))
+                            </div></text>)
+                 .Location(locations => {
+                     locations.Add().Row(1).Col(0);
+                 });
+             items.Add()
+                 .Template(@<text><div id="audit">
+                @(Html.DevExtreme().LoadIndicator().Visible(true))
+            </div></text>)
+        .Location(locations => {
+        locations.Add().Row(2).Col(0);
+        });
+        })
+            )*@
+</body>
+</html>
