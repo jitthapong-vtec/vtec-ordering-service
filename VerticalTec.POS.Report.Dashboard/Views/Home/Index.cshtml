@@ -1,0 +1,78 @@
+@(Html.DevExtreme().ResponsiveBox()
+                   .Rows(rows =>
+                       {
+                           rows.Add().Ratio(1);
+                           rows.Add().Ratio(1);
+                       rows.Add().Ratio(1);
+                       rows.Add().Ratio(1);
+                   rows.Add().Ratio(1);
+                   rows.Add().Ratio(1);
+               })
+                   .Cols(cols =>
+                       {
+                       cols.Add().Ratio(1);
+                   })
+                   .Items(items =>
+                       {
+                       items.Add()
+                           .Template(@<text><div class="card">
+                <h5 class="card-header">Summary</h5><div class="card-body" id="summary">
+                </div>
+            </div></text>)
+.Location(locations =>
+{
+locations.Add().Row(1).Col(0);
+});
+items.Add()
+.Template(@<text><div class="card">
+                                <h5 class="card-header">Tender</h5><div class="card-body" id="tender">
+                                </div>
+                            </div></text>)
+     .Location(locations =>
+     {
+     locations.Add().Row(2).Col(0);
+     });
+     items.Add()
+     .Template(@<text><div class="card">
+        <h5 class="card-header">Audit</h5><div class="card-body" id="audit">
+        </div>
+    </div></text>)
+.Location(locations =>
+{
+locations.Add().Row(3).Col(0);
+});
+})
+    )
+
+    @(Html.DevExtreme().LoadPanel()
+            .ID("summaryLoadPanel")
+            .ShadingColor("rgba(0,0,0,0.4)")
+            .Position(p => p.Of("#summary"))
+            .Visible(true)
+            .ShowIndicator(true)
+            .ShowPane(false)
+            .Shading(false)
+            .CloseOnOutsideClick(false)
+    )
+
+    @(Html.DevExtreme().LoadPanel()
+            .ID("tenderLoadPanel")
+            .ShadingColor("rgba(0,0,0,0.4)")
+            .Position(p => p.Of("#tender"))
+            .Visible(true)
+            .ShowIndicator(true)
+            .ShowPane(false)
+            .Shading(false)
+            .CloseOnOutsideClick(false)
+    )
+
+    @(Html.DevExtreme().LoadPanel()
+            .ID("auditLoadPanel")
+            .ShadingColor("rgba(0,0,0,0.4)")
+            .Position(p => p.Of("#audit"))
+            .Visible(true)
+            .ShowIndicator(true)
+            .ShowPane(false)
+            .Shading(false)
+            .CloseOnOutsideClick(false)
+    )

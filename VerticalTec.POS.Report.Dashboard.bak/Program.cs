@@ -17,7 +17,8 @@ namespace VerticalTec_POS_Report_Dashboard
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .Build();
+            .UseIIS()
+            .UseStartup<Startup>()
+            .Build();
     }
 }

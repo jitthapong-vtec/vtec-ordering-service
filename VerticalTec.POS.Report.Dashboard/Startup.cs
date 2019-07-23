@@ -1,15 +1,17 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Serialization;
 using vtecdbhelper;
 
-namespace VerticalTec_POS_Report_Dashboard
+namespace VerticalTec.POS.Report.Dashboard
 {
     public class Startup
     {
@@ -23,16 +25,11 @@ namespace VerticalTec_POS_Report_Dashboard
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<IISServerOptions>(options =>
-            {
-                options.AutomaticAuthentication = false;
-            });
+            var dbServer = Configuration.GetSection("Database").GetValue<string>("DbServer");
+            var dbName = Configuration.GetSection("Database").GetValue<string>("DbName");
+            services.AddSingleton<IDbHelper>(new SqlServerDatabase($"Data Source={dbServer};Initial Catalog={dbName};User ID=vtecPOS; Password=vtecpwnet"));
 
-            services.AddSingleton<IDbHelper>(new SqlServerDatabase("Data Source=203.151.32.203;Initial Catalog=VTEC_HQ_ITN;User ID=vtecPOS; Password=vtecpwnet"));
-
-            services
-                .AddMvc()
-                .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,14 +37,15 @@ namespace VerticalTec_POS_Report_Dashboard
         {
             if (env.IsDevelopment())
             {
-                app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
             }
             else
             {
                 app.UseExceptionHandler("/Home/Error");
+                //app.UseHsts();
             }
 
+            //app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseMvc(routes =>

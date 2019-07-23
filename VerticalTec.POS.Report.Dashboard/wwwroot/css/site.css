@@ -2,22 +2,23 @@
     font-family: Tahoma, Verdana, Arial;
 }
 
-.dx-drawer-panel-content, .dx-overlay-content {
-    background-color: lightgray;
+.toolbar-label,
+.toolbar-label > b {
+    font-size:16px;
+    color:#f0f0f0;
 }
 
-.drawer-view-content {
-    margin-left: 10px;
-    margin-top: 10px;
+.card{
+    margin:1em;
 }
 
 #layout-toolbar {
-    background-color: rgba(191, 191, 191, .15);
+    background-color: #48A23F;
     padding: 5px 10px;
 }
 
 #layout-toolbar .dx-toolbar-button .dx-button {
-    background-color: rgba(191, 191, 191, -0.15);
+    background-color: #f0f0f5;
     border: none;
 }
 
