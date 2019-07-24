@@ -1,7 +1,4 @@
-﻿using System;
-using Xamarin.Essentials;
-using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
+﻿using Xamarin.Forms;
 
 namespace VerticalTec.POS.Report.Mobile
 {

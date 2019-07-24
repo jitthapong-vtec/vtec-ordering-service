@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Windows.Input;
 using Xamarin.Forms;
 
@@ -24,7 +21,7 @@ namespace VerticalTec.POS.Report.Mobile
 
         public ICommand RefreshCommand => new Command(() =>
         {
-
+            LoadUrl();
         });
 
         public string Url
