@@ -1,4 +1,5 @@
-﻿using Xamarin.Forms;
+﻿using System.Threading.Tasks;
+using Xamarin.Forms;
 
 namespace VerticalTec.POS.Report.Mobile
 {
@@ -14,7 +15,6 @@ namespace VerticalTec.POS.Report.Mobile
 
         protected override void OnStart()
         {
-            // Handle when your app starts
         }
 
         protected override void OnSleep()
