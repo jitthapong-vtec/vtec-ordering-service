@@ -4625,7 +4625,7 @@ namespace VerticalTec.POS.Report.Mobile.Droid
 			public const int highlighted_text_material_light = 2131623967;
 			
 			// aapt resource value: 0x7f0e005a
-			public const int launcher_background = 2131624026;
+			public const int ic_launcher_background = 2131624026;
 			
 			// aapt resource value: 0x7f0e0020
 			public const int material_blue_grey_800 = 2131623968;
@@ -7629,13 +7629,13 @@ namespace VerticalTec.POS.Report.Mobile.Droid
 		{
 			
 			// aapt resource value: 0x7f030000
-			public const int icon = 2130903040;
+			public const int ic_launcher = 2130903040;
 			
 			// aapt resource value: 0x7f030001
-			public const int icon_round = 2130903041;
+			public const int ic_launcher_foreground = 2130903041;
 			
 			// aapt resource value: 0x7f030002
-			public const int launcher_foreground = 2130903042;
+			public const int ic_launcher_round = 2130903042;
 			
 			static Mipmap()
 			{

@@ -46,10 +46,14 @@
         });
 
         function loadReport() {
+                    $("#summaryLoadPanel").dxLoadPanel("show");
+                    $("#tenderLoadPanel").dxLoadPanel("show");
+                    $("#auditLoadPanel").dxLoadPanel("show");
             $.getJSON('@Url.Action("Summary", "Report")', function (result) {
                 $("#summary").html(result.data);
             })
                 .fail(function (err) {
+                    $("#summary").html("Not available now ");
                 }).always(function ()
                 {
                     $("#summaryLoadPanel").dxLoadPanel("hide");
@@ -59,6 +63,7 @@
                 $("#tender").html(result.data);
             }).fail(function (err)
             {
+                    $("#tender").html("Not available now");
             }).always(function ()
             {
                     $("#tenderLoadPanel").dxLoadPanel("hide");
@@ -68,23 +73,37 @@
                 $("#audit").html(result.data);
             })
                 .fail(function (err) {
+                    $("#audit").html("Not available now");
                 }).always(function ()
                 {
                     $("#auditLoadPanel").dxLoadPanel("hide");
             });
         }
 
+        function refresh_click() {
+            loadReport();
+        }
+
+        function setting_click() {
+            location.href = "@Url.Action("Setting", "Home")";
+        }
+
+        function back_to_home_click() {
+            window.history.back();
+        }
     </script>
 </head>
 <body style="height:100%;">
-    @(Html.DevExtreme().Toolbar()
-    .ID("layout-toolbar")
-    .Items(items =>
-    {
-    items.Add().Template(@<text><div class="toolbar-label"><b>Reports</b></div></text>)
-    .LocateInMenu(ToolbarItemLocateInMenuMode.Never)
-    .Location(ToolbarItemLocation.Center);
-    }))
+    @*@(Html.DevExtreme().Toolbar()
+                .ID("layout-toolbar")
+                .Items(items =>
+                {
+                    items.Add().Template(@<text><div class="toolbar-label"><b>Reports</b></div></text>)
+            .LocateInMenu(ToolbarItemLocateInMenuMode.Never)
+            .Location(ToolbarItemLocation.Center);
+        items.Add().Widget(w => w.Button().Icon("refresh").OnClick("refresh_click"))
+        .Location(ToolbarItemLocation.After);
+        }))*@
     @RenderBody()
 </body>
 </html>

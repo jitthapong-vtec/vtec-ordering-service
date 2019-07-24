@@ -12,23 +12,25 @@ namespace VerticalTec.POS.Report.Mobile
     // Learn more about making custom code visible in the Xamarin.Forms previewer
     // by visiting https://aka.ms/xamarinforms-previewer
     [DesignTimeVisible(false)]
-    public partial class MainPage : ContentPage, IPage
+    public partial class MainPage : ContentPage
     {
         public MainPage()
         {
             InitializeComponent();
-            LoadUrl();
         }
 
         public void NavigationPopped()
         {
-            LoadUrl();
         }
 
-        void LoadUrl()
+        private void WebView_Navigating(object sender, WebNavigatingEventArgs e)
         {
-            var url = Preferences.Get("ReportUrl", "");
-            webView.Source = url;
+
+        }
+
+        private void WebView_Navigated(object sender, WebNavigatedEventArgs e)
+        {
+
         }
     }
 }

@@ -12,8 +12,6 @@ namespace VerticalTec.POS.Report.Mobile
             InitializeComponent();
 
             Page page = new MainPage();
-            if (string.IsNullOrEmpty(Preferences.Get("ReportUrl", "")))
-                page = new SettingPage();
             MainPage = new CustomNavigationPage(page);
         }
 

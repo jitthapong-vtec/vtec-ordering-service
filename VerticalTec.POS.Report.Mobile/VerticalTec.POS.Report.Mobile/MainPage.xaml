@@ -3,12 +3,22 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:VerticalTec.POS.Report.Mobile"
              mc:Ignorable="d"
-             NavigationPage.HasNavigationBar="False"
              x:Class="VerticalTec.POS.Report.Mobile.MainPage">
-
+    <ContentPage.BindingContext>
+        <local:MainViewModel/>
+    </ContentPage.BindingContext>
+    <NavigationPage.TitleView>
+        <StackLayout Orientation="Horizontal" VerticalOptions="CenterAndExpand">
+            <Label FontSize="Large" Text="Report" VerticalOptions="Center" Style="{StaticResource NavBarTitleFont}"/>
+            <local:TappedGrid TappedCommand="{Binding RefreshCommand}" VerticalOptions="CenterAndExpand" HorizontalOptions="EndAndExpand" Margin="8">
+                <Label Style="{StaticResource NavBarIconFont}" Text="&#xf2f1;"/>
+            </local:TappedGrid>
+        </StackLayout>
+    </NavigationPage.TitleView>
     <Grid>
-        <WebView x:Name="webView"/>
+        <WebView Source="{Binding Url}" Navigating="WebView_Navigating" Navigated="WebView_Navigated"/>
     </Grid>
 
 </ContentPage>

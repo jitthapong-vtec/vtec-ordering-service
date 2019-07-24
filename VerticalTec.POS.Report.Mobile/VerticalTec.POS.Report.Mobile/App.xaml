@@ -6,6 +6,30 @@
              mc:Ignorable="d"
              x:Class="VerticalTec.POS.Report.Mobile.App">
     <Application.Resources>
+        
+        <OnPlatform x:Key="DefaultFont" 
+                        x:TypeArguments="x:String" 
+                        Android="Fonts/Montserrat-Regular.otf#Montserrat-Regular"
+                        iOS="Montserrat-Regular"/>
+        
+        <OnPlatform x:Key="AwesomeFont" 
+                        x:TypeArguments="x:String" 
+                        Android="Fonts/FontAwesome.otf#Font Awesome 5 Free Solid"
+                        iOS="Font Awesome 5 Free"/>
 
+        <Style TargetType="Label" x:Key="BaseLabelStyle">
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFont}"/>
+        </Style>
+
+        <Style x:Key="NavBarTitleFont" TargetType="Label" BasedOn="{StaticResource BaseLabelStyle}">
+            <Setter Property="TextColor" Value="WhiteSmoke"/>
+        </Style>
+
+        <Style x:Key="NavBarIconFont" TargetType="Label">
+            <Setter Property="TextColor" Value="WhiteSmoke"/>
+            <Setter Property="FontFamily" Value="{StaticResource AwesomeFont}"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="Margin" Value="8"/>
+        </Style>
     </Application.Resources>
 </Application>
