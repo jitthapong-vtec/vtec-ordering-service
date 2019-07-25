@@ -46,19 +46,6 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                         var staffId = dtStaff.Rows[0].GetValue<int>("StaffID");
 
                         TempData["StaffID"] = staffId;
-
-                        var report = new VTECReports.Reports(_db);
-                        var dataSet = report.Shop_Info(staffId, conn);
-                        var shopList = new List<object>();
-                        foreach (DataRow row in dataSet.Tables["ShopData"].Rows)
-                        {
-                            shopList.Add(new
-                            {
-                                shopId = row.GetValue<int>("ShopID"),
-                                shopName = row.GetValue<string>("ShopName")
-                            });
-                        }
-                        result.Data = shopList;
                     }
                     else
                     {
@@ -82,6 +69,37 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
         {
             TempData.Remove("StaffID");
             return Ok();
+        }
+
+        [HttpGet]
+        [ActionName("ShopData")]
+        public async Task<IActionResult> GetShopAsync(int staffId = 2)
+        {
+            var result = new ReportActionResult<IEnumerable<object>>();
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var report = new VTECReports.Reports(_db);
+                    var dataSet = report.Shop_Info(staffId, conn);
+                    var shopList = new List<object>();
+                    foreach (DataRow row in dataSet.Tables["ShopData"].Rows)
+                    {
+                        shopList.Add(new
+                        {
+                            shopId = row.GetValue<int>("ShopID"),
+                            shopName = row.GetValue<string>("ShopName")
+                        });
+                    }
+                    result.Data = shopList;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.StatusCode = StatusCodes.Status500InternalServerError;
+                result.Message = ex.Message;
+            }
+            return result;
         }
 
         [HttpGet]

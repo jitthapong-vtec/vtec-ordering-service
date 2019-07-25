@@ -2,11 +2,17 @@
             .ID("layout-toolbar")
             .Items(items =>
             {
-                items.Add().Template(@<text><div class="toolbar-label"><b>Reports</b></div></text>)
-.LocateInMenu(ToolbarItemLocateInMenuMode.Never)
-.Location(ToolbarItemLocation.Center);
-items.Add().Widget(w => w.Button().Icon("refresh").OnClick("refresh_click"))
-.Location(ToolbarItemLocation.After);
+        items.Add()
+        .Widget(w => w
+            .SelectBox()
+            .Width(140)
+            .Value(1)
+            .DataSource(d => d.Mvc().Controller("Report").LoadAction("ShopData"))
+            .ValueExpr("shopId")
+            .DisplayExpr("shopName")
+    )
+    .LocateInMenu(ToolbarItemLocateInMenuMode.Auto)
+    .Location(ToolbarItemLocation.After);
 }))
 
 <div class="d-flex flex-column">
@@ -66,3 +72,9 @@ items.Add().Widget(w => w.Button().Icon("refresh").OnClick("refresh_click"))
         .Shading(true)
         .CloseOnOutsideClick(false)
 )
+
+<script type="text/javascript">
+    $(document).ready(function () {
+            loadReport();
+        });
+</script>

@@ -17,9 +17,9 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
         public IActionResult Index()
         {
-            if (TempData["StaffID"] == null)
-                return RedirectToAction("Login");
-            else
+            //if (TempData["StaffID"] == null)
+            //    return RedirectToAction("Login");
+            //else
                 return View();
         }
 
