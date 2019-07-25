@@ -1,49 +1,38 @@
+@(Html.DevExtreme().Toolbar()
+            .ID("layout-toolbar")
+            .Items(items =>
+            {
+                items.Add().Template(@<text><div class="toolbar-label"><b>Reports</b></div></text>)
+.LocateInMenu(ToolbarItemLocateInMenuMode.Never)
+.Location(ToolbarItemLocation.Center);
+items.Add().Widget(w => w.Button().Icon("refresh").OnClick("refresh_click"))
+.Location(ToolbarItemLocation.After);
+}))
 
-@(Html.DevExtreme().ResponsiveBox()
-                   .Rows(rows =>
-                       {
-                           rows.Add().Ratio(1);
-                           rows.Add().Ratio(1);
-                       rows.Add().Ratio(1);
-                       rows.Add().Ratio(1);
-                   rows.Add().Ratio(1);
-                   rows.Add().Ratio(1);
-               })
-                   .Cols(cols =>
-                       {
-                       cols.Add().Ratio(1);
-                   })
-                   .Items(items =>
-                       {
-                       items.Add()
-                           .Template(@<text><div class="card">
-            <b class="card-header">Summary Sale</b><div class="card-body" id="summary">
+<div class="d-flex flex-column">
+    <div class="card justify-content-around align-self-stretch">
+        <div class="card-header">
+            <div class="row">
+                <div class="col">
+                    <b>Summary Sale</b>
+                </div>
+                <div class="col-3 float-right">
+                    @(Html.DevExtreme().Button().Text("Close"))
+                </div>
             </div>
-        </div></text>)
-.Location(locations =>
-{
-locations.Add().Row(1).Col(0);
-});
-items.Add()
-.Template(@<text><div class="card">
-                                <b class="card-header">Tender</b><div class="card-body" id="tender">
-                                </div>
-                            </div></text>)
-.Location(locations =>
-{
-locations.Add().Row(2).Col(0);
-});
-items.Add()
-.Template(@<text><div class="card">
+        </div>
+        <div class="card-body" id="summary">
+        </div>
+    </div>
+    <div class="card justify-content-around align-self-stretch">
+        <b class="card-header">Tender</b><div class="card-body" id="tender">
+        </div>
+    </div>
+    <div class="card justify-content-around align-self-stretch">
         <b class="card-header">Audit</b><div class="card-body" id="audit">
         </div>
-    </div></text>)
-.Location(locations =>
-{
-locations.Add().Row(3).Col(0);
-});
-})
-)
+    </div>
+</div>
 
 @(Html.DevExtreme().LoadPanel()
         .ID("summaryLoadPanel")

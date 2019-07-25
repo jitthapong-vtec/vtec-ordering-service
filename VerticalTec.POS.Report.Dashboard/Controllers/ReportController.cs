@@ -23,6 +23,67 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             _db = db;
         }
 
+        [HttpPost]
+        [ActionName("Login")]
+        public async Task<IActionResult> GetShopInfoAsync(UserLogin payload)
+        {
+            var result = new ReportActionResult<IEnumerable<object>>();
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var cmd = _db.CreateCommand("select StaffID from staffs where StaffCode=@userName and StaffPassword=@password", conn);
+                    cmd.Parameters.Add(_db.CreateParameter("@userName", payload.Username ?? ""));
+                    cmd.Parameters.Add(_db.CreateParameter("@password", HashUtil.SHA1(payload.Password ?? "")));
+
+                    var dtStaff = new DataTable();
+                    using (var reader = await _db.ExecuteReaderAsync(cmd))
+                    {
+                        dtStaff.Load(reader);
+                    }
+                    if (dtStaff.Rows.Count > 0)
+                    {
+                        var staffId = dtStaff.Rows[0].GetValue<int>("StaffID");
+
+                        TempData["StaffID"] = staffId;
+
+                        var report = new VTECReports.Reports(_db);
+                        var dataSet = report.Shop_Info(staffId, conn);
+                        var shopList = new List<object>();
+                        foreach (DataRow row in dataSet.Tables["ShopData"].Rows)
+                        {
+                            shopList.Add(new
+                            {
+                                shopId = row.GetValue<int>("ShopID"),
+                                shopName = row.GetValue<string>("ShopName")
+                            });
+                        }
+                        result.Data = shopList;
+                    }
+                    else
+                    {
+                        result.StatusCode = StatusCodes.Status401Unauthorized;
+                        result.Message = $"Login fail for {payload.Username}";
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                result.StatusCode = StatusCodes.Status500InternalServerError;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        [HttpGet]
+        [ActionName("Logout")]
+        public IActionResult Logout()
+        {
+            TempData.Remove("StaffID");
+            return Ok();
+        }
+
         [HttpGet]
         [ActionName("Summary")]
         public async Task<IActionResult> GetSummaryReportAsync(string shopIds = "", string startDate = "", string endDate = "")

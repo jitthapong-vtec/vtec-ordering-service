@@ -45,6 +45,28 @@
             loadReport();
         });
 
+        function login_click() {
+            $("#loginLoadPanel").dxLoadPanel("show");
+            var payload = {
+                username: $('#txtUsername').dxTextBox('instance').option('value'),
+                password: $('#txtPassword').dxTextBox('instance').option('value')
+            };
+
+            $.ajax({
+                url: '@Url.Action("Login", "Report")',
+                type: 'POST',
+                data: payload,
+                success: function (result) {
+                    location.href = "@Url.Action("Index", "Home")";
+                },
+                error: function (xhr) {
+                    showPopup("Login", JSON.parse(xhr.responseText).message);
+                }
+            }).always(function () {
+                    $("#loginLoadPanel").dxLoadPanel("hide");
+            });
+        }
+
         function loadReport() {
                     $("#summaryLoadPanel").dxLoadPanel("show");
                     $("#tenderLoadPanel").dxLoadPanel("show");
@@ -91,19 +113,43 @@
         function back_to_home_click() {
             window.history.back();
         }
+
+        function showPopup(title, message) {
+            var popup = $("#global-popup").dxPopup("instance");
+            popup.option("title", title);
+            popup.option("contentTemplate", "<p>" + message + "</p>");
+            popup.show();
+        }
     </script>
 </head>
 <body style="height:100%;">
-    @*@(Html.DevExtreme().Toolbar()
-                .ID("layout-toolbar")
-                .Items(items =>
-                {
-                    items.Add().Template(@<text><div class="toolbar-label"><b>Reports</b></div></text>)
-            .LocateInMenu(ToolbarItemLocateInMenuMode.Never)
-            .Location(ToolbarItemLocation.Center);
-        items.Add().Widget(w => w.Button().Icon("refresh").OnClick("refresh_click"))
-        .Location(ToolbarItemLocation.After);
-        }))*@
+
+    @*@(Html.DevExtreme().RangeSelector()
+        .ID("range-selector")
+        .Margin(m => m.Left(20).Right(20))
+        .Scale(s => s
+            .StartValue(new DateTime(DateTime.Now.Year, DateTime.Now.Month - 2, 1))
+            .EndValue(DateTime.Now)
+            .MinorTickInterval(VizTimeInterval.Day)
+            .TickInterval(VizTimeInterval.Day)
+            .MinRange(VizTimeInterval.Day)
+            .MaxRange(VizTimeInterval.Year)
+            .MinorTick(m => m.Visible(false))
+        )
+        .SliderMarker(f => f.Format(Format.MonthAndDay))
+        .Value(new[] { new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTime.Now})
+        .Title("Select Period")
+        )*@
+
+    @(Html.DevExtreme().Popup()
+        .ID("global-popup")
+        .Height("auto")
+        .ShowTitle(true)
+        .Visible(false)
+        .DragEnabled(false)
+        .CloseOnOutsideClick(true)
+    )
+
     @RenderBody()
 </body>
 </html>

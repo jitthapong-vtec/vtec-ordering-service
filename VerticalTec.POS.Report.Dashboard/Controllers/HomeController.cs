@@ -10,9 +10,17 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 {
     public class HomeController : Controller
     {
-        public IActionResult Index()
+        public IActionResult Login()
         {
             return View();
+        }
+
+        public IActionResult Index()
+        {
+            if (TempData["StaffID"] == null)
+                return RedirectToAction("Login");
+            else
+                return View();
         }
 
         public IActionResult Setting()
