@@ -25,7 +25,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
         [HttpPost]
         [ActionName("Login")]
-        public async Task<IActionResult> GetShopInfoAsync(UserLogin payload)
+        public async Task<IActionResult> LoginAsync(UserLogin payload)
         {
             var result = new ReportActionResult<IEnumerable<object>>();
             try
@@ -104,7 +104,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
         [HttpGet]
         [ActionName("Summary")]
-        public async Task<IActionResult> GetSummaryReportAsync(string shopIds = "", string startDate = "", string endDate = "")
+        public async Task<IActionResult> GetSummaryReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<string>();
             var reportHtml = new StringBuilder();
@@ -112,13 +112,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             {
                 using (var conn = await _db.ConnectAsync())
                 {
-                    CheckParameter(ref shopIds, ref startDate, ref endDate);
-
                     var cate = new Dictionary<int, string>();
-
                     var report = new VTECReports.Reports(_db);
 
-                    var ds = report.Report_SummarySales(shopIds, startDate, endDate, 1, cate, conn);
+                    shopIds = ValidateShopIds(shopIds);
+                    var fromDateStr = ToISODate(startDate);
+                    var toDateStr = ToISODate(endDate);
+                    var ds = report.Report_SummarySales(shopIds, fromDateStr, toDateStr, 1, cate, conn);
                     foreach (DataRow html in ds.Tables["htmlData"].Rows)
                     {
                         reportHtml.Append(html.GetValue<string>("HtmlData") + "</br>");
@@ -136,7 +136,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
         [HttpGet]
         [ActionName("Tender")]
-        public async Task<IActionResult> GetTenderReportAsync(string shopIds = "", string startDate = "", string endDate = "")
+        public async Task<IActionResult> GetTenderReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<string>();
             var reportHtml = new StringBuilder();
@@ -144,13 +144,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             {
                 using (var conn = await _db.ConnectAsync())
                 {
-                    CheckParameter(ref shopIds, ref startDate, ref endDate);
-
                     var cate = new Dictionary<int, string>();
-
                     var report = new VTECReports.Reports(_db);
 
-                    var ds = report.Report_TenderData(shopIds, startDate, endDate, 1, cate, conn);
+                    shopIds = ValidateShopIds(shopIds);
+                    var fromDateStr = ToISODate(startDate);
+                    var toDateStr = ToISODate(endDate);
+                    var ds = report.Report_TenderData(shopIds, fromDateStr, toDateStr, 1, cate, conn);
                     foreach (DataRow html in ds.Tables["htmlData"].Rows)
                     {
                         reportHtml.Append(html.GetValue<string>("HtmlData") + "</br>");
@@ -168,7 +168,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
         [HttpGet]
         [ActionName("Audit")]
-        public async Task<IActionResult> GetAuditReportAsync(string shopIds = "", string startDate = "", string endDate = "")
+        public async Task<IActionResult> GetAuditReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<string>();
             var reportHtml = new StringBuilder();
@@ -176,12 +176,14 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             {
                 using (var conn = await _db.ConnectAsync())
                 {
-                    CheckParameter(ref shopIds, ref startDate, ref endDate);
-
                     var cate = new Dictionary<int, string>();
-
                     var report = new VTECReports.Reports(_db);
-                    var ds = report.Report_AuditData(shopIds, startDate, endDate, 1, cate, conn);
+
+                    shopIds = ValidateShopIds(shopIds);
+                    var fromDateStr = ToISODate(startDate);
+                    var toDateStr = ToISODate(endDate);
+
+                    var ds = report.Report_AuditData(shopIds, fromDateStr, toDateStr, 1, cate, conn);
                     reportHtml.Append(ds.Tables["htmlData"].Select("ReportType='voidData'").FirstOrDefault().GetValue<string>("HtmlData"));
                 }
                 result.Data = reportHtml.ToString();
@@ -194,14 +196,14 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             return result;
         }
 
-        private static void CheckParameter(ref string shopIds, ref string startDate, ref string endDate)
+        string ValidateShopIds(string shopIds)
         {
-            if (string.IsNullOrEmpty(shopIds))
-                shopIds = "";
-            if (string.IsNullOrEmpty(startDate))
-                startDate = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            if (string.IsNullOrEmpty(endDate))
-                endDate = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            return string.IsNullOrEmpty(shopIds) ? "" : shopIds;
+        }
+
+        string ToISODate(DateTime date)
+        {
+            return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
     }
 }

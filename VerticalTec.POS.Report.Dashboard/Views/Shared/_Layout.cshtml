@@ -1,6 +1,6 @@
 ﻿<!DOCTYPE html>
 
-<html style="height:100%;">
+<html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
@@ -41,6 +41,7 @@
     <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
 
     <script type="text/javascript">
+
         function login_click() {
             $("#loginLoadPanel").dxLoadPanel("show");
             var payload = {
@@ -67,7 +68,12 @@
                     $("#summaryLoadPanel").dxLoadPanel("show");
                     $("#tenderLoadPanel").dxLoadPanel("show");
                     $("#auditLoadPanel").dxLoadPanel("show");
-            $.getJSON('@Url.Action("Summary", "Report")', function (result) {
+
+            var shopIds = $("#slShop").dxSelectBox('instance').option('value');
+            var fromDate = $("#fromDate").dxDateBox('instance').option('value').toISOString();
+            var toDate = $("#toDate").dxDateBox('instance').option('value').toISOString();
+            var param = '?shopIds=' + shopIds + '&startDate=' + fromDate + '&endDate=' + toDate;
+            $.getJSON('@Url.Action("Summary", "Report")' + param, function (result) {
                 $("#summary").html(result.data);
             })
                 .fail(function (err) {
@@ -77,7 +83,7 @@
                     $("#summaryLoadPanel").dxLoadPanel("hide");
             });
 
-            $.getJSON('@Url.Action("Tender", "Report")', function (result) {
+            $.getJSON('@Url.Action("Tender", "Report")' + param, function (result) {
                 $("#tender").html(result.data);
             }).fail(function (err)
             {
@@ -87,7 +93,7 @@
                     $("#tenderLoadPanel").dxLoadPanel("hide");
             });
 
-            $.getJSON('@Url.Action("Audit", "Report")', function (result) {
+            $.getJSON('@Url.Action("Audit", "Report")' + param, function (result) {
                 $("#audit").html(result.data);
             })
                 .fail(function (err) {
@@ -96,6 +102,10 @@
                 {
                     $("#auditLoadPanel").dxLoadPanel("hide");
             });
+        }
+
+        function on_shop_selection_change(e) {
+            //alert(JSON.stringify(e.selectedItem));
         }
 
         function refresh_click() {
@@ -118,25 +128,81 @@
         }
     </script>
 </head>
-<body style="height:100%;">
+<body>
+    <div id="root-content">
+        <div class="layout-header">
+            @(Html.DevExtreme().Toolbar()
+                   .ID("layout-toolbar")
+                   .Items(items =>
+                   {
+                   items.Add().Template(@<text><b class="toolbar-label">Report</b></text>)
+.LocateInMenu(ToolbarItemLocateInMenuMode.Never)
+.Location(ToolbarItemLocation.Before);
 
-    @*@(Html.DevExtreme().RangeSelector()
-        .ID("range-selector")
-        .Margin(m => m.Left(20).Right(20))
-        .Scale(s => s
-            .StartValue(new DateTime(DateTime.Now.Year, DateTime.Now.Month - 2, 1))
-            .EndValue(DateTime.Now)
-            .MinorTickInterval(VizTimeInterval.Day)
-            .TickInterval(VizTimeInterval.Day)
-            .MinRange(VizTimeInterval.Day)
-            .MaxRange(VizTimeInterval.Year)
-            .MinorTick(m => m.Visible(false))
-        )
-        .SliderMarker(f => f.Format(Format.MonthAndDay))
-        .Value(new[] { new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTime.Now})
-        .Title("Select Period")
-        )*@
-
+items.Add()
+.Widget(w => w
+.SelectBox()
+.Width(230)
+.Value("")
+.DataSource(d => d.Mvc().Controller("Report").LoadAction("ShopData"))
+.ID("slShop")
+.ValueExpr("shopId")
+.DisplayExpr("shopName")
+.SearchEnabled(true)
+.Placeholder("Select Shop")
+.SearchMode(DropDownSearchMode.Contains)
+.OnSelectionChanged("on_shop_selection_change")
+)
+.LocateInMenu(ToolbarItemLocateInMenuMode.Auto)
+.Location(ToolbarItemLocation.After);
+}))
+            <div class="card" style="padding:0">
+                <div class="card-body">
+                    <div class="dx-field">
+                        <div class="dx-field-label">From</div>
+                        <div class="dx-field-value">
+                            @(Html.DevExtreme().DateBox()
+                                .ID("fromDate")
+                                .PickerType(DateBoxPickerType.Rollers)
+                                .DisplayFormat("dd/MM/yyyy")
+                                .Value(DateTime.Now)
+                            )
+                        </div>
+                    </div>
+                    <div class="dx-field">
+                        <div class="dx-field-label">To</div>
+                        <div class="dx-field-value">
+                            @(Html.DevExtreme().DateBox()
+                                .ID("toDate")
+                                .PickerType(DateBoxPickerType.Rollers)
+                                .DisplayFormat("dd/MM/yyyy")
+                                .Value(DateTime.Now)
+                            )
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="dx-field">
+                        <div class="dx-field-label"></div>
+                        <div class="dx-field-value">
+                            @(Html.DevExtreme().Button()
+                       .Text("Search")
+                       .Width(230)
+                       .OnClick("loadReport")
+                            )
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layout-body">
+            @(Html.DevExtreme().ScrollView().Content(@<text>
+                    <div style="margin:10px;">
+                        @RenderBody()
+                    </div>
+            </text>))
+        </div>
+    </div>
     @(Html.DevExtreme().Popup()
         .ID("global-popup")
         .Height("auto")
@@ -145,7 +211,5 @@
         .DragEnabled(false)
         .CloseOnOutsideClick(true)
     )
-
-    @RenderBody()
 </body>
 </html>

@@ -1,42 +1,22 @@
-@(Html.DevExtreme().Toolbar()
-            .ID("layout-toolbar")
-            .Items(items =>
-            {
-        items.Add()
-        .Widget(w => w
-            .SelectBox()
-            .Width(140)
-            .Value(1)
-            .DataSource(d => d.Mvc().Controller("Report").LoadAction("ShopData"))
-            .ValueExpr("shopId")
-            .DisplayExpr("shopName")
-    )
-    .LocateInMenu(ToolbarItemLocateInMenuMode.Auto)
-    .Location(ToolbarItemLocation.After);
-}))
-
-<div class="d-flex flex-column">
-    <div class="card justify-content-around align-self-stretch">
-        <div class="card-header">
-            <div class="row">
-                <div class="col">
-                    <b>Summary Sale</b>
-                </div>
-                <div class="col-3 float-right">
-                    @(Html.DevExtreme().Button().Text("Close"))
-                </div>
+<div class="card card-space-bottom">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <b>Summary Sale</b>
+            </div>
+            <div class="col-3 float-right">
             </div>
         </div>
-        <div class="card-body" id="summary">
-        </div>
     </div>
-    <div class="card justify-content-around align-self-stretch">
-        <b class="card-header">Tender</b><div class="card-body" id="tender">
-        </div>
+    <div class="card-body" id="summary">
     </div>
-    <div class="card justify-content-around align-self-stretch">
-        <b class="card-header">Audit</b><div class="card-body" id="audit">
-        </div>
+</div>
+<div class="card card-space-bottom">
+    <b class="card-header">Tender</b><div class="card-body" id="tender">
+    </div>
+</div>
+<div class="card card-space-bottom">
+    <b class="card-header">Audit</b><div class="card-body" id="audit">
     </div>
 </div>
 
@@ -72,9 +52,8 @@
         .Shading(true)
         .CloseOnOutsideClick(false)
 )
-
 <script type="text/javascript">
     $(document).ready(function () {
-            loadReport();
-        });
+        loadReport();
+    });
 </script>
