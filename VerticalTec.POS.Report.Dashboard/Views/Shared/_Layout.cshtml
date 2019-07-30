@@ -10,12 +10,13 @@
 
     <title>Report</title>
     @*
-        <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />*@
+    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />*@
 
     <link href="~/css/devextreme/bootstrap.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" />
     <link href="~/css/devextreme/dx.common.css" rel="stylesheet" />
     <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <script src="~/js/devextreme/jquery.js"></script>
     <script src="~/js/devextreme/bootstrap.js"></script>
@@ -33,7 +34,7 @@
 
     @* JSZip for client side export *@
     @*
-        <script src="~/js/devextreme/jszip.js"></script>*@
+    <script src="~/js/devextreme/jszip.js"></script>*@
 
     <script src="~/js/devextreme/dx.all.js"></script>
     <script src="~/js/devextreme/vectormap-data/world.js"></script>
@@ -41,6 +42,13 @@
     <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
 
     <script type="text/javascript">
+        var lastScrollOffset = 0;
+        var isScrollUp = false;
+        var isCriteriaShow = true;
+
+        $('#criteria').on('hide.bs.collapse', function () {
+            isCriteriaShow = false;
+        })
 
         function login_click() {
             $("#loginLoadPanel").dxLoadPanel("show");
@@ -65,9 +73,9 @@
         }
 
         function loadReport() {
-                    $("#summaryLoadPanel").dxLoadPanel("show");
-                    $("#tenderLoadPanel").dxLoadPanel("show");
-                    $("#auditLoadPanel").dxLoadPanel("show");
+            $("#summaryLoadPanel").dxLoadPanel("show");
+            $("#tenderLoadPanel").dxLoadPanel("show");
+            $("#auditLoadPanel").dxLoadPanel("show");
 
             var shopIds = $("#slShop").dxSelectBox('instance').option('value');
             var fromDate = $("#fromDate").dxDateBox('instance').option('value').toISOString();
@@ -120,6 +128,24 @@
             window.history.back();
         }
 
+        function onScroll(obj) {
+            var scrollOffset = obj.scrollOffset.top;
+
+            if (scrollOffset > lastScrollOffset)
+                isScrollUp = true;
+            else if (scrollOffset < lastScrollOffset)
+                isScrollUp = false;
+
+            if (isScrollUp) {
+                if (isCriteriaShow)
+                 $('.collapse').collapse('hide');
+            }
+            if (obj.reachedTop) {
+                 $('.collapse').collapse('show');
+            }
+            lastScrollOffset = scrollOffset;
+        }
+
         function showPopup(title, message) {
             var popup = $("#global-popup").dxPopup("instance");
             popup.option("title", title);
@@ -132,40 +158,40 @@
     <div id="root-content">
         <div class="layout-header">
             @(Html.DevExtreme().Toolbar()
-                   .ID("layout-toolbar")
-                   .Items(items =>
-                   {
-                   items.Add().Template(@<text><b class="toolbar-label">Report</b></text>)
-.LocateInMenu(ToolbarItemLocateInMenuMode.Never)
-.Location(ToolbarItemLocation.Before);
+            .ID("layout-toolbar")
+            .Items(items =>
+            {
+            items.Add().Template(@<text><b class="toolbar-label">Report</b></text>)
+            .LocateInMenu(ToolbarItemLocateInMenuMode.Never)
+            .Location(ToolbarItemLocation.Before);
 
-items.Add()
-.Widget(w => w
-.SelectBox()
-.Width(230)
-.Value("")
-.DataSource(d => d.Mvc().Controller("Report").LoadAction("ShopData"))
-.ID("slShop")
-.ValueExpr("shopId")
-.DisplayExpr("shopName")
-.SearchEnabled(true)
-.Placeholder("Select Shop")
-.SearchMode(DropDownSearchMode.Contains)
-.OnSelectionChanged("on_shop_selection_change")
-)
-.LocateInMenu(ToolbarItemLocateInMenuMode.Auto)
-.Location(ToolbarItemLocation.After);
-}))
+            items.Add()
+            .Widget(w => w
+            .SelectBox()
+            .Width(230)
+            .Value("")
+            .DataSource(d => d.Mvc().Controller("Report").LoadAction("ShopData"))
+            .ID("slShop")
+            .ValueExpr("shopId")
+            .DisplayExpr("shopName")
+            .SearchEnabled(true)
+            .Placeholder("Select Shop")
+            .SearchMode(DropDownSearchMode.Contains)
+            .OnSelectionChanged("on_shop_selection_change")
+            )
+            .LocateInMenu(ToolbarItemLocateInMenuMode.Auto)
+            .Location(ToolbarItemLocation.After);
+            }))
             <div class="card" style="padding:0">
-                <div class="card-body">
+                <div id="criteria" class="collapse card-body">
                     <div class="dx-field">
                         <div class="dx-field-label">From</div>
                         <div class="dx-field-value">
                             @(Html.DevExtreme().DateBox()
-                                .ID("fromDate")
-                                .PickerType(DateBoxPickerType.Rollers)
-                                .DisplayFormat("dd/MM/yyyy")
-                                .Value(DateTime.Now)
+                            .ID("fromDate")
+                            .PickerType(DateBoxPickerType.Rollers)
+                            .DisplayFormat("dd/MM/yyyy")
+                            .Value(DateTime.Now)
                             )
                         </div>
                     </div>
@@ -173,22 +199,37 @@ items.Add()
                         <div class="dx-field-label">To</div>
                         <div class="dx-field-value">
                             @(Html.DevExtreme().DateBox()
-                                .ID("toDate")
-                                .PickerType(DateBoxPickerType.Rollers)
-                                .DisplayFormat("dd/MM/yyyy")
-                                .Value(DateTime.Now)
+                            .ID("toDate")
+                            .PickerType(DateBoxPickerType.Rollers)
+                            .DisplayFormat("dd/MM/yyyy")
+                            .Value(DateTime.Now)
                             )
+                        </div>
+                    </div>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                @(Html.DevExtreme().Button()
+                               .Text("Yesterday")
+                                )
+                            </div>
+                            <div class="col">
+                                @(Html.DevExtreme().Button()
+                               .Text("Today")
+                                )
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer">
                     <div class="dx-field">
-                        <div class="dx-field-label"></div>
+                        <div class="dx-field-label">
+                        </div>
                         <div class="dx-field-value">
                             @(Html.DevExtreme().Button()
-                       .Text("Search")
-                       .Width(230)
-                       .OnClick("loadReport")
+                            .Text("Search")
+                            .Width(230)
+                            .OnClick("loadReport")
                             )
                         </div>
                     </div>
@@ -196,20 +237,20 @@ items.Add()
             </div>
         </div>
         <div class="layout-body">
-            @(Html.DevExtreme().ScrollView().Content(@<text>
-                    <div style="margin:10px;">
-                        @RenderBody()
-                    </div>
+            @(Html.DevExtreme().ScrollView().OnScroll("onScroll").Content(@<text>
+                <div style="margin:10px;">
+                    @RenderBody()
+                </div>
             </text>))
         </div>
     </div>
     @(Html.DevExtreme().Popup()
-        .ID("global-popup")
-        .Height("auto")
-        .ShowTitle(true)
-        .Visible(false)
-        .DragEnabled(false)
-        .CloseOnOutsideClick(true)
+    .ID("global-popup")
+    .Height("auto")
+    .ShowTitle(true)
+    .Visible(false)
+    .DragEnabled(false)
+    .CloseOnOutsideClick(true)
     )
 </body>
 </html>

@@ -13,7 +13,7 @@ using Xamarin.Forms;
 
 namespace VerticalTec.POS.Report.Mobile.Droid
 {
-    [Activity(Label = "SplashActivity", MainLauncher =true, Theme = "@style/Theme.Splash", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]
+    [Activity(MainLauncher =true, Theme = "@style/Theme.Splash", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]
     public class SplashActivity : Activity
     {
         protected override void OnCreate(Bundle savedInstanceState)

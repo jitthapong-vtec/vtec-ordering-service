@@ -67,7 +67,6 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
         [ActionName("Logout")]
         public IActionResult Logout()
         {
-            TempData.Remove("StaffID");
             return Ok();
         }
 
@@ -106,8 +105,9 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
         [ActionName("Summary")]
         public async Task<IActionResult> GetSummaryReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
-            var result = new ReportActionResult<string>();
+            var result = new ReportActionResult<object>();
             var reportHtml = new StringBuilder();
+
             try
             {
                 using (var conn = await _db.ConnectAsync())
