@@ -8,7 +8,39 @@
             </div>
         </div>
     </div>
-    <div class="card-body" id="summary">
+    <div class="card-body">
+        <div id="productSale"></div><br/>
+        <div id="productSalePieContainer" class="collapse">
+            @(Html.DevExtreme().PieChart()
+            .ID("productSalePie")
+            .Margin(m => m.Left(10).Right(10))
+            .Palette(VizPalette.Bright)
+            .Legend(l => l.Visible(false))
+            .ResolveLabelOverlapping(PieChartResolveLabelOverlapping.Shift)
+            .Series(s =>
+            s.Add()
+        .ArgumentField("productCatName")
+        .ValueField("percentage")
+        .Label(l => l
+                .Visible(true)
+                .Font(f => f.Size(10))
+                .Connector(c => c
+                    .Visible(true)
+                    .Width(0.5)
+                )
+                .Position(PieChartLabelPosition.Columns)
+                .CustomizeText(@<text>
+                            function(arg) {
+                            return arg.argumentText + "<br/>(" + arg.valueText + "%)";
+                            }
+                </text>)
+         ))
+     .Title(t => t.Text("Item Sales").Font(f => f.Size(20)))
+            )
+        </div>
+        <div id="promotion"></div><br/>
+        <div id="stat"></div><br/>
+        <div id="saleMode"></div>
     </div>
 </div>
 <div class="card card-space-bottom">

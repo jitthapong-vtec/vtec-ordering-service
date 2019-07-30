@@ -10,7 +10,7 @@
 
     <title>Report</title>
     @*
-    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />*@
+        <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />*@
 
     <link href="~/css/devextreme/bootstrap.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" />
@@ -34,12 +34,13 @@
 
     @* JSZip for client side export *@
     @*
-    <script src="~/js/devextreme/jszip.js"></script>*@
+        <script src="~/js/devextreme/jszip.js"></script>*@
 
     <script src="~/js/devextreme/dx.all.js"></script>
     <script src="~/js/devextreme/vectormap-data/world.js"></script>
     <script src="~/js/devextreme/aspnet/dx.aspnet.data.js"></script>
     <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
+    <script src="~/js/moment.min.js"></script>
 
     <script type="text/javascript">
         var lastScrollOffset = 0;
@@ -81,14 +82,23 @@
             var fromDate = $("#fromDate").dxDateBox('instance').option('value').toISOString();
             var toDate = $("#toDate").dxDateBox('instance').option('value').toISOString();
             var param = '?shopIds=' + shopIds + '&startDate=' + fromDate + '&endDate=' + toDate;
+
             $.getJSON('@Url.Action("Summary", "Report")' + param, function (result) {
-                $("#summary").html(result.data);
-            })
-                .fail(function (err) {
-                    $("#summary").html("Not available now ");
-                }).always(function ()
-                {
-                    $("#summaryLoadPanel").dxLoadPanel("hide");
+                var data = result.data;
+                $("#productSale").html(data.saleByGroupHtml);
+                $("#promotion").html(data.promoDataHtml);
+                $("#stat").html(data.statDataHtml);
+                var productSalePie = $("#productSalePie").dxPieChart("instance");
+                if (result.data.productSaleChartData.length > 0) {
+                    productSalePie.option("dataSource", data.productSaleChartData);
+                    $('#productSalePieContainer').collapse('show');
+                } else {
+                    $('#productSalePieContainer').collapse('hide');
+                }
+            }).fail(function (err) {
+                $("#summary").html("Not available now ");
+            }).always(function (){
+                $("#summaryLoadPanel").dxLoadPanel("hide");
             });
 
             $.getJSON('@Url.Action("Tender", "Report")' + param, function (result) {
@@ -138,12 +148,40 @@
 
             if (isScrollUp) {
                 if (isCriteriaShow)
-                 $('.collapse').collapse('hide');
+                 $('#criteria').collapse('hide');
             }
             if (obj.reachedTop) {
-                 $('.collapse').collapse('show');
+                 $('#criteria').collapse('show');
             }
             lastScrollOffset = scrollOffset;
+        }
+
+        function periodGroup_ItemClick(e) {
+            let period = e.itemData.period;
+            let year = moment().year();
+            let month = moment().month();
+            let daysInMonth = moment().daysInMonth();
+            let lastMonth = moment().add(-1, 'month');
+            let today = moment();
+            let yesterday = moment().add(-1, 'days');
+            switch (period) {
+                case "last_month":
+                    $("#fromDate").dxDateBox("instance").option("value", moment(lastMonth).set('date', 1));
+                    $("#toDate").dxDateBox("instance").option("value", lastMonth);
+                    break;
+                case "this_month":
+                    $("#fromDate").dxDateBox("instance").option("value", new Date(year, month, 1));
+                    $("#toDate").dxDateBox("instance").option("value", new Date(year, month, daysInMonth));
+                    break;
+                case "yesterday":
+                    $("#fromDate").dxDateBox("instance").option("value", yesterday);
+                    $("#toDate").dxDateBox("instance").option("value", yesterday);
+                    break;
+                case "today":
+                    $("#fromDate").dxDateBox("instance").option("value", today);
+                    $("#toDate").dxDateBox("instance").option("value", today);
+                    break;
+            }
         }
 
         function showPopup(title, message) {
@@ -162,85 +200,83 @@
             .Items(items =>
             {
             items.Add().Template(@<text><b class="toolbar-label">Report</b></text>)
-            .LocateInMenu(ToolbarItemLocateInMenuMode.Never)
-            .Location(ToolbarItemLocation.Before);
+.LocateInMenu(ToolbarItemLocateInMenuMode.Never)
+.Location(ToolbarItemLocation.Before);
 
-            items.Add()
-            .Widget(w => w
-            .SelectBox()
-            .Width(230)
-            .Value("")
-            .DataSource(d => d.Mvc().Controller("Report").LoadAction("ShopData"))
-            .ID("slShop")
-            .ValueExpr("shopId")
-            .DisplayExpr("shopName")
-            .SearchEnabled(true)
-            .Placeholder("Select Shop")
-            .SearchMode(DropDownSearchMode.Contains)
-            .OnSelectionChanged("on_shop_selection_change")
-            )
-            .LocateInMenu(ToolbarItemLocateInMenuMode.Auto)
-            .Location(ToolbarItemLocation.After);
-            }))
+items.Add()
+.Widget(w => w
+.SelectBox()
+.Width(230)
+.Value("")
+.DataSource(d => d.Mvc().Controller("Report").LoadAction("ShopData"))
+.ID("slShop")
+.ValueExpr("shopId")
+.DisplayExpr("shopName")
+.SearchEnabled(false)
+.Placeholder("Select Shop")
+.SearchMode(DropDownSearchMode.Contains)
+.OnSelectionChanged("on_shop_selection_change")
+)
+.LocateInMenu(ToolbarItemLocateInMenuMode.Auto)
+.Location(ToolbarItemLocation.After);
+}))
             <div class="card" style="padding:0">
-                <div id="criteria" class="collapse card-body">
-                    <div class="dx-field">
-                        <div class="dx-field-label">From</div>
-                        <div class="dx-field-value">
-                            @(Html.DevExtreme().DateBox()
-                            .ID("fromDate")
-                            .PickerType(DateBoxPickerType.Rollers)
-                            .DisplayFormat("dd/MM/yyyy")
-                            .Value(DateTime.Now)
-                            )
-                        </div>
-                    </div>
-                    <div class="dx-field">
-                        <div class="dx-field-label">To</div>
-                        <div class="dx-field-value">
-                            @(Html.DevExtreme().DateBox()
-                            .ID("toDate")
-                            .PickerType(DateBoxPickerType.Rollers)
-                            .DisplayFormat("dd/MM/yyyy")
-                            .Value(DateTime.Now)
-                            )
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="row">
-                            <div class="col">
-                                @(Html.DevExtreme().Button()
-                               .Text("Yesterday")
-                                )
-                            </div>
-                            <div class="col">
-                                @(Html.DevExtreme().Button()
-                               .Text("Today")
+                <div id="criteria" class="collapse">
+                    <div class="dx-fieldset">
+                        <div class="dx-field">
+                            <div class="dx-field-label">From</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().DateBox()
+                                .ID("fromDate")
+                                .PickerType(DateBoxPickerType.Rollers)
+                                .DisplayFormat("dd/MM/yyyy")
+                                .Value(DateTime.Now)
                                 )
                             </div>
                         </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">To</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().DateBox()
+                                .ID("toDate")
+                                .PickerType(DateBoxPickerType.Rollers)
+                                .DisplayFormat("dd/MM/yyyy")
+                                .Value(DateTime.Now)
+                                )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center" style="margin-bottom:1em;">
+                        @(Html.DevExtreme().ButtonGroup()
+        .KeyExpr("period")
+        .Items(items =>
+{
+            items.Add().Text("Last month").Option("period", "last_month");
+            items.Add().Text("This month").Option("period", "this_month");
+            items.Add().Text("Yesterday").Option("period", "yesterday");
+            items.Add().Text("Today").Option("period", "today");
+        }).SelectedItemKeys(new[] { "today" })
+        .OnItemClick("periodGroup_ItemClick"))
                     </div>
                 </div>
-                <div class="card-footer">
-                    <div class="dx-field">
-                        <div class="dx-field-label">
-                        </div>
-                        <div class="dx-field-value">
-                            @(Html.DevExtreme().Button()
-                            .Text("Search")
-                            .Width(230)
-                            .OnClick("loadReport")
-                            )
-                        </div>
-                    </div>
+                <div class="card-footer text-center">
+                    @(Html.DevExtreme().Button()
+                    .Text("Search")
+                    .Width(230)
+                    .OnClick("loadReport")
+                    )
                 </div>
             </div>
         </div>
         <div class="layout-body">
-            @(Html.DevExtreme().ScrollView().OnScroll("onScroll").Content(@<text>
-                <div style="margin:10px;">
-                    @RenderBody()
-                </div>
+            @(Html.DevExtreme().ScrollView()
+                .OnScroll("onScroll")
+                .ScrollByContent(true)
+                .ScrollByThumb(true)
+                .Content(@<text>
+                    <div style="margin:0.5em;">
+                        @RenderBody()
+                    </div>
             </text>))
         </div>
     </div>

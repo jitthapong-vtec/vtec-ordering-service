@@ -106,10 +106,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
         public async Task<IActionResult> GetSummaryReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<object>();
-            var reportHtml = new StringBuilder();
-
+            var saleByGroupHtml = "";
+            var promoDataHtml = "";
+            var statDataHtml = "";
+            var saleModeDataHtml = "";
             try
             {
+                var ds = new DataSet();
                 using (var conn = await _db.ConnectAsync())
                 {
                     var cate = new Dictionary<int, string>();
@@ -118,13 +121,21 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                     shopIds = ValidateShopIds(shopIds);
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
-                    var ds = report.Report_SummarySales(shopIds, fromDateStr, toDateStr, 1, cate, conn);
-                    foreach (DataRow html in ds.Tables["htmlData"].Rows)
-                    {
-                        reportHtml.Append(html.GetValue<string>("HtmlData") + "</br>");
-                    }
+                    ds = report.Report_SummarySales(shopIds, fromDateStr, toDateStr, 1, cate, conn);
+                    var dtHtml = ds.Tables["htmlData"];
+                    saleByGroupHtml = dtHtml.Select("ReportType='SaleByGroup'").FirstOrDefault()?.GetValue<string>("HtmlData");
+                    promoDataHtml = dtHtml.Select("ReportType='PromoData'").FirstOrDefault()?.GetValue<string>("HtmlData");
+                    statDataHtml = dtHtml.Select("ReportType='StatData'").FirstOrDefault()?.GetValue<string>("HtmlData");
+                    saleModeDataHtml = dtHtml.Select("ReportType='SaleModeData'").FirstOrDefault()?.GetValue<string>("HtmlData");
                 }
-                result.Data = reportHtml.ToString();
+                result.Data = new
+                {
+                    ProductSaleChartData = ds.Tables["ProductCatGraphData"],
+                    SaleByGroupHtml = saleByGroupHtml,
+                    PromoDataHtml = promoDataHtml,
+                    StatDataHtml = statDataHtml,
+                    SaleModeDataHtml = saleModeDataHtml
+                };
             }
             catch (Exception ex)
             {
@@ -198,7 +209,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
         string ValidateShopIds(string shopIds)
         {
-            return string.IsNullOrEmpty(shopIds) ? "" : shopIds;
+            if (string.IsNullOrEmpty(shopIds))
+                shopIds = "";
+            else if (shopIds == "0")
+                shopIds = "";
+            else if (shopIds == "null")
+                shopIds = "";
+            return shopIds;
         }
 
         string ToISODate(DateTime date)
