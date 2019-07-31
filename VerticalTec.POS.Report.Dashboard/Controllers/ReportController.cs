@@ -14,7 +14,8 @@ using VerticalTec.POS.Report.Dashboard.Models;
 namespace VerticalTec.POS.Report.Dashboard.Controllers
 {
     [Produces("application/json")]
-    public class ReportController : Controller
+    [Route("api/[controller]")]
+    public class ReportController : ApiControllerBase
     {
         IDbHelper _db;
 
@@ -23,8 +24,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             _db = db;
         }
 
-        [HttpPost]
-        [ActionName("Login")]
+        [HttpPost("login")]
         public async Task<IActionResult> LoginAsync(UserLogin payload)
         {
             var result = new ReportActionResult<IEnumerable<object>>();
@@ -44,8 +44,6 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                     if (dtStaff.Rows.Count > 0)
                     {
                         var staffId = dtStaff.Rows[0].GetValue<int>("StaffID");
-
-                        TempData["StaffID"] = staffId;
                     }
                     else
                     {
@@ -63,15 +61,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             return result;
         }
 
-        [HttpGet]
-        [ActionName("Logout")]
-        public IActionResult Logout()
-        {
-            return Ok();
-        }
-
-        [HttpGet]
-        [ActionName("ShopData")]
+        [HttpGet("shopdata")]
         public async Task<IActionResult> GetShopAsync(int staffId = 2)
         {
             var result = new ReportActionResult<IEnumerable<object>>();
@@ -95,14 +85,14 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             }
             catch (Exception ex)
             {
+                result.Success = false;
                 result.StatusCode = StatusCodes.Status500InternalServerError;
                 result.Message = ex.Message;
             }
             return result;
         }
 
-        [HttpGet]
-        [ActionName("Summary")]
+        [HttpGet("summary")]
         public async Task<IActionResult> GetSummaryReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<object>();
@@ -130,23 +120,23 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                 }
                 result.Data = new
                 {
-                    ProductSaleChartData = ds.Tables["ProductCatGraphData"],
-                    SaleByGroupHtml = saleByGroupHtml,
-                    PromoDataHtml = promoDataHtml,
-                    StatDataHtml = statDataHtml,
-                    SaleModeDataHtml = saleModeDataHtml
+                    productSaleChartData = ds.Tables["ProductCatGraphData"],
+                    saleByGroupHtml = saleByGroupHtml,
+                    promoDataHtml = promoDataHtml,
+                    statDataHtml = statDataHtml,
+                    saleModeDataHtml = saleModeDataHtml
                 };
             }
             catch (Exception ex)
             {
+                result.Success = false;
                 result.StatusCode = StatusCodes.Status500InternalServerError;
                 result.Message = ex.Message;
             }
             return result;
         }
 
-        [HttpGet]
-        [ActionName("Tender")]
+        [HttpGet("tender")]
         public async Task<IActionResult> GetTenderReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<string>();
@@ -171,14 +161,14 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             }
             catch (Exception ex)
             {
+                result.Success = false;
                 result.StatusCode = StatusCodes.Status500InternalServerError;
                 result.Message = ex.Message;
             }
             return result;
         }
 
-        [HttpGet]
-        [ActionName("Audit")]
+        [HttpGet("audit")]
         public async Task<IActionResult> GetAuditReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<string>();
@@ -201,6 +191,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             }
             catch (Exception ex)
             {
+                result.Success = false;
                 result.StatusCode = StatusCodes.Status500InternalServerError;
                 result.Message = ex.Message;
             }

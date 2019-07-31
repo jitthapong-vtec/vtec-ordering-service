@@ -1,0 +1,292 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Report</title>
+    @*
+        <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />*@
+
+    <link href="~/css/devextreme/bootstrap.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link href="~/css/devextreme/dx.common.css" rel="stylesheet" />
+    <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <script src="~/js/devextreme/jquery.js"></script>
+    <script src="~/js/devextreme/bootstrap.js"></script>
+
+    <script src="~/js/devextreme/cldr.js"></script>
+    <script src="~/js/devextreme/cldr/event.js"></script>
+    <script src="~/js/devextreme/cldr/supplemental.js"></script>
+    <script src="~/js/devextreme/cldr/unresolved.js"></script>
+
+    <script src="~/js/devextreme/globalize.js"></script>
+    <script src="~/js/devextreme/globalize/message.js"></script>
+    <script src="~/js/devextreme/globalize/number.js"></script>
+    <script src="~/js/devextreme/globalize/currency.js"></script>
+    <script src="~/js/devextreme/globalize/date.js"></script>
+
+    @* JSZip for client side export *@
+    @*
+        <script src="~/js/devextreme/jszip.js"></script>*@
+
+    <script src="~/js/devextreme/dx.all.js"></script>
+    <script src="~/js/devextreme/vectormap-data/world.js"></script>
+    <script src="~/js/devextreme/aspnet/dx.aspnet.data.js"></script>
+    <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
+    <script src="~/js/moment.min.js"></script>
+
+    <script type="text/javascript">
+        var lastScrollOffset = 0;
+        var isScrollUp = false;
+        var isCriteriaShow = true;
+
+        $('#criteria').on('hide.bs.collapse', function () {
+            isCriteriaShow = false;
+        })
+
+        function login_click() {
+            $("#loginLoadPanel").dxLoadPanel("show");
+            var payload = {
+                username: $('#txtUsername').dxTextBox('instance').option('value'),
+                password: $('#txtPassword').dxTextBox('instance').option('value')
+            };
+
+            $.ajax({
+                url: '@Url.Action("Login", "Report")',
+                type: 'POST',
+                data: payload,
+                success: function (result) {
+                    location.href = "@Url.Action("Index", "Home")";
+                },
+                error: function (xhr) {
+                    showPopup("Login", JSON.parse(xhr.responseText).message);
+                }
+            }).always(function () {
+                    $("#loginLoadPanel").dxLoadPanel("hide");
+            });
+        }
+
+        function loadReport() {
+            $("#summaryLoadPanel").dxLoadPanel("show");
+            $("#tenderLoadPanel").dxLoadPanel("show");
+            $("#auditLoadPanel").dxLoadPanel("show");
+
+            var shopIds = $("#slShop").dxSelectBox('instance').option('value');
+            var fromDate = $("#fromDate").dxDateBox('instance').option('value').toISOString();
+            var toDate = $("#toDate").dxDateBox('instance').option('value').toISOString();
+            var param = '?shopIds=' + shopIds + '&startDate=' + fromDate + '&endDate=' + toDate;
+
+            $.getJSON('@Url.Action("Summary", "Report")' + param, function (result) {
+                var data = result.data;
+                $("#productSale").html(data.saleByGroupHtml);
+                $("#promotion").html(data.promoDataHtml);
+                $("#stat").html(data.statDataHtml);
+                var productSalePie = $("#productSalePie").dxPieChart("instance");
+                if (result.data.productSaleChartData.length > 0) {
+                    productSalePie.option("dataSource", data.productSaleChartData);
+                    $('#productSalePieContainer').collapse('show');
+                } else {
+                    $('#productSalePieContainer').collapse('hide');
+                }
+            }).fail(function (err) {
+                $("#summary").html("Not available now ");
+            }).always(function (){
+                $("#summaryLoadPanel").dxLoadPanel("hide");
+            });
+
+            $.getJSON('@Url.Action("Tender", "Report")' + param, function (result) {
+                $("#tender").html(result.data);
+            }).fail(function (err)
+            {
+                    $("#tender").html("Not available now");
+            }).always(function ()
+            {
+                    $("#tenderLoadPanel").dxLoadPanel("hide");
+            });
+
+            $.getJSON('@Url.Action("Audit", "Report")' + param, function (result) {
+                $("#audit").html(result.data);
+            })
+                .fail(function (err) {
+                    $("#audit").html("Not available now");
+                }).always(function ()
+                {
+                    $("#auditLoadPanel").dxLoadPanel("hide");
+            });
+        }
+
+        function on_shop_selection_change(e) {
+            //alert(JSON.stringify(e.selectedItem));
+        }
+
+        function refresh_click() {
+            loadReport();
+        }
+
+        function setting_click() {
+            location.href = "@Url.Action("Setting", "Home")";
+        }
+
+        function back_to_home_click() {
+            window.history.back();
+        }
+
+        function onScroll(obj) {
+            var scrollOffset = obj.scrollOffset.top;
+
+            if (scrollOffset > lastScrollOffset)
+                isScrollUp = true;
+            else if (scrollOffset < lastScrollOffset)
+                isScrollUp = false;
+
+            if (isScrollUp) {
+                if (isCriteriaShow)
+                 $('#criteria').collapse('hide');
+            }
+            if (obj.reachedTop) {
+                 $('#criteria').collapse('show');
+            }
+            lastScrollOffset = scrollOffset;
+        }
+
+        function periodGroup_ItemClick(e) {
+            let period = e.itemData.period;
+            let year = moment().year();
+            let month = moment().month();
+            let daysInMonth = moment().daysInMonth();
+            let lastMonth = moment().add(-1, 'month');
+            let today = moment();
+            let yesterday = moment().add(-1, 'days');
+            switch (period) {
+                case "last_month":
+                    $("#fromDate").dxDateBox("instance").option("value", moment(lastMonth).set('date', 1));
+                    $("#toDate").dxDateBox("instance").option("value", lastMonth);
+                    break;
+                case "this_month":
+                    $("#fromDate").dxDateBox("instance").option("value", new Date(year, month, 1));
+                    $("#toDate").dxDateBox("instance").option("value", new Date(year, month, daysInMonth));
+                    break;
+                case "yesterday":
+                    $("#fromDate").dxDateBox("instance").option("value", yesterday);
+                    $("#toDate").dxDateBox("instance").option("value", yesterday);
+                    break;
+                case "today":
+                    $("#fromDate").dxDateBox("instance").option("value", today);
+                    $("#toDate").dxDateBox("instance").option("value", today);
+                    break;
+            }
+        }
+
+        function showPopup(title, message) {
+            var popup = $("#global-popup").dxPopup("instance");
+            popup.option("title", title);
+            popup.option("contentTemplate", "<p>" + message + "</p>");
+            popup.show();
+        }
+    </script>
+</head>
+<body>
+    <div id="root-content">
+        <div class="layout-header">
+            @(Html.DevExtreme().Toolbar()
+            .ID("layout-toolbar")
+            .Items(items =>
+            {
+            items.Add().Template(@<text><b class="toolbar-label">Report</b></text>)
+.LocateInMenu(ToolbarItemLocateInMenuMode.Never)
+.Location(ToolbarItemLocation.Before);
+
+items.Add()
+.Widget(w => w
+.SelectBox()
+.Width(230)
+.Value("")
+.DataSource(d => d.Mvc().Controller("Report").LoadAction("ShopData"))
+.ID("slShop")
+.ValueExpr("shopId")
+.DisplayExpr("shopName")
+.SearchEnabled(false)
+.Placeholder("Select Shop")
+.SearchMode(DropDownSearchMode.Contains)
+.OnSelectionChanged("on_shop_selection_change")
+)
+.LocateInMenu(ToolbarItemLocateInMenuMode.Auto)
+.Location(ToolbarItemLocation.After);
+}))
+            <div class="card" style="padding:0">
+                <div id="criteria" class="collapse">
+                    <div class="dx-fieldset">
+                        <div class="dx-field">
+                            <div class="dx-field-label">From</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().DateBox()
+                                .ID("fromDate")
+                                .PickerType(DateBoxPickerType.Rollers)
+                                .DisplayFormat("dd/MM/yyyy")
+                                .Value(DateTime.Now)
+                                )
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">To</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().DateBox()
+                                .ID("toDate")
+                                .PickerType(DateBoxPickerType.Rollers)
+                                .DisplayFormat("dd/MM/yyyy")
+                                .Value(DateTime.Now)
+                                )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center" style="margin-bottom:1em;">
+                        @(Html.DevExtreme().ButtonGroup()
+        .KeyExpr("period")
+        .Items(items =>
+{
+            items.Add().Text("Last month").Option("period", "last_month");
+            items.Add().Text("This month").Option("period", "this_month");
+            items.Add().Text("Yesterday").Option("period", "yesterday");
+            items.Add().Text("Today").Option("period", "today");
+        }).SelectedItemKeys(new[] { "today" })
+        .OnItemClick("periodGroup_ItemClick"))
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    @(Html.DevExtreme().Button()
+                    .Text("Search")
+                    .Width(230)
+                    .OnClick("loadReport")
+                    )
+                </div>
+            </div>
+        </div>
+        <div class="layout-body">
+            @(Html.DevExtreme().ScrollView()
+                .OnScroll("onScroll")
+                .ScrollByContent(true)
+                .ScrollByThumb(true)
+                .Content(@<text>
+                    <div style="margin:0.5em;">
+                        @RenderBody()
+                    </div>
+            </text>))
+        </div>
+    </div>
+    @(Html.DevExtreme().Popup()
+    .ID("global-popup")
+    .Height("auto")
+    .ShowTitle(true)
+    .Visible(false)
+    .DragEnabled(false)
+    .CloseOnOutsideClick(true)
+    )
+</body>
+</html>

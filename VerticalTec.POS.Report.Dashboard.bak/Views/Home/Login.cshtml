@@ -1,0 +1,33 @@
+﻿
+<div class="card" id="login">
+    <b class="card-header">Login</b>
+    <div class="card-body">
+        <div>
+            <label>Username</label>
+            @(Html.DevExtreme().TextBox()
+                .ID("txtUsername")
+            )
+        </div>
+        <div>
+            <label>Password</label>
+            @(Html.DevExtreme().TextBox()
+                .ID("txtPassword")
+                .Mode(TextBoxMode.Password)
+            )
+        </div>
+    </div>
+    <div class="card-footer text-right">
+        @(Html.DevExtreme().Button().Text("Login").OnClick("login_click"))
+    </div>
+</div>
+
+@(Html.DevExtreme().LoadPanel()
+        .ID("loginLoadPanel")
+        .ShadingColor("rgba(255,255,255,0.4)")
+        .Position(p => p.Of("#login"))
+        .Visible(false)
+        .ShowIndicator(true)
+        .ShowPane(false)
+        .Shading(true)
+        .CloseOnOutsideClick(false)
+)

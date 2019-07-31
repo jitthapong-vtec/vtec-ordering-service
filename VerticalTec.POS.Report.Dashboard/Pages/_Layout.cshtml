@@ -1,0 +1,309 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title></title>
+    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <link rel="stylesheet" href="~/css/vendor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <script src="~/js/vendor.js" asp-append-version="true"></script>
+</head>
+
+<body>
+    <div id="app-side-nav-outer-toolbar">
+        <div class="layout-header">
+            @(Html.DevExtreme().Toolbar()
+                .Items(items =>
+                        {
+                    items.Add()
+                        .Widget(w => w
+                            .Button()
+                        //.Icon("menu")
+                        //.OnClick("VerticalTec_POS_Report_Dashboard.onMenuButtonClick")
+                        )
+                        .Location(ToolbarItemLocation.Before)
+                        .CssClass("menu-button");
+                    items.Add()
+                        .Html("<div>Report</div>")
+                        .Location(ToolbarItemLocation.Before)
+                        .CssClass("header-title");
+                })
+            )
+            <div class="card" style="padding:0">
+                <div id="criteria" class="collapse">
+                    <div class="dx-fieldset">
+                        <div class="dx-field">
+                            <div class="dx-field-label">Select Shop</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().SelectBox().Value("")
+                                    .ID("slShop")
+                                    .ValueExpr("shopId")
+                                    .DisplayExpr("shopName")
+                                    .SearchEnabled(false)
+                                    .Placeholder("Select Shop"))
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">From</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().DateBox()
+                                .ID("fromDate")
+                                .PickerType(DateBoxPickerType.Rollers)
+                                .DisplayFormat("dd/MM/yyyy")
+                                .Value(DateTime.Now)
+                                )
+                            </div>
+                        </div>
+                        <div class="dx-field">
+                            <div class="dx-field-label">To</div>
+                            <div class="dx-field-value">
+                                @(Html.DevExtreme().DateBox()
+                                .ID("toDate")
+                                .PickerType(DateBoxPickerType.Rollers)
+                                .DisplayFormat("dd/MM/yyyy")
+                                .Value(DateTime.Now)
+                                )
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center" style="margin-bottom:1em;">
+                        @(Html.DevExtreme().ButtonGroup().KeyExpr("period")
+                            .Items(items =>
+                            {
+                                items.Add().Text("Last month").Option("period", "last_month");
+                                items.Add().Text("This month").Option("period", "this_month");
+                                items.Add().Text("Yesterday").Option("period", "yesterday");
+                                items.Add().Text("Today").Option("period", "today");
+                            }).SelectedItemKeys(new[] { "today" })
+                            .OnItemClick("VerticalTec_POS_Report_Dashboard.periodGroupItemClick"))
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    @(Html.DevExtreme().Button()
+                        .Text("Search")
+                        .OnClick("VerticalTec_POS_Report_Dashboard.loadReport"))
+                </div>
+            </div>
+        </div>
+        <div class="layout-body">
+            @(Html.DevExtreme().ScrollView()
+                .OnScroll("VerticalTec_POS_Report_Dashboard.scrollViewOnScroll")
+                .ScrollByContent(true)
+                .ScrollByThumb(true)
+                .Content(@<text>
+                            <div style="margin:0.5em;">
+                                @RenderBody()
+                            </div>
+                </text>))
+        </div>
+    </div>
+    <script>
+
+        var VerticalTec_POS_Report_Dashboard = (function () {
+
+            var DRAWER_OPENED_KEY = "VerticalTec_POS_Report_Dashboard-drawer-opened";
+
+            var lastScrollOffset = 0;
+            var isScrollUp = false;
+            var isCriteriaShow = true;
+
+            var breakpoints = {
+                xSmallMedia: window.matchMedia("(max-width: 599.99px)"),
+                smallMedia: window.matchMedia("(min-width: 600px) and (max-width: 959.99px)"),
+                mediumMedia: window.matchMedia("(min-width: 960px) and (max-width: 1279.99px)"),
+                largeMedia: window.matchMedia("(min-width: 1280px)")
+            };
+
+            function getDrawer() {
+                return $("#layout-drawer").dxDrawer("instance");
+            }
+
+            function restoreDrawerOpened() {
+                var isLarge = breakpoints.largeMedia.matches;
+                if (!isLarge)
+                    return false;
+
+                var state = sessionStorage.getItem(DRAWER_OPENED_KEY);
+                if (state === null)
+                    return isLarge;
+
+                return state === "true";
+            }
+
+            function saveDrawerOpened() {
+                sessionStorage.setItem(DRAWER_OPENED_KEY, getDrawer().option("opened"));
+            }
+
+            function updateDrawer() {
+                var isXSmall = breakpoints.xSmallMedia.matches,
+                    isLarge = breakpoints.largeMedia.matches;
+
+                getDrawer().option({
+                    openedStateMode: isLarge ? "shrink" : "overlap",
+                    revealMode: isXSmall ? "slide" : "expand",
+                    minSize: isXSmall ? 0 : 60,
+                    shading: !isLarge,
+                });
+            }
+
+            function init() {
+                $('#criteria').on('hide.bs.collapse', function () {
+                    isCriteriaShow = false;
+                })
+
+                $('#criteria').collapse('show');
+                loadReport();
+                //$.each(breakpoints, function(_, size) {
+                //    size.addListener(function(e) {
+                //        if(e.matches)
+                //            updateDrawer();
+                //    });
+                //});
+
+                //updateDrawer();
+            }
+
+            function navigate(url, delay) {
+                if (url)
+                    setTimeout(function () { location.href = url }, delay);
+            }
+
+            function onMenuButtonClick() {
+                getDrawer().toggle();
+                saveDrawerOpened();
+            }
+
+            function onTreeViewItemClick(e) {
+                var drawer = getDrawer();
+                var savedOpened = restoreDrawerOpened();
+                var actualOpened = drawer.option("opened");
+
+                if (!actualOpened) {
+                    drawer.show();
+                } else {
+                    var willHide = !savedOpened || !breakpoints.largeMedia.matches;
+                    var willNavigate = !e.itemData.selected;
+
+                    if (willHide)
+                        drawer.hide();
+
+                    if (willNavigate)
+                        navigate(e.itemData.path, willHide ? 400 : 0);
+                }
+            }
+
+            function scrollViewOnScroll(obj) {
+                var scrollOffset = obj.scrollOffset.top;
+
+                if (scrollOffset > lastScrollOffset)
+                    isScrollUp = true;
+                else if (scrollOffset < lastScrollOffset)
+                    isScrollUp = false;
+
+                if (isScrollUp) {
+                    if (isCriteriaShow)
+                     $('#criteria').collapse('hide');
+                }
+                if (obj.reachedTop) {
+                     $('#criteria').collapse('show');
+                }
+                lastScrollOffset = scrollOffset;
+            }
+
+            function loadReport() {
+            var shopIds = $("#slShop").dxSelectBox('instance').option('value');
+            var fromDate = $("#fromDate").dxDateBox('instance').option('value').toISOString();
+            var toDate = $("#toDate").dxDateBox('instance').option('value').toISOString();
+            var param = '?shopIds=' + shopIds + '&startDate=' + fromDate + '&endDate=' + toDate;
+
+            $.getJSON('api/report/summary' + param, function (result) {
+                var data = result.data;
+                $("#productSale").html(data.saleByGroupHtml);
+                $("#promotion").html(data.promoDataHtml);
+                $("#stat").html(data.statDataHtml);
+                var productSalePie = $("#productSalePie").dxPieChart("instance");
+                if (data.productSaleChartData.length > 0) {
+                    productSalePie.option("dataSource", data.productSaleChartData);
+                    $('#productSalePieContainer').collapse('show');
+                } else {
+                    $('#productSalePieContainer').collapse('hide');
+                }
+            }).fail(function (err) {
+                $("#summary").html("Not available now ");
+            }).always(function () {
+
+            });
+
+            $.getJSON('api/report/tender' + param, function (result) {
+                $("#tender").html(result.data);
+            }).fail(function (err)
+            {
+                $("#tender").html("Not available now");
+            }).always(function ()
+            {
+
+            });
+
+            $.getJSON('api/report/audit' + param, function (result) {
+                $("#audit").html(result.data);
+            })
+                .fail(function (err) {
+                    $("#audit").html("Not available now");
+                }).always(function ()
+                {
+
+            });
+            }
+
+            function periodGroupItemClick(e) {
+                let period = e.itemData.period;
+                let year = moment().year();
+                let month = moment().month();
+                let daysInMonth = moment().daysInMonth();
+                let lastMonth = moment().add(-1, 'month');
+                let today = moment();
+                let yesterday = moment().add(-1, 'days');
+                switch (period) {
+                    case "last_month":
+                        $("#fromDate").dxDateBox("instance").option("value", moment(lastMonth).set('date', 1));
+                        $("#toDate").dxDateBox("instance").option("value", lastMonth);
+                        break;
+                    case "this_month":
+                        $("#fromDate").dxDateBox("instance").option("value", new Date(year, month, 1));
+                        $("#toDate").dxDateBox("instance").option("value", new Date(year, month, daysInMonth));
+                        break;
+                    case "yesterday":
+                        $("#fromDate").dxDateBox("instance").option("value", yesterday);
+                        $("#toDate").dxDateBox("instance").option("value", yesterday);
+                        break;
+                    case "today":
+                        $("#fromDate").dxDateBox("instance").option("value", today);
+                        $("#toDate").dxDateBox("instance").option("value", today);
+                        break;
+                }
+            }
+
+            return {
+                init: init,
+                restoreDrawerOpened: restoreDrawerOpened,
+                onMenuButtonClick: onMenuButtonClick,
+                onTreeViewItemClick: onTreeViewItemClick,
+                loadReport: loadReport,
+                scrollViewOnScroll: scrollViewOnScroll,
+                periodGroupItemClick: periodGroupItemClick
+            };
+        })();
+
+        document.addEventListener("DOMContentLoaded", function documentReady() {
+            this.removeEventListener("DOMContentLoaded", documentReady);
+            VerticalTec_POS_Report_Dashboard.init();
+        });
+    </script>
+</body>
+</html>

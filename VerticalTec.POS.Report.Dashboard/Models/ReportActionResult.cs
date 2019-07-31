@@ -14,7 +14,8 @@ namespace VerticalTec.POS.Report.Dashboard.Models
         public ReportActionResult()
         {
             _statusCode = StatusCodes.Status200OK;
-            _data = default(TResult);
+            _success = true;
+            _data = default;
         }
 
         public TResult Data

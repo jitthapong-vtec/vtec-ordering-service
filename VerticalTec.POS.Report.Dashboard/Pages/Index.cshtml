@@ -1,0 +1,54 @@
+@page
+<div class="dx-card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <b>Summary Sale</b>
+            </div>
+            <div class="col-3 float-right">
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="productSale"></div><br />
+        <div id="productSalePieContainer" class="collapse">
+            @(Html.DevExtreme().PieChart()
+            .ID("productSalePie")
+            .Margin(m => m.Left(10).Right(10))
+            .Palette(VizPalette.Bright)
+            .Legend(l => l.Visible(false))
+            .ResolveLabelOverlapping(PieChartResolveLabelOverlapping.Shift)
+            .Series(s =>
+            s.Add()
+        .ArgumentField("ProductCatName")
+        .ValueField("Percentage")
+        .Label(l => l
+                .Visible(true)
+                .Font(f => f.Size(10))
+                .Connector(c => c
+                    .Visible(true)
+                    .Width(0.5)
+                )
+                .Position(PieChartLabelPosition.Columns)
+                .CustomizeText(@<text>
+                            function(arg) {
+                            return arg.argumentText + "<br />(" + arg.valueText + "%)";
+                            }
+                </text>)
+))
+.Title(t => t.Text("Item Sales").Font(f => f.Size(20)))
+            )
+        </div>
+        <div id="promotion"></div><br />
+        <div id="stat"></div><br />
+        <div id="saleMode"></div>
+    </div>
+</div>
+<div class="card card-space-bottom">
+    <b class="card-header">Tender</b><div class="card-body" id="tender">
+    </div>
+</div>
+<div class="card card-space-bottom">
+    <b class="card-header">Audit</b><div class="card-body" id="audit">
+    </div>
+</div>

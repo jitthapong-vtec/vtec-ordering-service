@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExtreme.AspNet.Core" Version="19.1.4" />
+    <PackageReference Include="DevExtreme.AspNet.Data" Version="2.2.1" />
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.9" />
+    <PackageReference Include="MySql.Data" Version="8.0.17" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="vtecdbhelper">
+      <HintPath>..\DLLs\vtecdbhelper.dll</HintPath>
+    </Reference>
+    <Reference Include="VTECReports">
+      <HintPath>..\DLLs\VTECReports.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
