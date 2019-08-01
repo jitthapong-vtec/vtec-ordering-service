@@ -84,7 +84,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         {
                             await LogManager.Instance.WriteLogAsync($"Begin send inven data to hq", LogPrefix);
 
-                            var syncJson = await HttpClientManager.Instance.PostAsync<string>(importApiUrl, exportJson);
+                            var syncJson = await HttpClientManager.Instance.VDSPostAsync<string>(importApiUrl, exportJson);
                             success = _posModule.SyncInventUpdate(ref respText, syncJson, conn);
                             result.Success = success;
                             if (success)

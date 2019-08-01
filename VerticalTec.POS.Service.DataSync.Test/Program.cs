@@ -15,7 +15,7 @@ namespace VerticalTec.POS.Service.DataSync.Test
         {
             LogManager.Instance.InitLogManager("Log/");
 
-            string baseAddress = "http://localhost:9001/";
+            string baseAddress = "http://localhost:9000/";
 
             // Start OWIN host 
             using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "mj").Configuration(appBuilder)))
@@ -26,6 +26,14 @@ namespace VerticalTec.POS.Service.DataSync.Test
                 });
                 Console.ReadLine();
             }
+
+            //Task.Run(async () =>
+            //{
+            //    var vdsclient = "http://127.0.0.1/v1/"; // from property 1012 parameter=vdsclientservice
+            //    HttpClient client = new HttpClient();
+            //    var uri = $"{vdsclient}commission/sendreceipt?shopId=3&tranId=203&compId=1";
+            //    await client.GetAsync(uri);
+            //});
         }
 
         private static async Task TestCommissionApi(string baseAddress)

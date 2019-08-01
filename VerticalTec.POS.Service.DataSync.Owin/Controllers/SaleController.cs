@@ -96,7 +96,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         foreach (var exportSale in exportSales)
                         {
                             await LogManager.Instance.WriteLogAsync($"Begin send {exportSale.Key}", LogPrefix);
-                            var syncJsonSale = await HttpClientManager.Instance.PostAsync<string>(importApiUrl, exportSale.Value);
+                            var syncJsonSale = await HttpClientManager.Instance.VDSPostAsync<string>(importApiUrl, exportSale.Value);
                             success = _posModule.SyncUpdate(ref respText, syncJsonSale, conn);
                             if (success)
                                 await LogManager.Instance.WriteLogAsync($"Import {exportSale.Key} successfully", LogPrefix);

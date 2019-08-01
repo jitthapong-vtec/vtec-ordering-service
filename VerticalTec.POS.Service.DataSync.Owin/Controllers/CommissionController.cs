@@ -28,7 +28,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 
         [HttpGet]
         [Route("v1/commission/sendreceipt")]
-        public async Task<IHttpActionResult> SendReceiptCommissionAsync(int shopId, int tranId, int compId)
+        public async Task<IHttpActionResult> SendReceiptCommissionAsync(int shopId, int tranId=0, int compId=0)
         {
             await LogManager.Instance.WriteLogAsync($"Call v1/commission/sendreceipt?shopId={shopId}&tranId={tranId}&compId={compId}", LogPrefix);
 
@@ -42,8 +42,6 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                     try
                     {
                         commissionApi = prop.GetCommissionApiUrl(conn);
-                        if (!commissionApi.EndsWith("/"))
-                            commissionApi = commissionApi + "/";
                     }
                     catch (Exception)
                     {
@@ -53,7 +51,6 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         return result;
                     }
 
-                    var commissionUrl = $"{commissionApi}";
                     var tableName = "log_commissionsync";
                     var alreadyHaveTable = false;
 
@@ -81,7 +78,8 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                             "SyncEndTime DATETIME," +
                             "SaleDate DATETIME," +
                             "SyncStatus TINYINT(4) NOT NULL Default 0," +
-                            "Message VARCHAR(255)," +
+                            "RespMessage VARCHAR(255)," +
+                            "RespJson TEXT, " +
                             "PRIMARY KEY(TransactionID, ComputerID)" +
                             ") ENGINE = INNODB; ";
                         cmd.Parameters.Clear();
@@ -93,17 +91,22 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                     cmd.Parameters.Add(_db.CreateParameter("@outDate", DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
                     await _db.ExecuteNonQueryAsync(cmd);
 
-                    try
+                    // log only specific transaction
+                    // if not it will skip log transaction and resend transaction that not success
+                    if (tranId > 0 && compId > 0)
                     {
-                        cmd.CommandText = "insert into " + tableName + "(TaskID, TransactionID, ComputerID, ShopID) values(@taskId, @tranId, @compId, @shopId)";
-                        cmd.Parameters.Clear();
-                        cmd.Parameters.Add(_db.CreateParameter("@taskId", Guid.NewGuid().ToString()));
-                        cmd.Parameters.Add(_db.CreateParameter("@tranId", tranId));
-                        cmd.Parameters.Add(_db.CreateParameter("@compId", compId));
-                        cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
-                        await _db.ExecuteNonQueryAsync(cmd);
+                        try
+                        {
+                            cmd.CommandText = "insert into " + tableName + "(TaskID, TransactionID, ComputerID, ShopID) values(@taskId, @tranId, @compId, @shopId)";
+                            cmd.Parameters.Clear();
+                            cmd.Parameters.Add(_db.CreateParameter("@taskId", Guid.NewGuid().ToString()));
+                            cmd.Parameters.Add(_db.CreateParameter("@tranId", tranId));
+                            cmd.Parameters.Add(_db.CreateParameter("@compId", compId));
+                            cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
+                            await _db.ExecuteNonQueryAsync(cmd);
+                        }
+                        catch (Exception) { }
                     }
-                    catch (Exception) { }
 
                     cmd.CommandText = "select a.TaskID, b.SaleDate, b.ReceiptNumber, b.TransactionNote, " +
                         " b.ReceiptRetailPrice, b.TransactionVAT, b.ReceiptPayPrice" +
@@ -144,12 +147,13 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                             cmd.Parameters.Add(_db.CreateParameter("@taskId", taskId));
                             await _db.ExecuteNonQueryAsync(cmd);
 
-                            var resp = await HttpClientManager.Instance.PostAsync<object>(commissionUrl, payload);
+                            var resp = await HttpClientManager.Instance.PostAsync<object>(commissionApi, payload);
                             if (resp != null)
                             {
-                                cmd.CommandText = "update " + tableName + " set SyncStatus=1, SyncEndTime=@endTime, Message='' where TaskID=@taskId";
+                                cmd.CommandText = "update " + tableName + " set SyncStatus=1, SyncEndTime=@endTime, RespJson=@respJson where TaskID=@taskId";
                                 cmd.Parameters.Clear();
                                 cmd.Parameters.Add(_db.CreateParameter("@endTime", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")));
+                                cmd.Parameters.Add(_db.CreateParameter("@respJson", resp.ToString()));
                                 cmd.Parameters.Add(_db.CreateParameter("@taskId", taskId));
                                 await _db.ExecuteNonQueryAsync(cmd);
 
@@ -163,7 +167,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                             if (ex is HttpRequestException)
                             {
                                 var reqEx = (ex as HttpRequestException);
-                                errMsg = $"{reqEx.InnerException.Message} {commissionUrl}";
+                                errMsg = $"{reqEx.InnerException.Message} {commissionApi}";
                             }
                             else if (ex is HttpResponseException)
                             {
@@ -171,7 +175,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                                 errMsg = $"{(ex as HttpResponseException).Response.ReasonPhrase}";
                             }
 
-                            cmd.CommandText = "update " + tableName + " set Message=@msg where TaskID=@taskId";
+                            cmd.CommandText = "update " + tableName + " set RespMessage=@msg where TaskID=@taskId";
                             cmd.Parameters.Clear();
                             cmd.Parameters.Add(_db.CreateParameter("@msg", errMsg));
                             cmd.Parameters.Add(_db.CreateParameter("@taskId", taskId));

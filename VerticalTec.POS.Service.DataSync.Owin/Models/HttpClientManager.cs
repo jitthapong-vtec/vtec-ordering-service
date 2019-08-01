@@ -42,8 +42,30 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
 
         public async Task<TResult> PostAsync<TResult>(string url, object payload)
         {
-            var content = new StringContent(payload.ToString());
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            var data = payload is string ? payload.ToString() : JsonConvert.SerializeObject(payload);
+            var content = new StringContent(data, Encoding.UTF8, "application/json");
+            var respMessage = await _httpClient.PostAsync(url, content);
+            var respContent = await respMessage.Content.ReadAsStringAsync();
+            TResult respBody = default;
+            try
+            {
+                respBody = await Task.Run(() => JsonConvert.DeserializeObject<TResult>(respContent));
+            }
+            catch (Exception) { }
+            if (respMessage.IsSuccessStatusCode)
+            {
+                return respBody;
+            }
+            else
+            {
+                throw new HttpResponseException(respMessage);
+            }
+        }
+
+        public async Task<TResult> VDSPostAsync<TResult>(string url, object payload)
+        {
+            var data = payload is string ? payload.ToString() : JsonConvert.SerializeObject(payload);
+            var content = new StringContent(data, Encoding.UTF8, "application/json");
             var respMessage = await _httpClient.PostAsync(url, content);
             var respContent = await respMessage.Content.ReadAsStringAsync();
             ResponseBody<TResult> respBody = null;
