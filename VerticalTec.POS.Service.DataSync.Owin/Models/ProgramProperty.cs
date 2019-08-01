@@ -19,13 +19,12 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
 
         public string GetVdsUrl(IDbConnection conn)
         {
-            var vdsUrl = "";
-            try
-            {
-                vdsUrl = UriUtils.ValidateUriFormat(GetPropertyValue(conn, 1050, "vdsurl"));
-            }
-            catch (Exception) { }
-            return vdsUrl;
+            return UriUtils.ValidateUriFormat(GetPropertyValue(conn, 1050, "vdsurl"));
+        }
+
+        public string GetCommissionApiUrl(IDbConnection conn)
+        {
+            return UriUtils.ValidateUriFormat(GetPropertyValue(conn, 2003, "CommissionApi"));
         }
 
         public string GetPropertyValue(IDbConnection conn, int propertyId, string param, int shopId = 0, int computerId = 0)

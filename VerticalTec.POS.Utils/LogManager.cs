@@ -76,7 +76,7 @@ namespace VerticalTec.POS.Utils
             var logFile = GetFilePath(prefixFileName);
             if (logType == LogTypes.Error)
                 log = $"ERR! {log}";
-            log = $"[{ DateTime.Now.ToString("HH:mm:ss")}]: {log}\n\r";
+            log = $"[{ DateTime.Now.ToString("HH:mm:ss")}]: {log}{Environment.NewLine}";
             try
             {
                 byte[] encodedText = Encoding.Unicode.GetBytes(log);

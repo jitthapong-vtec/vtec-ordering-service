@@ -18,13 +18,38 @@ namespace VerticalTec.POS.Service.DataSync.Test
             string baseAddress = "http://localhost:9001/";
 
             // Start OWIN host 
-            using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "jmart_08").Configuration(appBuilder)))
+            using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "mj").Configuration(appBuilder)))
             {
                 Task.Run(async () =>
                 {
-                    await TestSyncInv(baseAddress);
+                    await TestCommissionApi(baseAddress);
                 }).Wait();
                 Console.ReadLine();
+            }
+        }
+
+        private static async Task TestCommissionApi(string baseAddress)
+        {
+            HttpClient client = new HttpClient();
+            var uri = baseAddress + "v1/commission/sendreceipt?shopId=3&tranId=196&compId=1";
+            Console.WriteLine($"Send request {uri}");
+            var respMessage = await client.GetAsync(uri);
+            var respContent = await respMessage.Content.ReadAsStringAsync();
+            var respBody = JsonConvert.DeserializeObject<ResponseBody<string>>(respContent);
+            if (respMessage.IsSuccessStatusCode)
+            {
+                if (respBody.Success)
+                {
+                    Console.WriteLine($"Result: {respBody.Message}");
+                }
+                else
+                {
+                    Console.WriteLine("Done!");
+                }
+            }
+            else
+            {
+                Console.WriteLine(respBody.Message);
             }
         }
 

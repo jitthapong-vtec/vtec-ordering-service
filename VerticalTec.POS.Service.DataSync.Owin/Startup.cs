@@ -13,13 +13,10 @@ namespace VerticalTec.POS.Service.DataSync.Owin
 {
     public class Startup
     {
-        string _dbServer;
-        string _dbName;
-
         public Startup(string dbServer, string dbName)
         {
-            _dbServer = dbServer;
-            _dbName = dbName;
+            GlobalVar.Instance.DbServer = dbServer;
+            GlobalVar.Instance.DbName = dbName;
         }
 
         public void Configuration(IAppBuilder appBuilder)
@@ -30,7 +27,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin
 
             container.RegisterType<IDatabase, MySqlDatabase>(
                 new ContainerControlledLifetimeManager(),
-                new InjectionConstructor(_dbServer, _dbName, "3308"));
+                new InjectionConstructor(GlobalVar.Instance.DbServer, GlobalVar.Instance.DbName, "3308"));
             container.RegisterSingleton<POSModule>();
 
             config.DependencyResolver = new UnityResolver(container);

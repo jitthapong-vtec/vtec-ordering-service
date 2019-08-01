@@ -102,8 +102,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controllers\CommissionController.cs" />
     <Compile Include="Controllers\InventoryController.cs" />
     <Compile Include="Controllers\SaleController.cs" />
+    <Compile Include="GlobalVar.cs" />
     <Compile Include="Models\GlobalExceptionHandler.cs" />
     <Compile Include="Models\HttpActionResult.cs" />
     <Compile Include="Models\HttpClientManager.cs" />
