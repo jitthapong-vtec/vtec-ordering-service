@@ -4,8 +4,7 @@
     "inputFiles": [
       "wwwroot/css/devextreme/bootstrap.css",
       "wwwroot/css/devextreme/dx.common.css",
-      "wwwroot/css/devextreme/theme.base.css",
-      "wwwroot/css/devextreme/dx.material.green.css"
+      "wwwroot/css/devextreme/dx.material.custom.css"
     ],
     "minify": {
       "enabled": false

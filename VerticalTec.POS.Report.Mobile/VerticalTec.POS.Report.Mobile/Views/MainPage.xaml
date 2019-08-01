@@ -3,19 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:local="clr-namespace:VerticalTec.POS.Report.Mobile"
+             xmlns:viewModel="clr-namespace:VerticalTec.POS.Report.Mobile.ViewModels"
+             xmlns:ctrls="clr-namespace:VerticalTec.POS.Report.Mobile.Controls"
              NavigationPage.HasNavigationBar="False"
              mc:Ignorable="d"
-             x:Class="VerticalTec.POS.Report.Mobile.MainPage">
+             x:Class="VerticalTec.POS.Report.Mobile.Views.MainPage">
     <ContentPage.BindingContext>
-        <local:MainViewModel/>
+        <viewModel:MainViewModel/>
     </ContentPage.BindingContext>
     <NavigationPage.TitleView>
         <StackLayout Orientation="Horizontal" VerticalOptions="CenterAndExpand">
             <Label FontSize="Large" Text="Report" VerticalOptions="Center" Style="{StaticResource NavBarTitleFont}"/>
-            <local:TappedGrid TappedCommand="{Binding RefreshCommand}" VerticalOptions="CenterAndExpand" HorizontalOptions="EndAndExpand" Margin="8">
+            <ctrls:TappedGrid TappedCommand="{Binding RefreshCommand}" VerticalOptions="CenterAndExpand" HorizontalOptions="EndAndExpand" Margin="8">
                 <Label Style="{StaticResource NavBarIconFont}" Text="&#xf2f1;"/>
-            </local:TappedGrid>
+            </ctrls:TappedGrid>
         </StackLayout>
     </NavigationPage.TitleView>
     <Grid>

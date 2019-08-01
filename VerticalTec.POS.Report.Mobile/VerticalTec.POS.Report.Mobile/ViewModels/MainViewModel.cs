@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Xamarin.Forms;
 
-namespace VerticalTec.POS.Report.Mobile
+namespace VerticalTec.POS.Report.Mobile.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {

@@ -14,7 +14,7 @@ using VerticalTec.POS.Report.Dashboard.Models;
 namespace VerticalTec.POS.Report.Dashboard.Controllers
 {
     [Produces("application/json")]
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     public class ReportController : ApiControllerBase
     {
         IDbHelper _db;
@@ -24,7 +24,8 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             _db = db;
         }
 
-        [HttpPost("login")]
+        [HttpPost()]
+        [ActionName("login")]
         public async Task<IActionResult> LoginAsync(UserLogin payload)
         {
             var result = new ReportActionResult<IEnumerable<object>>();
@@ -61,7 +62,8 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             return result;
         }
 
-        [HttpGet("shopdata")]
+        [HttpGet]
+        [ActionName("shopdata")]
         public async Task<IActionResult> GetShopAsync(int staffId = 2)
         {
             var result = new ReportActionResult<IEnumerable<object>>();
@@ -92,7 +94,8 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             return result;
         }
 
-        [HttpGet("summary")]
+        [HttpGet]
+        [ActionName("summary")]
         public async Task<IActionResult> GetSummaryReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<object>();
@@ -136,7 +139,8 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             return result;
         }
 
-        [HttpGet("tender")]
+        [HttpGet]
+        [ActionName("tender")]
         public async Task<IActionResult> GetTenderReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<string>();
@@ -168,7 +172,8 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             return result;
         }
 
-        [HttpGet("audit")]
+        [HttpGet]
+        [ActionName("audit")]
         public async Task<IActionResult> GetAuditReportAsync(string shopIds, DateTime startDate, DateTime endDate)
         {
             var result = new ReportActionResult<string>();

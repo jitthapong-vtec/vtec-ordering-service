@@ -1,4 +1,6 @@
 ﻿using System.Threading.Tasks;
+using VerticalTec.POS.Report.Mobile.Controls;
+using VerticalTec.POS.Report.Mobile.Views;
 using Xamarin.Forms;
 
 namespace VerticalTec.POS.Report.Mobile

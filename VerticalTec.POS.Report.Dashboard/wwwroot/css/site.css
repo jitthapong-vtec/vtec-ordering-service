@@ -4,11 +4,19 @@
     height: 100%;
 }
 
-#app-side-nav-outer-toolbar {
+#root-content {
     flex-direction: column;
     display: flex; 
     height: 100%;
     width: 100%;
+}
+
+#btn-search #btn-search-indicator {
+    height: 20px;
+    width: 20px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
 }
 
 .card-space-bottom {
@@ -26,10 +34,13 @@
     color:#fff;
 }
 
-.dx-toolbar .dx-toolbar-item.menu-button {
-    width: 60px;
-    text-align: center;
-    padding: 0;
+.dx-toolbar{
+    padding-left:10px;
+    padding-right:10px;
+}
+
+.toolbar-button .dx-icon{
+    color:#fff;
 }
 
 .dx-toolbar .dx-toolbar-item.menu-button > .dx-toolbar-item-content .dx-icon {

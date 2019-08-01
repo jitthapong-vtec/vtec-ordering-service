@@ -16,24 +16,20 @@
 </head>
 
 <body>
-    <div id="app-side-nav-outer-toolbar">
+    <div id="root-content">
         <div class="layout-header">
             @(Html.DevExtreme().Toolbar()
-                .Items(items =>
-                        {
-                    items.Add()
-                        .Widget(w => w
-                            .Button()
-                        //.Icon("menu")
-                        //.OnClick("VerticalTec_POS_Report_Dashboard.onMenuButtonClick")
-                        )
-                        .Location(ToolbarItemLocation.Before)
-                        .CssClass("menu-button");
-                    items.Add()
-                        .Html("<div>Report</div>")
-                        .Location(ToolbarItemLocation.Before)
-                        .CssClass("header-title");
-                })
+            .Items(items =>
+            {
+                items.Add()
+                .Html("<div>Report</div>")
+                .Location(ToolbarItemLocation.Before)
+                .CssClass("header-title");
+                items.Add().Widget(w => w.Button().Icon("filter").ElementAttr("class", "toolbar-button")
+                .OnClick("VerticalTec_POS_Report_Dashboard.toggleCriteria"))
+                .LocateInMenu(ToolbarItemLocateInMenuMode.Never)
+                .Location(ToolbarItemLocation.After);
+            })
             )
             <div class="card" style="padding:0">
                 <div id="criteria" class="collapse">
@@ -41,16 +37,17 @@
                         <div class="dx-field">
                             <div class="dx-field-label">Select Shop</div>
                             <div class="dx-field-value">
-                                @(Html.DevExtreme().SelectBox().Value("")
-                                    .ID("slShop")
-                                    .ValueExpr("shopId")
-                                    .DisplayExpr("shopName")
-                                    .SearchEnabled(false)
-                                    .Placeholder("Select Shop"))
+                                @(Html.DevExtreme().SelectBox().Value(0)
+                                .ID("slShop")
+                                .DataSource(d => d.Mvc().Controller("Report").LoadAction("shopdata"))
+                                .ValueExpr("shopId")
+                                .DisplayExpr("shopName")
+                                .SearchEnabled(false)
+                                .Placeholder("Select Shop"))
                             </div>
                         </div>
                         <div class="dx-field">
-                            <div class="dx-field-label">From</div>
+                            <div class="dx-field-label">From Date</div>
                             <div class="dx-field-value">
                                 @(Html.DevExtreme().DateBox()
                                 .ID("fromDate")
@@ -61,7 +58,7 @@
                             </div>
                         </div>
                         <div class="dx-field">
-                            <div class="dx-field-label">To</div>
+                            <div class="dx-field-label">To Date</div>
                             <div class="dx-field-value">
                                 @(Html.DevExtreme().DateBox()
                                 .ID("toDate")
@@ -72,133 +69,86 @@
                             </div>
                         </div>
                     </div>
-                    <div class="text-center" style="margin-bottom:1em;">
-                        @(Html.DevExtreme().ButtonGroup().KeyExpr("period")
-                            .Items(items =>
-                            {
+                    <div style="margin:0.5em;">
+                        @(Html.DevExtreme().ScrollView()
+                        .Direction(ScrollDirection.Horizontal)
+                        .Content(@<text>
+                            <div class="text-center">
+                                @(Html.DevExtreme().ButtonGroup().KeyExpr("period")
+                                .StylingMode(ButtonStylingMode.Text)
+                                .FocusStateEnabled(true)
+                                .Items(items =>
+                                {
                                 items.Add().Text("Last month").Option("period", "last_month");
                                 items.Add().Text("This month").Option("period", "this_month");
                                 items.Add().Text("Yesterday").Option("period", "yesterday");
                                 items.Add().Text("Today").Option("period", "today");
-                            }).SelectedItemKeys(new[] { "today" })
-                            .OnItemClick("VerticalTec_POS_Report_Dashboard.periodGroupItemClick"))
+                                }).SelectedItemKeys(new[] { "today" })
+                                .OnItemClick("VerticalTec_POS_Report_Dashboard.periodGroupItemClick"))
+                            </div>
+                        </text>))
                     </div>
                 </div>
                 <div class="card-footer text-center">
                     @(Html.DevExtreme().Button()
-                        .Text("Search")
-                        .OnClick("VerticalTec_POS_Report_Dashboard.loadReport"))
+                    .Text("Search")
+                    .Width(230)
+                    .ID("btn-search")
+                    .Template(@<text>
+                        @(Html.DevExtreme().LoadIndicator()
+                        .ID("btn-search-indicator")
+                        .Visible(false)
+                        )
+                        <span class="dx-button-text"><%= text %></span>
+                    </text>).OnClick("VerticalTec_POS_Report_Dashboard.loadReportClick"))
                 </div>
             </div>
         </div>
         <div class="layout-body">
             @(Html.DevExtreme().ScrollView()
-                .OnScroll("VerticalTec_POS_Report_Dashboard.scrollViewOnScroll")
-                .ScrollByContent(true)
-                .ScrollByThumb(true)
-                .Content(@<text>
-                            <div style="margin:0.5em;">
-                                @RenderBody()
-                            </div>
-                </text>))
+            .OnScroll("VerticalTec_POS_Report_Dashboard.scrollViewOnScroll")
+            .ScrollByContent(true)
+            .ScrollByThumb(true)
+            .Direction(ScrollDirection.Both)
+            .Content(@<text>
+                <div style="margin:0.5em;">
+                    @RenderBody()
+                </div>
+            </text>))
         </div>
     </div>
     <script>
-
         var VerticalTec_POS_Report_Dashboard = (function () {
 
-            var DRAWER_OPENED_KEY = "VerticalTec_POS_Report_Dashboard-drawer-opened";
-
-            var lastScrollOffset = 0;
-            var isScrollUp = false;
-            var isCriteriaShow = true;
-
-            var breakpoints = {
-                xSmallMedia: window.matchMedia("(max-width: 599.99px)"),
-                smallMedia: window.matchMedia("(min-width: 600px) and (max-width: 959.99px)"),
-                mediumMedia: window.matchMedia("(min-width: 960px) and (max-width: 1279.99px)"),
-                largeMedia: window.matchMedia("(min-width: 1280px)")
-            };
-
-            function getDrawer() {
-                return $("#layout-drawer").dxDrawer("instance");
-            }
-
-            function restoreDrawerOpened() {
-                var isLarge = breakpoints.largeMedia.matches;
-                if (!isLarge)
-                    return false;
-
-                var state = sessionStorage.getItem(DRAWER_OPENED_KEY);
-                if (state === null)
-                    return isLarge;
-
-                return state === "true";
-            }
-
-            function saveDrawerOpened() {
-                sessionStorage.setItem(DRAWER_OPENED_KEY, getDrawer().option("opened"));
-            }
-
-            function updateDrawer() {
-                var isXSmall = breakpoints.xSmallMedia.matches,
-                    isLarge = breakpoints.largeMedia.matches;
-
-                getDrawer().option({
-                    openedStateMode: isLarge ? "shrink" : "overlap",
-                    revealMode: isXSmall ? "slide" : "expand",
-                    minSize: isXSmall ? 0 : 60,
-                    shading: !isLarge,
-                });
-            }
+            let lastScrollOffset = 0;
+            let isScrollUp = false;
+            let isCriteriaShow = true;
+            let summaryDone = false;
+            let tenderDone = false;
+            let auditDone = false;
 
             function init() {
                 $('#criteria').on('hide.bs.collapse', function () {
                     isCriteriaShow = false;
                 })
+                $('#criteria').on('show.bs.collapse', function () {
+                    isCriteriaShow = true;
+                })
 
                 $('#criteria').collapse('show');
-                loadReport();
-                //$.each(breakpoints, function(_, size) {
-                //    size.addListener(function(e) {
-                //        if(e.matches)
-                //            updateDrawer();
-                //    });
-                //});
 
-                //updateDrawer();
+                loadReport(loadReportCallback);
             }
 
-            function navigate(url, delay) {
-                if (url)
-                    setTimeout(function () { location.href = url }, delay);
-            }
-
-            function onMenuButtonClick() {
-                getDrawer().toggle();
-                saveDrawerOpened();
-            }
-
-            function onTreeViewItemClick(e) {
-                var drawer = getDrawer();
-                var savedOpened = restoreDrawerOpened();
-                var actualOpened = drawer.option("opened");
-
-                if (!actualOpened) {
-                    drawer.show();
-                } else {
-                    var willHide = !savedOpened || !breakpoints.largeMedia.matches;
-                    var willNavigate = !e.itemData.selected;
-
-                    if (willHide)
-                        drawer.hide();
-
-                    if (willNavigate)
-                        navigate(e.itemData.path, willHide ? 400 : 0);
-                }
+            function toggleCriteria() {
+                if (isCriteriaShow)
+                    $('#criteria').collapse('hide');
+                else
+                    $('#criteria').collapse('show');
             }
 
             function scrollViewOnScroll(obj) {
+
                 var scrollOffset = obj.scrollOffset.top;
 
                 if (scrollOffset > lastScrollOffset)
@@ -208,63 +158,87 @@
 
                 if (isScrollUp) {
                     if (isCriteriaShow)
-                     $('#criteria').collapse('hide');
+                        $('#criteria').collapse('hide');
                 }
                 if (obj.reachedTop) {
-                     $('#criteria').collapse('show');
+                    $('#criteria').collapse('show');
                 }
                 lastScrollOffset = scrollOffset;
             }
 
-            function loadReport() {
-            var shopIds = $("#slShop").dxSelectBox('instance').option('value');
-            var fromDate = $("#fromDate").dxDateBox('instance').option('value').toISOString();
-            var toDate = $("#toDate").dxDateBox('instance').option('value').toISOString();
-            var param = '?shopIds=' + shopIds + '&startDate=' + fromDate + '&endDate=' + toDate;
+            function loadReport(loadCallback) {
+                let shopIds = $("#slShop").dxSelectBox('instance').option('value');
+                let fromDate = $("#fromDate").dxDateBox('instance').option('value').toISOString();
+                let toDate = $("#toDate").dxDateBox('instance').option('value').toISOString();
+                let param = '?shopIds=' + shopIds + '&startDate=' + fromDate + '&endDate=' + toDate;
 
-            $.getJSON('api/report/summary' + param, function (result) {
-                var data = result.data;
-                $("#productSale").html(data.saleByGroupHtml);
-                $("#promotion").html(data.promoDataHtml);
-                $("#stat").html(data.statDataHtml);
-                var productSalePie = $("#productSalePie").dxPieChart("instance");
-                if (data.productSaleChartData.length > 0) {
-                    productSalePie.option("dataSource", data.productSaleChartData);
-                    $('#productSalePieContainer').collapse('show');
-                } else {
-                    $('#productSalePieContainer').collapse('hide');
-                }
-            }).fail(function (err) {
-                $("#summary").html("Not available now ");
-            }).always(function () {
+                $.getJSON('@Url.Content("~/api/report/summary")' + param, function (result) {
+                    var data = result.data;
+                    $("#productSale").html(data.saleByGroupHtml);
+                    $("#promotion").html(data.promoDataHtml);
+                    $("#stat").html(data.statDataHtml);
+                    var productSalePie = $("#productSalePie").dxPieChart("instance");
+                    if (data.productSaleChartData.length > 0) {
+                        productSalePie.option("dataSource", data.productSaleChartData);
+                        $('#productSalePieContainer').collapse('show');
+                    } else {
+                        $('#productSalePieContainer').collapse('hide');
+                    }
+                }).fail(function (err) {
+                    $("#summary").html("Not available now ");
+                }).always(function () {
+                    loadCallback('summary');
+                });
 
-            });
+                $.getJSON('@Url.Content("~/api/report/tender")' + param, function (result) {
+                    $("#tender").html(result.data);
+                }).fail(function (err) {
+                    $("#tender").html("Not available now");
+                }).always(function () {
+                    loadCallback('tender');
+                });
 
-            $.getJSON('api/report/tender' + param, function (result) {
-                $("#tender").html(result.data);
-            }).fail(function (err)
-            {
-                $("#tender").html("Not available now");
-            }).always(function ()
-            {
-
-            });
-
-            $.getJSON('api/report/audit' + param, function (result) {
-                $("#audit").html(result.data);
-            })
-                .fail(function (err) {
+                $.getJSON('@Url.Content("~/api/report/audit")' + param, function (result) {
+                    $("#audit").html(result.data);
+                }).fail(function (err) {
                     $("#audit").html("Not available now");
-                }).always(function ()
-                {
+                }).always(function () {
+                    loadCallback('audit');
+                });
+            }
 
-            });
+            function loadReportCallback (opt) {
+                if (opt === 'summary')
+                    summaryDone = true;
+                if (opt === 'tender')
+                    tenderDone = true;
+                if (opt === 'audit')
+                    auditDone = true;
+
+                if (summaryDone && tenderDone && auditDone) {
+                    $("#btn-search-indicator").dxLoadIndicator("option", "visible", false);
+                    $("#btn-search").dxButton("option", "disabled", false);
+                }
+            }
+
+            function resetLoadStatus() {
+                summaryDone = false;
+                tenderDone = false;
+                auditDone = false;
+            }
+
+            function loadReportClick() {
+                resetLoadStatus();
+                $("#btn-search-indicator").dxLoadIndicator("option", "visible", true);
+                $("#btn-search").dxButton("option", "disabled", true);
+                loadReport(loadReportCallback);
             }
 
             function periodGroupItemClick(e) {
                 let period = e.itemData.period;
                 let year = moment().year();
                 let month = moment().month();
+                let day = moment().date();
                 let daysInMonth = moment().daysInMonth();
                 let lastMonth = moment().add(-1, 'month');
                 let today = moment();
@@ -272,11 +246,11 @@
                 switch (period) {
                     case "last_month":
                         $("#fromDate").dxDateBox("instance").option("value", moment(lastMonth).set('date', 1));
-                        $("#toDate").dxDateBox("instance").option("value", lastMonth);
+                        $("#toDate").dxDateBox("instance").option("value", new Date(lastMonth.year(), lastMonth.month(), lastMonth.daysInMonth()));
                         break;
                     case "this_month":
                         $("#fromDate").dxDateBox("instance").option("value", new Date(year, month, 1));
-                        $("#toDate").dxDateBox("instance").option("value", new Date(year, month, daysInMonth));
+                        $("#toDate").dxDateBox("instance").option("value", new Date(year, month, day));
                         break;
                     case "yesterday":
                         $("#fromDate").dxDateBox("instance").option("value", yesterday);
@@ -291,17 +265,14 @@
 
             return {
                 init: init,
-                restoreDrawerOpened: restoreDrawerOpened,
-                onMenuButtonClick: onMenuButtonClick,
-                onTreeViewItemClick: onTreeViewItemClick,
-                loadReport: loadReport,
+                toggleCriteria: toggleCriteria,
+                loadReportClick: loadReportClick,
                 scrollViewOnScroll: scrollViewOnScroll,
                 periodGroupItemClick: periodGroupItemClick
             };
         })();
 
-        document.addEventListener("DOMContentLoaded", function documentReady() {
-            this.removeEventListener("DOMContentLoaded", documentReady);
+        $(document).ready(function () {
             VerticalTec_POS_Report_Dashboard.init();
         });
     </script>

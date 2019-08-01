@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
 
-namespace VerticalTec.POS.Report.Mobile
+namespace VerticalTec.POS.Report.Mobile.Controls
 {
     public class TappedGrid : Grid
     {
