@@ -30,7 +30,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
         [Route("v1/commission/sendreceipt")]
         public async Task<IHttpActionResult> SendReceiptCommissionAsync(int shopId, int tranId, int compId)
         {
-            await LogManager.Instance.WriteLogAsync($"Call v1/commission?tranId={tranId}&compId={compId}", LogPrefix);
+            await LogManager.Instance.WriteLogAsync($"Call v1/commission/sendreceipt?shopId={shopId}&tranId={tranId}&compId={compId}", LogPrefix);
 
             var result = new HttpActionResult<string>(Request);
             try

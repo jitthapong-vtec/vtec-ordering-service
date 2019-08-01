@@ -23,7 +23,7 @@ namespace VerticalTec.POS.Service.DataSync.Test
                 Task.Run(async () =>
                 {
                     await TestCommissionApi(baseAddress);
-                }).Wait();
+                });
                 Console.ReadLine();
             }
         }
