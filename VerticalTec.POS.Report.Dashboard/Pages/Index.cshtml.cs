@@ -12,7 +12,7 @@ namespace VerticalTec.POS.Report.Dashboard.Pages
         public IActionResult OnGet(string staffId = "")
         {
             if (string.IsNullOrEmpty(staffId))
-                return Redirect("/Login");
+                return Redirect(Url.Page("Login"));
             else
                 return Page();
         }
