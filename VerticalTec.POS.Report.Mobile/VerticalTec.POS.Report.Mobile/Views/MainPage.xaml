@@ -20,7 +20,12 @@
         </StackLayout>
     </NavigationPage.TitleView>
     <Grid>
+        <!--<Grid>
+            <ctrls:CustomWebView Url="{Binding Url}" Loading="{Binding IsBusy}"/>
+        </Grid>-->
         <WebView Source="{Binding Url}" Navigating="WebView_Navigating" Navigated="WebView_Navigated"/>
+        <ActivityIndicator IsVisible="{Binding IsBusy}" IsRunning="{Binding IsBusy}"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"/>
     </Grid>
-
 </ContentPage>

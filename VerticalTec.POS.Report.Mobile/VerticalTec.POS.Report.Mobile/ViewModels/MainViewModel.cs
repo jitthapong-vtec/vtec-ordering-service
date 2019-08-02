@@ -1,22 +1,23 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
 
 namespace VerticalTec.POS.Report.Mobile.ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel : ViewModelBase
     {
         string _url;
 
         public MainViewModel()
         {
-            LoadUrl();
         }
 
-        public void LoadUrl()
+        public Task LoadUrl()
         {
             Url = "http://203.151.92.65/vtecmobilereport";
+            return Task.FromResult(true);
         }
 
         public ICommand RefreshCommand => new Command(() =>
@@ -32,12 +33,6 @@ namespace VerticalTec.POS.Report.Mobile.ViewModels
                 _url = value;
                 NotifyPropertyChanged();
             }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

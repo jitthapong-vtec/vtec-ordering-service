@@ -19,6 +19,12 @@
     margin-right: 5px;
 }
 
+#productSalePie{
+    width:350px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
 .card-space-bottom {
     margin-bottom: 1em;
 }

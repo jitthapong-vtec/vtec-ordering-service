@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 namespace VerticalTec.POS.Report.Dashboard.Controllers
 {
     [ApiController]
+    [Produces("application/json")]
+    [Route("api/[controller]/[action]")]
     public class ApiControllerBase : ControllerBase
     {
     }

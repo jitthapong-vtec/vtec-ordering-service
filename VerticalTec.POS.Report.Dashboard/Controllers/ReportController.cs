@@ -10,11 +10,10 @@ using vtecdbhelper;
 using VerticalTec.POS.Utils;
 using System.Globalization;
 using VerticalTec.POS.Report.Dashboard.Models;
+using DevExtreme.AspNet.Mvc;
 
 namespace VerticalTec.POS.Report.Dashboard.Controllers
 {
-    [Produces("application/json")]
-    [Route("api/[controller]/[action]")]
     public class ReportController : ApiControllerBase
     {
         IDbHelper _db;
@@ -24,49 +23,10 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             _db = db;
         }
 
-        [HttpPost()]
-        [ActionName("login")]
-        public async Task<IActionResult> LoginAsync(UserLogin payload)
-        {
-            var result = new ReportActionResult<IEnumerable<object>>();
-            try
-            {
-                using (var conn = await _db.ConnectAsync())
-                {
-                    var cmd = _db.CreateCommand("select StaffID from staffs where StaffCode=@userName and StaffPassword=@password", conn);
-                    cmd.Parameters.Add(_db.CreateParameter("@userName", payload.Username ?? ""));
-                    cmd.Parameters.Add(_db.CreateParameter("@password", HashUtil.SHA1(payload.Password ?? "")));
-
-                    var dtStaff = new DataTable();
-                    using (var reader = await _db.ExecuteReaderAsync(cmd))
-                    {
-                        dtStaff.Load(reader);
-                    }
-                    if (dtStaff.Rows.Count > 0)
-                    {
-                        var staffId = dtStaff.Rows[0].GetValue<int>("StaffID");
-                    }
-                    else
-                    {
-                        result.StatusCode = StatusCodes.Status401Unauthorized;
-                        result.Message = $"Login fail for {payload.Username}";
-                    }
-
-                }
-            }
-            catch (Exception ex)
-            {
-                result.StatusCode = StatusCodes.Status500InternalServerError;
-                result.Message = ex.Message;
-            }
-            return result;
-        }
-
         [HttpGet]
         [ActionName("shopdata")]
-        public async Task<IActionResult> GetShopAsync(int staffId = 2)
+        public async Task<IActionResult> GetShopAsync(int staffId)
         {
-            var result = new ReportActionResult<IEnumerable<object>>();
             try
             {
                 using (var conn = await _db.ConnectAsync())
@@ -82,16 +42,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                             shopName = row.GetValue<string>("ShopName")
                         });
                     }
-                    result.Data = shopList;
+                    return Ok(shopList);
                 }
             }
             catch (Exception ex)
             {
-                result.Success = false;
-                result.StatusCode = StatusCodes.Status500InternalServerError;
-                result.Message = ex.Message;
+                return NoContent();
             }
-            return result;
         }
 
         [HttpGet]
