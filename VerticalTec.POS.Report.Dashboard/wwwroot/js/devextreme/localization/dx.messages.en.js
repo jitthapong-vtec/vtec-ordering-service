@@ -1,7 +1,7 @@
 /*!
 * DevExtreme (dx.messages.en.js)
-* Version: 19.1.4
-* Build date: Mon Jun 17 2019
+* Version: 19.1.5
+* Build date: Tue Jul 30 2019
 *
 * Copyright (c) 2012 - 2019 Developer Express Inc. ALL RIGHTS RESERVED
 * Read about DevExtreme licensing here: https://js.devexpress.com/Licensing/
@@ -34,6 +34,7 @@
             Back: "Back",
             OK: "OK",
             "dxCollectionWidget-noDataText": "No data to display",
+            "dxDropDownEditor-selectLabel": "Select",
             "validation-required": "Required",
             "validation-required-formatted": "{0} is required",
             "validation-numeric": "Value must be a number",
@@ -275,6 +276,7 @@
             "dxHtmlEditor-dialogImageHeightField": "Height (px)",
             "dxHtmlEditor-heading": "Heading",
             "dxHtmlEditor-normalText": "Normal text",
+            "dxFileManager-newFolderName": "Untitled folder",
             "dxFileManager-errorNoAccess": "Access denied. The operation cannot be completed.",
             "dxFileManager-errorDirectoryExistsFormat": "Directory '{0}' already exists.",
             "dxFileManager-errorFileExistsFormat": "File '{0}' already exists.",
