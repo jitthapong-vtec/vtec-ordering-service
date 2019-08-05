@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace VerticalTec.POS.Report.Dashboard.Pages
 {
-    public class IndexModel : PageModel
+    public class ReportModel : PageModel
     {
         public IActionResult OnGet(string staffId = "")
         {

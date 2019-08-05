@@ -18,7 +18,7 @@
             <div class="card-body">
                 <div class="dx-fieldset">
                     <div class="dx-field">
-                        <div class="dx-field-label" style="width:100px;">User name</div>
+                        <div class="dx-field-label">User name</div>
                         <div class="dx-field-value">
                             @Html.DevExtreme().TextBox().ID("txtUsername").StylingMode(EditorStylingMode.Outlined).Placeholder("Username")
                         </div>
@@ -26,7 +26,7 @@
                 </div>
                 <div class="dx-fieldset">
                     <div class="dx-field">
-                        <div class="dx-field-label" style="width:100px;">Password</div>
+                        <div class="dx-field-label">Password</div>
                         <div class="dx-field-value">
                             @Html.DevExtreme().TextBox().ID("txtPassword").StylingMode(EditorStylingMode.Outlined).Placeholder("Password").Mode(TextBoxMode.Password)
                         </div>
@@ -34,7 +34,11 @@
                 </div>
             </div>
             <div class="card-footer text-center">
-                @Html.DevExtreme().Button().ID("btnLogin").Text("Login").Width(230).OnClick("login")
+                @Html.DevExtreme().Button().ID("btn-login").Text("Login").Height(48).Width(230).Template(@<text>
+                    @(Html.DevExtreme().LoadIndicator().ID("btn-login-indicator")
+                       .ElementAttr("class", "btn-indicator").Visible(false))
+                    <span class="dx-button-text"><%= text %></span>
+                </text>).OnClick("login")
             </div>
         </div>
     </div>
@@ -51,6 +55,13 @@
 )
 <script>
     $(function () {
+        try {
+            let staff = JSON.parse(sessionStorage.getItem('staff'));
+            if (staff) {
+                location.href = '@Url.Content("~/Report")' + '?staffId=' + staff.StaffID;
+            }
+        }
+        catch (e) {}
         let validateLogin = "validateLogin";
         $("#txtUsername").dxTextBox().dxValidator({
             validationRules: [{
@@ -71,6 +82,8 @@
     function login(e) {
         let result = e.validationGroup.validate();
         if (result.isValid) {
+            $("#btn-login-indicator").dxLoadIndicator("option", "visible", true);
+            $("#btn-login").dxButton("option", "disabled", true);
             let payload = {
                 "username": $("#txtUsername").dxTextBox('instance').option('value'),
                 "password": $("#txtPassword").dxTextBox('instance').option('value')
@@ -85,7 +98,7 @@
                 success: function (data) {
                     var staff = data.data;
                     sessionStorage.setItem('staff', JSON.stringify(staff));
-                    var url = '@Url.Content("~/Index")';
+                    var url = '@Url.Content("~/Report")';
                     location.href = url + "?staffId=" + staff.StaffID;
                 }
             }).fail(function (err) {
@@ -94,6 +107,9 @@
                     popup.option("contentTemplate", JSON.parse(err.responseText).message);
                     popup.show();
                 } catch (e) { }
+            }).always(function () {
+                $("#btn-login-indicator").dxLoadIndicator("option", "visible", false);
+                $("#btn-login").dxButton("option", "disabled", false);
             });
         }
     }
