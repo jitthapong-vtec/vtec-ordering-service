@@ -13,26 +13,26 @@ namespace VerticalTec.POS
 {
     public class VtecRepo
     {
-        IDatabase _database;
+        IDatabase _db;
 
-        public VtecRepo(IDatabase database)
+        public VtecRepo(IDatabase db)
         {
-            _database = database;
+            _db = db;
         }
 
         public async Task<IEnumerable<object>> GetKioskPageAsync(IDbConnection conn, int shopId, SaleModes saleMode = SaleModes.DineIn)
         {
-            var cmd = _database.CreateCommand("select a.Kiosk_TemplateID" +
+            var cmd = _db.CreateCommand("select a.Kiosk_TemplateID" +
                                 " from kiosk_template a" +
                                 " inner join kiosk_template_shoplink b" +
                                 " on a.Kiosk_TemplateID=b.Kiosk_TemplateID" +
                                 " where a.Deleted=0" +
                                 " and a.Kiosk_StartDate <= @date and a.Kiosk_EndDate >= @date" +
                                 " and b.ShopID=@shopId", conn);
-            cmd.Parameters.Add(_database.CreateParameter("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
-            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+            cmd.Parameters.Add(_db.CreateParameter("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+            cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             DataTable dtTemplate = new DataTable();
-            using (IDataReader reader = await _database.ExecuteReaderAsync(cmd))
+            using (IDataReader reader = await _db.ExecuteReaderAsync(cmd))
             {
                 dtTemplate.Load(reader);
             }
@@ -45,7 +45,7 @@ namespace VerticalTec.POS
             var saleDate = await GetSaleDateAsync(conn, shopId, chkCurrDate: false);
 
             string imageBaseUrl = $"{rootDir}/{backoffice}/UploadImage/Kiosk/Products/";
-            cmd = _database.CreateCommand(
+            cmd = _db.CreateCommand(
                     " select concat('" + imageBaseUrl + "', a.PageImage) as PageImage, a.*, b.LayoutTypeName, " +
                     " case when b.NoRows is null then 4 else b.NoRows end as NoRows, " +
                     " case when b.NoColumns is null then 3 else b.NoColumns end as NoColumns" +
@@ -71,12 +71,12 @@ namespace VerticalTec.POS
                     " where a.Activated=1 and a.Deleted=0 and a.Kiosk_TemplateID=@templateId " +
                     " order by a.RowPosition", conn);
 
-            cmd.Parameters.Add(_database.CreateParameter("@templateId", templateId));
-            cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
-            cmd.Parameters.Add(_database.CreateParameter("@saleMode", saleMode));
-            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+            cmd.Parameters.Add(_db.CreateParameter("@templateId", templateId));
+            cmd.Parameters.Add(_db.CreateParameter("@saleDate", saleDate));
+            cmd.Parameters.Add(_db.CreateParameter("@saleMode", saleMode));
+            cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
 
-            IDataAdapter adapter = _database.CreateDataAdapter(cmd);
+            IDataAdapter adapter = _db.CreateDataAdapter(cmd);
             adapter.TableMappings.Add("Table", "MenuPages");
             adapter.TableMappings.Add("Table1", "MenuPageDetails");
             DataSet dsMenuTemplate = new DataSet("MenuTemplate");
@@ -142,6 +142,62 @@ namespace VerticalTec.POS
             return pages;
         }
 
+        public async Task<DataSet> GetProductsAsync(IDbConnection conn, int shopId, SaleModes saleMode = SaleModes.DineIn)
+        {
+            var ds = new DataSet();
+            var rootDir = await GetPropertyValueAsync(conn, 1012, "RootWebDir", shopId);
+            var backoffice = await GetPropertyValueAsync(conn, 1012, "BackOfficePath", shopId);
+            string imageUrl = $"{rootDir}/{backoffice}/";
+
+            var cmd = _db.CreateCommand("select * from productgroup where ProductGroupActivate=1 and Deleted=0;" +
+                "select * from productdept where ProductDeptActivate=1 and Deleted=0;" +
+                "select a.ProductID, a.ProductGroupID, a.ProductDeptID," +
+                " a.ProductTypeID, a.ProductCode, a.ProductName, a.ProductName1, a.ProductName2, a.ProductName3, a.DisplayMobile," +
+                " case when b.ProductPrice is not null then b.ProductPrice else" +
+                " case when c.ProductPrice is not null then c.ProductPrice else null end end as ProductPrice, " +
+                " d.CurrentStock, concat('" + imageUrl + "', a.ProductPictureServer) as ProductImage" +
+                " from products a" +
+                " left join" +
+                " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@saleMode) b" +
+                " on a.ProductID = b.ProductID" +
+                " left join" +
+                " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) c" +
+                " on a.ProductID = c.ProductID" +
+                " left join productcountdownstock d" +
+                " on a.ProductID=d.ProductID" +
+                " and a.ShopID=d.ShopID" +
+                " where a.Deleted = 0" +
+                " and a.ProductActivate = 1;", conn);
+
+            var saleDate = await GetSaleDateAsync(conn, shopId);
+            cmd.Parameters.Add(_db.CreateParameter("@saleDate", saleDate));
+            cmd.Parameters.Add(_db.CreateParameter("@saleMode", (int)saleMode));
+
+            var adapter = _db.CreateDataAdapter(cmd);
+            adapter.TableMappings.Add("Table", "ProductGroup");
+            adapter.TableMappings.Add("Table1", "ProductDept");
+            adapter.TableMappings.Add("Table2", "Products");
+            adapter.Fill(ds);
+
+            return ds;
+        }
+
+        public async Task<DataTable> GetComputerProduct(IDbConnection conn, int computerId)
+        {
+            IDbCommand cmd = _db.CreateCommand("select * from computerproduct where ComputerID=@computerId", conn);
+            cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
+            DataTable dt = new DataTable();
+            try
+            {
+                using (IDataReader reader = await _db.ExecuteReaderAsync(cmd))
+                {
+                    dt.Load(reader);
+                }
+            }
+            catch (Exception) { }
+            return dt;
+        }
+
         public async Task<string> GetSaleDateAsync(IDbConnection conn, int shopId, bool chkCurrDate = false, bool withBracket = false)
         {
             string saleDate = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -149,7 +205,7 @@ namespace VerticalTec.POS
                 "where ShopID=@shopId and IsEndDay=@isEndDay order by sessiondate desc limit 1", conn as MySqlConnection);
             cmd.Parameters.AddWithValue("@shopId", shopId);
             cmd.Parameters.AddWithValue("@isEndDay", 0);
-            using (var reader = await _database.ExecuteReaderAsync(cmd))
+            using (var reader = await _db.ExecuteReaderAsync(cmd))
             {
                 if (reader.Read())
                 {
@@ -213,10 +269,10 @@ namespace VerticalTec.POS
                 " left join programproperty b" +
                 " on a.PropertyID=b.PropertyID" +
                 " where a.PropertyID=@propertyId";
-            IDbCommand cmd = _database.CreateCommand(sqlQuery, conn);
-            cmd.Parameters.Add(_database.CreateParameter("@propertyId", propertyId));
+            IDbCommand cmd = _db.CreateCommand(sqlQuery, conn);
+            cmd.Parameters.Add(_db.CreateParameter("@propertyId", propertyId));
             DataTable dtResult = new DataTable();
-            using (IDataReader reader = await _database.ExecuteReaderAsync(cmd))
+            using (IDataReader reader = await _db.ExecuteReaderAsync(cmd))
             {
                 dtResult.Load(reader);
             }
