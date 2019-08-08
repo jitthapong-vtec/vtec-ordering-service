@@ -29,10 +29,10 @@
         private void InitializeComponent()
         {
             // 
-            // VtecDataSync
+            // VtecDataSyncService
             // 
             this.CanPauseAndContinue = true;
-            this.ServiceName = "Vtec Data Synchronization";
+            this.ServiceName = "VtecDataSyncService";
 
         }
 
