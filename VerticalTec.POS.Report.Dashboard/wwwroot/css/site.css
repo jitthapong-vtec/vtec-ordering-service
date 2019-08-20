@@ -42,7 +42,17 @@
 
 .dx-toolbar{
     padding-left:10px;
-    padding-right:10px;
+}
+
+.toolbar-button{
+    color:#fff;
+}
+
+.button-icon .dx-icon {
+    font-size: 2em;
+    width: auto;
+    height: auto;
+    line-height: normal;
 }
 
 .toolbar-button .dx-icon{

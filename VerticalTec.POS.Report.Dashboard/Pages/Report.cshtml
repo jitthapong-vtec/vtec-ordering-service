@@ -9,8 +9,8 @@
                 .Html("<div>Report</div>")
                 .Location(ToolbarItemLocation.Before)
                 .CssClass("header-title");
-            items.Add().Widget(w => w.Button().Icon("filter").ElementAttr("class", "toolbar-button")
-                .OnClick("toggleCriteria"))
+            items.Add().Widget(w => w.Button().Text("Logout").ElementAttr("class", "toolbar-button")
+                .OnClick("logoutClick"))
                 .LocateInMenu(ToolbarItemLocateInMenuMode.Never)
                 .Location(ToolbarItemLocation.After);
         })
@@ -60,37 +60,47 @@
                     @(Html.DevExtreme().ScrollView()
                     .Direction(ScrollDirection.Horizontal)
                     .Content(@<text>
-                            <div class="text-center">
-                                @(Html.DevExtreme().ButtonGroup().KeyExpr("period")
-                        .StylingMode(ButtonStylingMode.Text)
-                        .FocusStateEnabled(true)
-                        .Items(items =>
-                        {
-                        items.Add().Text("Last month").Option("period", "last_month");
-                        items.Add().Text("This month").Option("period", "this_month");
-                        items.Add().Text("Yesterday").Option("period", "yesterday");
-                        items.Add().Text("Today").Option("period", "today");
-                        }).SelectedItemKeys(new[] { "today" })
-                        .OnItemClick("periodGroupItemClick"))
-                            </div>
+                                <div class="text-center">
+                                    @(Html.DevExtreme().ButtonGroup().KeyExpr("period")
+                          .StylingMode(ButtonStylingMode.Text)
+                          .FocusStateEnabled(true)
+                          .Items(items =>
+                          {
+                              items.Add().Text("Today").Option("period", "today");
+                              items.Add().Text("Yesterday").Option("period", "yesterday");
+                              items.Add().Text("This month").Option("period", "this_month");
+                              items.Add().Text("Last month").Option("period", "last_month");
+                          }).SelectedItemKeys(new[] { "today" })
+                          .OnItemClick("periodGroupItemClick"))
+                                </div>
                     </text>))
                 </div>
             </div>
-            <div class="card-footer text-center">
-                    @(Html.DevExtreme().Button()
-                    .Text("Search")
-                    .Width(230)
-                    .Height(48)
-                    .ID("btn-search")
-                    .Template(@<text>
-                            @(Html.DevExtreme().LoadIndicator()
-                 .ID("btn-search-indicator")
-              .ElementAttr("class", "btn-indicator")
-                 .Visible(false)
-                            )
-                            <span class="dx-button-text"><%= text %></span>
-                    </text>).OnClick("loadReportClick"))
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <div class="m-3">
+                    </div>
+                    <div>
+                        @(Html.DevExtreme().Button()
+                        .Text("Search")
+                        .Width(230)
+                        .Height(48)
+                        .ID("btn-search")
+                        .Template(@<text>
+                                    @(Html.DevExtreme().LoadIndicator()
+                     .ID("btn-search-indicator")
+                  .ElementAttr("class", "btn-indicator")
+                     .Visible(false)
+                                    )
+                                    <span class="dx-button-text"><%= text %></span>
+                        </text>).OnClick("loadReportClick"))
+                    </div>
+                    <div>
+                        @(Html.DevExtreme().Button().Icon("chevronup").Width(48).Height(48)
+                            .ID("btn-toggle").ElementAttr("class", "button-icon").OnClick("toggleCriteria"))
+                    </div>
                 </div>
+            </div>
         </div>
     </div>
     <div class="layout-body">
@@ -100,56 +110,56 @@
         .ScrollByThumb(true)
         .Direction(ScrollDirection.Both)
         .Content(@<text>
-                <div style="margin:0.5em;">
-                    <div class="text-center" style="margin:0.5em;" id="reportHeader"></div>
-                    <div class="card card-space-bottom">
-                        <div class="card-header">
-                            <div class="row">
-                                <div class="col">
-                                    <b>Summary Sale</b>
-                                </div>
-                                <div class="col-3 float-right">
+                    <div style="margin:0.5em;">
+                        <div class="text-center" style="margin:0.5em;" id="reportHeader"></div>
+                        <div class="card card-space-bottom">
+                            <div class="card-header">
+                                <div class="row">
+                                    <div class="col">
+                                        <b>Summary Sale</b>
+                                    </div>
+                                    <div class="col-3 float-right">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <div id="productSale"></div><br />
-                            <div id="productSalePieContainer" style="margin-left:auto; margin-right:auto; margin-bottom:1em;" class="collapse">
-                                @(Html.DevExtreme().PieChart()
-                      .ID("productSalePie")
-                      .Palette(VizPalette.Bright)
-                      .Legend(l => l.Visible(false))
-                      .ResolveLabelOverlapping(PieChartResolveLabelOverlapping.Shift)
-                      .Series(s =>
-                      s.Add()
-                  .ArgumentField("ProductCatName")
-                  .ValueField("Percentage")
-                  .Label(l => l
-                          .Visible(true)
-                          .Font(f => f.Size(10))
-                          .Connector(c => c
-                              .Visible(true)
-                              .Width(0.5)
-                          )
-                          .Position(PieChartLabelPosition.Columns)
-                          .CustomizeText("getPieChartLabel")))
-                      .Title(t => t.Text("Item Sales").Font(f => f.Size(20)))
-                                )
+                            <div class="card-body">
+                                <div id="productSale"></div><br />
+                                <div id="productSalePieContainer" style="margin-left:auto; margin-right:auto; margin-bottom:1em;" class="collapse">
+                                    @(Html.DevExtreme().PieChart()
+                        .ID("productSalePie")
+                        .Palette(VizPalette.Bright)
+                        .Legend(l => l.Visible(false))
+                        .ResolveLabelOverlapping(PieChartResolveLabelOverlapping.Shift)
+                        .Series(s =>
+                        s.Add()
+                    .ArgumentField("ProductCatName")
+                    .ValueField("Percentage")
+                    .Label(l => l
+                            .Visible(true)
+                            .Font(f => f.Size(10))
+                            .Connector(c => c
+                                .Visible(true)
+                                .Width(0.5)
+                            )
+                            .Position(PieChartLabelPosition.Columns)
+                            .CustomizeText("getPieChartLabel")))
+                        .Title(t => t.Text("Item Sales").Font(f => f.Size(20)))
+                                    )
+                                </div>
+                                <div id="promotion"></div><br />
+                                <div id="stat"></div><br />
+                                <div id="saleMode"></div>
                             </div>
-                            <div id="promotion"></div><br />
-                            <div id="stat"></div><br />
-                            <div id="saleMode"></div>
+                        </div>
+                        <div class="card card-space-bottom">
+                            <b class="card-header">Tender</b><div class="card-body" id="tender">
+                            </div>
+                        </div>
+                        <div class="card card-space-bottom">
+                            <b class="card-header">Audit</b><div class="card-body" id="audit">
+                            </div>
                         </div>
                     </div>
-                    <div class="card card-space-bottom">
-                        <b class="card-header">Tender</b><div class="card-body" id="tender">
-                        </div>
-                    </div>
-                    <div class="card card-space-bottom">
-                        <b class="card-header">Audit</b><div class="card-body" id="audit">
-                        </div>
-                    </div>
-                </div>
         </text>))
     </div>
 </div>
@@ -161,7 +171,7 @@
     var tenderDone = false;
     var auditDone = false;
     var api = '@Url.Content("~/api/report/")';
-    var staffId = JSON.parse(sessionStorage.getItem('staff')).StaffID;
+    var staffId = JSON.parse(localStorage.getItem('staff')).StaffID;
 
     var shopDataSource = new DevExpress.data.CustomStore({
         loadMode: "raw",
@@ -172,14 +182,16 @@
             if (result.length == 1)
                 $("#slShop").dxSelectBox("instance").option("value", result[0].shopId);
         }
-    }); 
+    });
 
     function init() {
         $('#criteria').on('hide.bs.collapse', function () {
             isCriteriaShow = false;
+            $("#btn-toggle").dxButton("instance").option("icon", "chevrondown");
         })
         $('#criteria').on('show.bs.collapse', function () {
             isCriteriaShow = true;
+            $("#btn-toggle").dxButton("instance").option("icon", "chevronup");
         })
 
         $('#criteria').collapse('show');
@@ -187,6 +199,18 @@
         $('#slShop').dxSelectBox({
             dataSource: shopDataSource
         });
+
+        try {
+            let savedCriteria = JSON.parse(sessionStorage.getItem("criteria"));
+
+            let slShop = $("#slShop").dxSelectBox('instance');
+
+            slShop.option('value', savedCriteria.shopIds);
+            $("#fromDate").dxDateBox('instance').option('value', moment(savedCriteria.fromDate));
+            $("#toDate").dxDateBox('instance').option('value', moment(savedCriteria.toDate));
+        } catch (e) {
+        }
+
         shopDataSource.load().done(function () {
             loadReport(loadReportCallback);
         });
@@ -233,7 +257,17 @@
         let toDate = $("#toDate").dxDateBox('instance').option('value');
         let param = '?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString();
 
+        sessionStorage.setItem("criteria", JSON.stringify({
+            "shopIds": shopIds,
+            "shopName": shopName,
+            "fromDate": fromDate,
+            "toDate": toDate
+        }));
+
         $("#reportHeader").html("<b>" + shopName  + "</b></br>" + moment(fromDate).format("D/M/Y") + " - " + moment(toDate).format("D/M/Y"));
+
+        $("#btn-search-indicator").dxLoadIndicator("option", "visible", true);
+        $("#btn-search").dxButton("option", "disabled", true);
 
         $.getJSON('@Url.Content("~/api/report/summary")' + param, function (result) {
             var data = result.data;
@@ -292,8 +326,6 @@
 
     function loadReportClick() {
         resetLoadStatus();
-        $("#btn-search-indicator").dxLoadIndicator("option", "visible", true);
-        $("#btn-search").dxButton("option", "disabled", true);
         loadReport(loadReportCallback);
     }
 
@@ -324,6 +356,33 @@
                 $("#toDate").dxDateBox("instance").option("value", today);
                 break;
         }
+    }
+
+    function logoutClick() {
+        var myDialog = DevExpress.ui.dialog.custom({
+            title: "Logout",
+            messageHtml: "<b>Do you want to logout?</b>",
+            buttons: [{
+                text: "No",
+                onClick: function (e) {
+                    return false;
+                }
+            },{
+                    text: "Yes",
+                    onClick: function (e) {
+                        return true;
+                    }
+                }
+            ]
+        });
+        myDialog.show().done(function (dialogResult) {
+            if (dialogResult) {
+                sessionStorage.clear();
+                localStorage.clear();
+                location.href = '@Url.Content("~/Login")';
+            }
+        });
+        
     }
 
     $(function () {

@@ -56,7 +56,7 @@
 <script>
     $(function () {
         try {
-            let staff = JSON.parse(sessionStorage.getItem('staff'));
+            let staff = JSON.parse(localStorage.getItem('staff'));
             if (staff) {
                 location.href = '@Url.Content("~/Report")' + '?staffId=' + staff.StaffID;
             }
@@ -97,7 +97,7 @@
                 data: JSON.stringify(payload),
                 success: function (data) {
                     var staff = data.data;
-                    sessionStorage.setItem('staff', JSON.stringify(staff));
+                    localStorage.setItem('staff', JSON.stringify(staff));
                     var url = '@Url.Content("~/Report")';
                     location.href = url + "?staffId=" + staff.StaffID;
                 }
