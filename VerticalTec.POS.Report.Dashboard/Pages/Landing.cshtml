@@ -1,0 +1,15 @@
+﻿@page
+@model VerticalTec.POS.Report.Dashboard.Pages.LandingModel
+<script>
+    $(function () {
+        try {
+            let staff = JSON.parse(localStorage.getItem('staff'));
+            if (staff) {
+                location.href = '@Url.Content("~/Report")' + '?staffId=' + staff.StaffID;
+            } else {
+                location.href = '@Url.Content("~/Login")';
+            }
+        }
+        catch (e) {}
+    });
+</script>

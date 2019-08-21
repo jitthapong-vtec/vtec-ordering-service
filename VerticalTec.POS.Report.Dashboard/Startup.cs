@@ -33,7 +33,7 @@ namespace VerticalTec_POS_Report_Dashboard
                 .AddMvc()
                 .AddRazorPagesOptions(option =>
                 {
-                    option.Conventions.AddPageRoute("/Login", "/");
+                    option.Conventions.AddPageRoute("/Landing", "/");
                 })
                 .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
         }

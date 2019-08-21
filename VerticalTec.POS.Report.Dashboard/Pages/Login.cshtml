@@ -55,13 +55,6 @@
 )
 <script>
     $(function () {
-        try {
-            let staff = JSON.parse(localStorage.getItem('staff'));
-            if (staff) {
-                location.href = '@Url.Content("~/Report")' + '?staffId=' + staff.StaffID;
-            }
-        }
-        catch (e) {}
         let validateLogin = "validateLogin";
         $("#txtUsername").dxTextBox().dxValidator({
             validationRules: [{
