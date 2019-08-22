@@ -5,6 +5,12 @@
         @(Html.DevExtreme().Toolbar()
         .Items(items =>
         {
+            items.Add().Widget(w => w
+                           .Button()
+                           .Icon("menu")
+                       )
+                       .Location(ToolbarItemLocation.Before)
+                       .CssClass("menu-button");
             items.Add()
                 .Html("<div>Report</div>")
                 .Location(ToolbarItemLocation.Before)

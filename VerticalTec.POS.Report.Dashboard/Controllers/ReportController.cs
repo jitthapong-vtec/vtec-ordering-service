@@ -52,8 +52,42 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
         }
 
         [HttpGet]
+        [ActionName("hourly")]
+        public async Task<IActionResult> GetHourlyReport(string shopIds, DateTime startDate, DateTime endDate, int reportType = 0, int langId = 1)
+        {
+            var result = new ReportActionResult<object>();
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var cate = new Dictionary<int, string>();
+                    var report = new VTECReports.Reports(_db);
+
+                    shopIds = ValidateShopIds(shopIds);
+                    var fromDateStr = ToISODate(startDate);
+                    var toDateStr = ToISODate(endDate);
+
+                    var ds = report.Report_HourlyData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);
+                    result.Data = new
+                    {
+                        hourly = ds.Tables["HourlyData"],
+                        stat = ds.Tables["StatData"],
+                        chartData = ds.Tables["GraphData"],
+                        html = ds.Tables["htmlData"].Select("ReportType='HourlyData'").FirstOrDefault()?.GetValue<string>("HtmlData")
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                result.StatusCode = StatusCodes.Status500InternalServerError;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        [HttpGet]
         [ActionName("summary")]
-        public async Task<IActionResult> GetSummaryReportAsync(string shopIds, DateTime startDate, DateTime endDate)
+        public async Task<IActionResult> GetSummaryReportAsync(string shopIds, DateTime startDate, DateTime endDate, int langId = 1)
         {
             var result = new ReportActionResult<object>();
             var saleByGroupHtml = "";
@@ -71,7 +105,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                     shopIds = ValidateShopIds(shopIds);
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
-                    ds = report.Report_SummarySales(shopIds, fromDateStr, toDateStr, 1, cate, conn);
+                    ds = report.Report_SummarySales(shopIds, fromDateStr, toDateStr, langId, cate, conn);
                     var dtHtml = ds.Tables["htmlData"];
                     saleByGroupHtml = dtHtml.Select("ReportType='SaleByGroup'").FirstOrDefault()?.GetValue<string>("HtmlData");
                     promoDataHtml = dtHtml.Select("ReportType='PromoData'").FirstOrDefault()?.GetValue<string>("HtmlData");
@@ -98,7 +132,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
         [HttpGet]
         [ActionName("tender")]
-        public async Task<IActionResult> GetTenderReportAsync(string shopIds, DateTime startDate, DateTime endDate)
+        public async Task<IActionResult> GetTenderReportAsync(string shopIds, DateTime startDate, DateTime endDate, int langId = 1)
         {
             var result = new ReportActionResult<string>();
             var reportHtml = new StringBuilder();
@@ -112,7 +146,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                     shopIds = ValidateShopIds(shopIds);
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
-                    var ds = report.Report_TenderData(shopIds, fromDateStr, toDateStr, 1, cate, conn);
+                    var ds = report.Report_TenderData(shopIds, fromDateStr, toDateStr, langId, cate, conn);
                     foreach (DataRow html in ds.Tables["htmlData"].Rows)
                     {
                         reportHtml.Append(html.GetValue<string>("HtmlData") + "</br>");
@@ -131,7 +165,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
         [HttpGet]
         [ActionName("audit")]
-        public async Task<IActionResult> GetAuditReportAsync(string shopIds, DateTime startDate, DateTime endDate)
+        public async Task<IActionResult> GetAuditReportAsync(string shopIds, DateTime startDate, DateTime endDate, int langId = 1)
         {
             var result = new ReportActionResult<string>();
             var reportHtml = new StringBuilder();
@@ -146,7 +180,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
 
-                    var ds = report.Report_AuditData(shopIds, fromDateStr, toDateStr, 1, cate, conn);
+                    var ds = report.Report_AuditData(shopIds, fromDateStr, toDateStr, langId, cate, conn);
                     reportHtml.Append(ds.Tables["htmlData"].Select("ReportType='voidData'").FirstOrDefault().GetValue<string>("HtmlData"));
                 }
                 result.Data = reportHtml.ToString();

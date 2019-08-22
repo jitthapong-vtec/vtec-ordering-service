@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
 using vtecdbhelper;
 
@@ -29,13 +30,15 @@ namespace VerticalTec_POS_Report_Dashboard
             var dbName = dbConfig.GetValue<string>("DbName");
             services.AddSingleton<IDbHelper>(new SqlServerDatabase($"Data Source={dbServer};Initial Catalog={dbName};User ID=vtecPOS; Password=vtecpwnet"));
 
-            services
-                .AddMvc()
-                .AddRazorPagesOptions(option =>
-                {
-                    option.Conventions.AddPageRoute("/Landing", "/");
-                })
-                .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+            services.AddMvc().AddRazorPagesOptions(option => 
+            {
+                option.Conventions.AddPageRoute("/Landing", "/");
+            }).AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Report API", Version = "v1" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -53,6 +56,12 @@ namespace VerticalTec_POS_Report_Dashboard
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Report API V1");
             });
             app.UseStaticFiles();
             app.UseMvc();

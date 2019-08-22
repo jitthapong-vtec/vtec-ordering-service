@@ -4,7 +4,8 @@
     "inputFiles": [
       "wwwroot/css/devextreme/bootstrap.css",
       "wwwroot/css/devextreme/dx.common.css",
-      "wwwroot/css/devextreme/dx.material.custom.css"
+      "wwwroot/css/devextreme/theme.base.css",
+      "wwwroot/css/devextreme/dx.material.green.css"
     ],
     "minify": {
       "enabled": false
@@ -14,7 +15,7 @@
     "outputFileName": "wwwroot/js/vendor.js",
     "inputFiles": [
       "wwwroot/js/devextreme/jquery.js",
-
+      "wwwroot/js/devextreme/bootstrap.js",
       "wwwroot/js/devextreme/cldr.js",
       "wwwroot/js/devextreme/cldr/event.js",
       "wwwroot/js/devextreme/cldr/supplemental.js",
@@ -32,9 +33,7 @@
       "wwwroot/js/devextreme/dx.all.js",
       "wwwroot/js/devextreme/vectormap-data/world.js",
       "wwwroot/js/devextreme/aspnet/dx.aspnet.data.js",
-      "wwwroot/js/devextreme/aspnet/dx.aspnet.mvc.js",
-      "wwwroot/js/moment.min.js",
-      "wwwroot/js/devextreme/bootstrap.js"
+      "wwwroot/js/devextreme/aspnet/dx.aspnet.mvc.js"
     ],
     "minify": {
       "enabled": false
