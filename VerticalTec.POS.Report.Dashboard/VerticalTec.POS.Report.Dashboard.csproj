@@ -18,7 +18,9 @@
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.4" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj" />
     <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj" />
+    <ProjectReference Include="..\VerticalTec.POS\VerticalTec.POS.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="vtecdbhelper">
@@ -27,6 +29,9 @@
     <Reference Include="VTECReports">
       <HintPath>..\DLLs\VTECReports.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Services\" />
   </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>

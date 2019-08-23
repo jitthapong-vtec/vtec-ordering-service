@@ -16,6 +16,21 @@
 </head>
 
 <body>
-    @RenderBody()
+    <div id="root-content">
+        <div class="layout-header">
+            @(Html.DevExtreme().Toolbar()
+                    .Items(items =>
+                    {
+                        items.Add()
+                        .Html("<div>Mobile Report</div>")
+                        .Location(ToolbarItemLocation.Center)
+                        .CssClass("header-title");
+                    })
+            )
+        </div>
+        <div class="layout-body">
+            @RenderBody()
+        </div>
+    </div>
 </body>
 </html>

@@ -11,16 +11,19 @@ using VerticalTec.POS.Utils;
 using System.Globalization;
 using VerticalTec.POS.Report.Dashboard.Models;
 using DevExtreme.AspNet.Mvc;
+using VerticalTec.POS.Database;
 
 namespace VerticalTec.POS.Report.Dashboard.Controllers
 {
     public class ReportController : ApiControllerBase
     {
         IDbHelper _db;
+        IDatabase _db2;
 
-        public ReportController(IDbHelper db)
+        public ReportController(IDbHelper db, IDatabase db2)
         {
             _db = db;
+            _db2 = db2;
         }
 
         [HttpGet]
@@ -52,6 +55,33 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
         }
 
         [HttpGet]
+        [ActionName("bills")]
+        public async Task<IActionResult> GetBillReportAsync(string shopIds, DateTime startDate, DateTime endDate, int reportType = 0, int langId = 1)
+        {
+            var result = new ReportActionResult<object>();
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var report = new VTECReports.Reports(_db);
+                    var cate = new Dictionary<int, string>();
+                    shopIds = ValidateShopIds(shopIds);
+                    var fromDateStr = ToISODate(startDate);
+                    var toDateStr = ToISODate(endDate);
+
+                    var ds = report.Report_BillData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);
+
+                    result.Data = ds.Tables["BillData"];
+                }
+            }catch(Exception ex)
+            {
+                result.StatusCode = StatusCodes.Status500InternalServerError;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        [HttpGet]
         [ActionName("hourly")]
         public async Task<IActionResult> GetHourlyReport(string shopIds, DateTime startDate, DateTime endDate, int reportType = 0, int langId = 1)
         {
@@ -60,18 +90,26 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             {
                 using (var conn = await _db.ConnectAsync())
                 {
-                    var cate = new Dictionary<int, string>();
                     var report = new VTECReports.Reports(_db);
+                    var posRepo = new VtecRepo(_db2);
+
+                    var cate = new Dictionary<int, string>();
 
                     shopIds = ValidateShopIds(shopIds);
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
+                    var prop = await posRepo.GetProgramPropertyAsync(conn, 12);
+                    var currencyFormat = prop.Rows[0].GetValue<string>("PropertyTextValue");
 
                     var ds = report.Report_HourlyData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);
                     result.Data = new
                     {
-                        hourly = ds.Tables["HourlyData"],
-                        stat = ds.Tables["StatData"],
+                        raw = ds.Tables["HourlyData"],
+                        stat = new
+                        {
+                            Summary = ds.Tables["StatData"].Rows[0].GetValue<decimal>("DataValue").ToString(currencyFormat),
+                            AvgPerHour = ds.Tables["StatData"].Rows[1].GetValue<decimal>("DataValue").ToString(currencyFormat)
+                        },
                         chartData = ds.Tables["GraphData"],
                         html = ds.Tables["htmlData"].Select("ReportType='HourlyData'").FirstOrDefault()?.GetValue<string>("HtmlData")
                     };

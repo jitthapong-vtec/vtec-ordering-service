@@ -4,7 +4,7 @@
     try {
         let staff = JSON.parse(localStorage.getItem('staff'));
         if (staff) {
-            location.href = '@Url.Content("~/Report")' + '?staffId=' + staff.StaffID;
+            location.href = '@Url.Content("~/HourlyReport")' + '?staffId=' + staff.StaffID;
         } else {
             location.href = '@Url.Content("~/Login")';
         }

@@ -1,0 +1,80 @@
+﻿@page
+@model VerticalTec.POS.Report.Dashboard.Pages.HourlyReportModel
+@{
+    ViewData["Title"] = "Hourly Report";
+}
+
+<div class="mt-4 ml-1 mr-1 text-center">
+    <div id="report-type-scrollview">
+        @(Html.DevExtreme().ButtonGroup().ID("btn-group-report-type").KeyExpr("reportType")
+                                            .FocusStateEnabled(true)
+                                            .Items(items =>
+                                            {
+                                                items.Add().Text("Hourly Sales").Option("reportType", "0");
+                                                items.Add().Text("Hourly Bills").Option("reportType", "1");
+                                                items.Add().Text("Hourly Cups").Option("reportType", "2");
+                                            }).SelectedItemKeys(new[] { "0" })
+                                            .OnItemClick("reportTypeGroupItemClick"))
+    </div>
+</div>
+
+<div class="m-4">
+    @Html.DevExtreme().Chart().ID("hourly_chart").Palette(VizPalette.Bright).CommonSeriesSettings(s => s.ArgumentField("Description").Type(SeriesType.Spline)).CommonAxisSettings(s => s.Grid(g => g.Visible(true))).Series(s =>
+{
+    s.Add().ValueField("Percentage").Name("Percentage");
+}).Tooltip(t => t.Enabled(true)).Legend(l => l
+    .VerticalAlignment(VerticalEdge.Bottom)
+    .HorizontalAlignment(HorizontalAlignment.Center)
+    ).ArgumentAxis(a => a
+    .Label(l => l.Format(Format.Decimal))
+    .AllowDecimals(false)
+    .AxisDivisionFactor(60)
+    ).Export(e => e.Enabled(false))
+</div>
+
+<div class="d-flex justify-content-between">
+    <div class="flex-column ml-4">
+        <h2 id="stat-summary"></h2>
+    </div>
+    <div class="flex-column text-right mr-4">
+        <h2 id="stat-avg"></h2>
+        <label>Avg/Hour</label>
+    </div>
+</div>
+
+<div id="html" class="m-4">
+</div>
+
+<script>
+    function pageLoaded() {
+        $("#report-type-scrollview").dxScrollView({ direction: "horizontal" });
+    }
+
+    function loadReport() {
+        let criteria = getCriteria();
+        let shopIds = criteria.shopIds;
+        let fromDate = moment(criteria.fromDate);
+        let toDate = moment(criteria.toDate);
+        let reportType = $("#btn-group-report-type").dxButtonGroup('instance').option('selectedItems')[0].reportType;
+        let url = api + 'hourly?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString() + '&reportType=' + reportType;
+
+        showLoading();
+        $.getJSON(url, function (result) {
+            var data = result.data;
+            console.log("hourlydata", data);
+            $("#hourly_chart").dxChart('instance').option('dataSource', data.chartData);
+            $("#stat-summary").text(data.stat.Summary);
+            $("#stat-avg").text(data.stat.AvgPerHour);
+            $("#html").html(data.html);
+        }).fail(function (err) {
+            console.log('hourly', err);
+        }).always(function () {
+            hideLoading();
+        });
+    }
+
+    function reportTypeGroupItemClick(e) {
+        loadReport();
+    }
+</script>
+

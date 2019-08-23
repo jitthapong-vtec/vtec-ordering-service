@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
+using VerticalTec.POS.Database;
 using vtecdbhelper;
 
 namespace VerticalTec_POS_Report_Dashboard
@@ -28,7 +29,9 @@ namespace VerticalTec_POS_Report_Dashboard
             var dbConfig = Configuration.GetSection("Database");
             var dbServer = dbConfig.GetValue<string>("DbServer");
             var dbName = dbConfig.GetValue<string>("DbName");
-            services.AddSingleton<IDbHelper>(new SqlServerDatabase($"Data Source={dbServer};Initial Catalog={dbName};User ID=vtecPOS; Password=vtecpwnet"));
+            var connString = $"Data Source={dbServer};Initial Catalog={dbName};User ID=vtecPOS; Password=vtecpwnet";
+            services.AddSingleton<IDbHelper>(new vtecdbhelper.SqlServerDatabase(connString));
+            services.AddSingleton<IDatabase>(new VerticalTec.POS.Database.SqlServerDatabase(dbServer, dbName));
 
             services.AddMvc().AddRazorPagesOptions(option => 
             {

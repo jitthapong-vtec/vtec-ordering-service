@@ -1,46 +1,31 @@
 ﻿@page
 @model VerticalTec.POS.Report.Dashboard.Pages.LoginModel
-<div id="root-content">
-    <div class="layout-header">
-        @(Html.DevExtreme().Toolbar()
-                .Items(items =>
-                {
-                    items.Add()
-                    .Html("<div>Mobile Report</div>")
-                    .Location(ToolbarItemLocation.Center)
-                    .CssClass("header-title");
-                })
-        )
-    </div>
-    <div class="layout-body">
-        <div class="card" style="margin:1em;">
-            <b class="card-header">Login</b>
-            <div class="card-body">
-                <div class="dx-fieldset">
-                    <div class="dx-field">
-                        <div class="dx-field-label">User name</div>
-                        <div class="dx-field-value">
-                            @Html.DevExtreme().TextBox().ID("txtUsername").StylingMode(EditorStylingMode.Outlined).Placeholder("Username")
-                        </div>
-                    </div>
+<div class="card m-4">
+    <b class="card-header">Login</b>
+    <div class="card-body">
+        <div class="dx-fieldset">
+            <div class="dx-field">
+                <div class="dx-field-label">User name</div>
+                <div class="dx-field-value">
+                    @Html.DevExtreme().TextBox().ID("txtUsername").StylingMode(EditorStylingMode.Outlined).Placeholder("Username")
                 </div>
-                <div class="dx-fieldset">
-                    <div class="dx-field">
-                        <div class="dx-field-label">Password</div>
-                        <div class="dx-field-value">
-                            @Html.DevExtreme().TextBox().ID("txtPassword").StylingMode(EditorStylingMode.Outlined).Placeholder("Password").Mode(TextBoxMode.Password)
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer text-center">
-                @Html.DevExtreme().Button().ID("btn-login").Text("Login").Height(48).Width(230).Template(@<text>
-                    @(Html.DevExtreme().LoadIndicator().ID("btn-login-indicator")
-                       .ElementAttr("class", "btn-indicator").Visible(false))
-                    <span class="dx-button-text"><%= text %></span>
-                </text>).OnClick("login")
             </div>
         </div>
+        <div class="dx-fieldset">
+            <div class="dx-field">
+                <div class="dx-field-label">Password</div>
+                <div class="dx-field-value">
+                    @Html.DevExtreme().TextBox().ID("txtPassword").StylingMode(EditorStylingMode.Outlined).Placeholder("Password").Mode(TextBoxMode.Password)
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer text-center">
+        @Html.DevExtreme().Button().ID("btn-login").Text("Login").Height(48).Width(230).Template(@<text>
+            @(Html.DevExtreme().LoadIndicator().ID("btn-login-indicator")
+              .ElementAttr("class", "btn-indicator").Visible(false))
+            <span class="dx-button-text"><%= text %></span>
+        </text>).OnClick("login")
     </div>
 </div>
 
@@ -89,7 +74,7 @@
                 success: function (data) {
                     var staff = data.data;
                     localStorage.setItem('staff', JSON.stringify(staff));
-                    var url = '@Url.Content("~/Report")';
+                    var url = '@Url.Content("~/HourlyReport")';
                     location.href = url + "?staffId=" + staff.StaffID;
                 }
             }).fail(function (err) {

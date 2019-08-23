@@ -1,3 +1,11 @@
 ﻿@{
-    Layout = "_Layout";
+    var model = ViewContext.ViewData.Model;
+    if (model is VerticalTec.POS.Report.Dashboard.Pages.LoginModel)
+    {
+        Layout = "~/Pages/Shared/_LoginLayout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Pages/Shared/_Layout.cshtml";
+    }
 }
