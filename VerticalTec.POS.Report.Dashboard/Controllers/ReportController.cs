@@ -58,7 +58,6 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
         [ActionName("bills")]
         public async Task<IActionResult> GetBillReportAsync(string shopIds, DateTime startDate, DateTime endDate, int reportType = 0, int langId = 1)
         {
-            var result = new ReportActionResult<object>();
             try
             {
                 using (var conn = await _db.ConnectAsync())
@@ -71,14 +70,26 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
 
                     var ds = report.Report_BillData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);
 
-                    result.Data = ds.Tables["BillData"];
+                    var bills = new List<object>();
+                    foreach (DataRow row in ds.Tables["BillData"].Rows)
+                    {
+                        var statusId = row.GetValue<string>("TransactionStatusID");
+                        var status = (statusId == "99" || string.IsNullOrEmpty(statusId)) ? "Void" : ""; 
+                        bills.Add(new
+                        {
+                            ReceiptNumber = row.GetValue<string>("ReceiptNumber"),
+                            Status = status,
+                            Qty = row.GetValue<decimal>("ReceiptTotalQty"),
+                            Amount = row.GetValue<decimal>("ReceiptPayPrice")
+                        });
+                    }
+                    return Ok(bills);
                 }
-            }catch(Exception ex)
-            {
-                result.StatusCode = StatusCodes.Status500InternalServerError;
-                result.Message = ex.Message;
             }
-            return result;
+            catch (Exception ex)
+            {
+                return NoContent();
+            }
         }
 
         [HttpGet]

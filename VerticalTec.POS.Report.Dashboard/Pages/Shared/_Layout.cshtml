@@ -424,12 +424,16 @@
                         .Icon("clock")
                         .Option("path", Url.Page("HourlyReport"))
                         .Selected(IsCurrentPage("HourlyReport"));
-
                     items.Add()
                         .Text("Summary")
                         .Icon("datafield")
                         .Option("path", Url.Page("SummaryReport"))
                         .Selected(IsCurrentPage("SummaryReport"));
+                    items.Add()
+                                .Text("Bill")
+                                .Icon("datafield")
+                                .Option("path", Url.Page("BillReport"))
+                                .Selected(IsCurrentPage("BillReport"));
                 })
                 .ExpandEvent(TreeViewExpandEvent.Click)
                 .SelectionMode(NavSelectionMode.Single)

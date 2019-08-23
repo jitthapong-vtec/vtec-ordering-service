@@ -1,0 +1,70 @@
+﻿@page
+@model VerticalTec.POS.Report.Dashboard.Pages.BillReportModel
+@{
+    ViewData["Title"] = "Bill";
+}
+
+<div class="mt-4 ml-1 mr-1 text-center">
+    <div id="report-type-scrollview">
+        @(Html.DevExtreme().ButtonGroup().ID("btn-group-report-type").KeyExpr("group")
+                                            .FocusStateEnabled(true)
+                                            .Items(items =>
+                                            {
+                                                items.Add().Text("Details").Option("group", "0");
+                                                items.Add().Text("Group By Date").Option("group", "1");
+                                                items.Add().Text("Group By Shop").Option("group", "2");
+                                            }).SelectedItemKeys(new[] { "0" })
+                                            .OnItemClick("groupItemClick"))
+    </div>
+</div>
+
+<div id="gridContainer" class="m-4">
+</div>
+
+<script>
+    var api = '@Url.Content("~/api/report/bills")';
+    var dataSource = new DevExpress.data.CustomStore({
+        loadMode: "raw",
+        load: function (loadOptions) {
+                let criteria = getCriteria();
+                let shopIds = criteria.shopIds;
+                let fromDate = moment(criteria.fromDate);
+                let toDate = moment(criteria.toDate);
+                let url = api + '?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString();
+                return $.getJSON(url);
+            },
+            onLoaded: function (result) {
+            }
+    });
+
+    function groupItemClick(e) {
+
+    }
+
+    function pageLoaded() {
+        $("#gridContainer").dxDataGrid({
+            dataSource: dataSource,
+            allowColumnReordering: true,
+            showBorders: true,
+            grouping: {
+                autoExpandAll: true,
+            },
+            searchPanel: {
+                visible: true
+            },
+            paging: {
+                pageSize: 10
+            },
+            groupPanel: {
+                visible: true
+            },
+            columns: [
+                "ReceiptNumber",
+                "Status",
+                "Qty",
+                "Amount"
+            ]
+        }).dxDataGrid("instance");
+    }
+</script>
+
