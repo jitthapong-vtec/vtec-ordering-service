@@ -57,12 +57,12 @@
                 dataSource: shopDataSource
             });
 
-                let savedCriteria = getCriteria();
-                let slShop = $("#slShop").dxSelectBox('instance');
+            let savedCriteria = getCriteria();
+            let slShop = $("#slShop").dxSelectBox('instance');
 
-                slShop.option('value', savedCriteria.shopIds);
-                $("#fromDate").dxDateBox('instance').option('value', moment(savedCriteria.fromDate));
-                $("#toDate").dxDateBox('instance').option('value', moment(savedCriteria.toDate));
+            slShop.option('value', savedCriteria.shopIds);
+            $("#fromDate").dxDateBox('instance').option('value', moment(savedCriteria.fromDate));
+            $("#toDate").dxDateBox('instance').option('value', moment(savedCriteria.toDate));
 
             shopDataSource.load().done(function () {
                 loadReport();
@@ -431,7 +431,7 @@
                         .Selected(IsCurrentPage("SummaryReport"));
                     items.Add()
                                 .Text("Bill")
-                                .Icon("datafield")
+                                .Icon("money")
                                 .Option("path", Url.Page("BillReport"))
                                 .Selected(IsCurrentPage("BillReport"));
                 })

@@ -269,3 +269,7 @@ td, th {
     color: black;
     background-color: #f0f0f5;
 }
+
+.dx-data-row td.align-right {
+    text-align: right !important;
+}

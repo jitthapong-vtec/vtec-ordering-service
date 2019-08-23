@@ -18,53 +18,82 @@
     </div>
 </div>
 
-<div id="gridContainer" class="m-4">
+<div id="billGrid" class="m-2">
 </div>
 
 <script>
-    var api = '@Url.Content("~/api/report/bills")';
-    var dataSource = new DevExpress.data.CustomStore({
+    var dataSource = new DevExpress.data.DataSource({
+        store: new DevExpress.data.CustomStore({
         loadMode: "raw",
         load: function (loadOptions) {
                 let criteria = getCriteria();
                 let shopIds = criteria.shopIds;
                 let fromDate = moment(criteria.fromDate);
                 let toDate = moment(criteria.toDate);
-                let url = api + '?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString();
+                let url = '@Url.Content("~/api/report/bills")?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString();
+
                 return $.getJSON(url);
             },
             onLoaded: function (result) {
             }
-    });
+        })
+    }); 
+
 
     function groupItemClick(e) {
+        var grid = $("#billGrid").dxDataGrid('instance');
+        grid.columnOption("SaleDate", "groupIndex", undefined);
+        grid.columnOption("ShopName", "groupIndex", undefined);
 
+        switch (e.itemData.group) {
+            case "1":
+                grid.columnOption("SaleDate", "groupIndex", 1);
+                break;
+            case "2":
+                grid.columnOption("ShopName", "groupIndex", 1);
+                break;
+        }
+    }
+
+    function loadReport() {
+        dataSource.reload();
     }
 
     function pageLoaded() {
-        $("#gridContainer").dxDataGrid({
+        $("#billGrid").dxDataGrid({
             dataSource: dataSource,
-            allowColumnReordering: true,
             showBorders: true,
             grouping: {
                 autoExpandAll: true,
             },
-            searchPanel: {
-                visible: true
-            },
             paging: {
-                pageSize: 10
-            },
-            groupPanel: {
-                visible: true
+                pageSize: 100
             },
             columns: [
-                "ReceiptNumber",
-                "Status",
-                "Qty",
-                "Amount"
+                {
+                    dataField: "SaleDate",
+                    visible:false,
+                },
+                {
+                    dataField: "ShopName",
+                    visible:false
+                },
+                {
+                    dataField: "ReceiptNumber",
+                },
+                {
+                    caption: 'Qty',
+                    dataField: "Qty",
+                    alignment: 'right',
+                    width: '20%'
+                },
+                {
+                    dataField: "Amount",
+                    alignment: 'right',
+                    width:'20%'
+                }
             ]
-        }).dxDataGrid("instance");
+        });
     }
 </script>
 

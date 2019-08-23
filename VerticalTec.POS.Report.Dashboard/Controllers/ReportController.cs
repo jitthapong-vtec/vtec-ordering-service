@@ -63,11 +63,17 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                 using (var conn = await _db.ConnectAsync())
                 {
                     var report = new VTECReports.Reports(_db);
+                    var posRepo = new VtecRepo(_db2);
+
                     var cate = new Dictionary<int, string>();
                     shopIds = ValidateShopIds(shopIds);
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
 
+                    var prop = await posRepo.GetProgramPropertyAsync(conn);
+                    var currencyFormat = prop.Select($"PropertyID = 12").FirstOrDefault()?.GetValue<string>("PropertyTextValue");
+                    var qtyFormat = prop.Select($"PropertyID = 15").FirstOrDefault()?.GetValue<string>("PropertyTextValue");
+                    var dateFormat = prop.Select($"PropertyID = 13").FirstOrDefault()?.GetValue<string>("PropertyTextValue");
                     var ds = report.Report_BillData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);
 
                     var bills = new List<object>();
@@ -77,10 +83,12 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                         var status = (statusId == "99" || string.IsNullOrEmpty(statusId)) ? "Void" : ""; 
                         bills.Add(new
                         {
+                            ShopName = row.GetValue<string>("ShopName"),
+                            SaleDate = row.GetValue<DateTime>("SaleDate").ToString(dateFormat),
                             ReceiptNumber = row.GetValue<string>("ReceiptNumber"),
                             Status = status,
-                            Qty = row.GetValue<decimal>("ReceiptTotalQty"),
-                            Amount = row.GetValue<decimal>("ReceiptPayPrice")
+                            Qty = row.GetValue<decimal>("ReceiptTotalQty").ToString(qtyFormat),
+                            Amount = row.GetValue<decimal>("ReceiptPayPrice").ToString(currencyFormat)
                         });
                     }
                     return Ok(bills);
