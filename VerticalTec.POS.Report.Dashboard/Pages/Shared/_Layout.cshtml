@@ -28,17 +28,19 @@
         var isScrollUp = false;
         var isCriteriaShow = true;
         var api = '@Url.Content("~/api/report/")';
-        var staffId = JSON.parse(localStorage.getItem('staff')).StaffID;
+        var staffId = JSON.parse(localStorage.getItem('staff')).StaffId;
 
-        var shopDataSource = new DevExpress.data.CustomStore({
-            loadMode: "raw",
-            load: function(loadOptions) {
-                return $.getJSON(api + "shopdata?staffId=" + staffId);
-            },
-            onLoaded: function (result) {
-                if (result.length == 1)
-                    $("#slShop").dxSelectBox("instance").option("value", result[0].shopId);
-            }
+        var shopDataSource = new DevExpress.data.DataSource({
+            store: new DevExpress.data.CustomStore({
+                loadMode: "raw",
+                load: function(loadOptions) {
+                    return $.getJSON(api + "shopdata?staffId=" + staffId);
+                },
+                onLoaded: function (result) {
+                    if (result.length == 1)
+                        $("#slShop").dxSelectBox("instance").option("value", result[0].shopId);
+                }
+            })
         });
 
         function initCriteria() {
@@ -58,14 +60,18 @@
             });
 
             let savedCriteria = getCriteria();
-            let slShop = $("#slShop").dxSelectBox('instance');
+            if (savedCriteria) {
+                let slShop = $("#slShop").dxSelectBox('instance');
 
-            slShop.option('value', savedCriteria.shopIds);
-            $("#fromDate").dxDateBox('instance').option('value', moment(savedCriteria.fromDate));
-            $("#toDate").dxDateBox('instance').option('value', moment(savedCriteria.toDate));
+                slShop.option('value', savedCriteria.shopIds);
+                $("#fromDate").dxDateBox('instance').option('value', moment(savedCriteria.fromDate));
+                $("#toDate").dxDateBox('instance').option('value', moment(savedCriteria.toDate));
+                $("#period-group").dxButtonGroup('instance').option('selectedItemKeys', [savedCriteria.period]);
+            }
+            $("#period-scrollview").dxScrollView({ direction: "horizontal" });
 
             shopDataSource.load().done(function () {
-                loadReport();
+                loadReportClick();
             });
         }
 
@@ -139,16 +145,7 @@
         }
 
         function getCriteria() {
-            var criteria;
-            try {
-                criteria = JSON.parse(sessionStorage.getItem("criteria"));
-            } catch (e) {
-            }
-            if (!criteria) {
-                createCriteria();
-                criteria = JSON.parse(sessionStorage.getItem("criteria"));
-            }
-            return criteria;
+            return JSON.parse(sessionStorage.getItem("criteria"));
         }
 
         function createCriteria() {
@@ -156,17 +153,25 @@
             let shopIds = slShop.option('value');
             let shopName = '';
             try {
-                shopName = slShop.option('selectedItem').shopName;
-            } catch (e) {}
+                shopName = slShop.option("selectedItem").shopName;
+            } catch (e) {
+            }
             let fromDate = $("#fromDate").dxDateBox('instance').option('value');
             let toDate = $("#toDate").dxDateBox('instance').option('value');
+            let period = $("#period-group").dxButtonGroup('instance').option('selectedItems')[0].period;
 
-            sessionStorage.setItem("criteria", JSON.stringify({
+            var criteria = JSON.stringify({
                 "shopIds": shopIds,
                 "shopName": shopName,
                 "fromDate": fromDate,
-                "toDate": toDate
-            }));
+                "toDate": toDate,
+                "period": period
+            });
+            saveCriteria(criteria);
+        }
+
+        function saveCriteria(criteria) {
+            sessionStorage.setItem("criteria", criteria);
         }
 
         function getDrawer() {
@@ -204,7 +209,6 @@
         function init() {
             $("#title").html('@ViewData["Title"]');
             $("#layout-drawer-scrollview").dxScrollView({ direction: "vertical" });
-            $("#period-scrollview").dxScrollView({ direction: "horizontal" });
 
             $.each(breakpoints, function (_, size) {
                 size.addListener(function (e) {
@@ -243,6 +247,14 @@
                 if (willNavigate)
                     navigate(e.itemData.path, willHide ? 400 : 0);
             }
+        }
+
+        function getProperty(id) {
+            var properies = JSON.parse(localStorage.getItem("properties"));
+            var result = $.grep(properies, function (prop) {
+                return (prop.PropertyId === id);
+            });
+            return result[0];
         }
 
         function logoutClick() {
@@ -311,7 +323,6 @@
                 .Position(DrawerPosition.Left)
                 .Content(@<text>
                             <div id="layout-drawer-scrollview">
-
                                 <div class="card">
                                     <div id="criteria" class="collapse">
                                         <div class="dx-fieldset">
@@ -319,24 +330,24 @@
                                                 <div class="dx-field-label">Shop</div>
                                                 <div class="dx-field-value">
                                                     @(Html.DevExtreme().SelectBox()
-                                                  .ID("slShop")
-                                                  .Value(0)
-                                                  .SearchEnabled(true)
-                                                  .SearchMode(DropDownSearchMode.Contains)
-                                                  .StylingMode(EditorStylingMode.Outlined)
-                                                  .ValueExpr("shopId")
-                                                  .DisplayExpr("shopName"))
+                                               .ID("slShop")
+                                               .Value(0)
+                                               .SearchEnabled(true)
+                                               .SearchMode(DropDownSearchMode.Contains)
+                                               .StylingMode(EditorStylingMode.Outlined)
+                                               .ValueExpr("shopId")
+                                               .DisplayExpr("shopName"))
                                                 </div>
                                             </div>
                                             <div class="dx-field">
                                                 <div class="dx-field-label">From Date</div>
                                                 <div class="dx-field-value">
                                                     @(Html.DevExtreme().DateBox()
-                                                  .ID("fromDate")
-                                                  .StylingMode(EditorStylingMode.Outlined)
-                                                  .PickerType(DateBoxPickerType.Rollers)
-                                                  .DisplayFormat("dd/MM/yyyy")
-                                                  .Value(DateTime.Now)
+                                               .ID("fromDate")
+                                               .StylingMode(EditorStylingMode.Outlined)
+                                               .PickerType(DateBoxPickerType.Rollers)
+                                               .DisplayFormat("dd/MM/yyyy")
+                                               .Value(DateTime.Now)
                                                     )
                                                 </div>
                                             </div>
@@ -344,54 +355,56 @@
                                                 <div class="dx-field-label">To Date</div>
                                                 <div class="dx-field-value">
                                                     @(Html.DevExtreme().DateBox()
-                                                  .ID("toDate")
-                                                  .StylingMode(EditorStylingMode.Outlined)
-                                                  .PickerType(DateBoxPickerType.Rollers)
-                                                  .DisplayFormat("dd/MM/yyyy")
-                                                  .Value(DateTime.Now)
+                                               .ID("toDate")
+                                               .StylingMode(EditorStylingMode.Outlined)
+                                               .PickerType(DateBoxPickerType.Rollers)
+                                               .DisplayFormat("dd/MM/yyyy")
+                                               .Value(DateTime.Now)
                                                     )
                                                 </div>
                                             </div>
                                         </div>
                                         <div style="margin:0.5em;">
-                                                <div id="period-scrollview" class="text-center">
-                                                    @(Html.DevExtreme().ButtonGroup().KeyExpr("period")
-                                                      .StylingMode(ButtonStylingMode.Outlined)
-                                                      .FocusStateEnabled(true)
-                                                      .Items(items =>
-                                                      {
-                                                          items.Add().Text("Today").Option("period", "today");
-                                                          items.Add().Text("Yesterday").Option("period", "yesterday");
-                                                          items.Add().Text("This month").Option("period", "this_month");
-                                                          items.Add().Text("Last month").Option("period", "last_month");
-                                                      }).SelectedItemKeys(new[] { "today" })
-                                                      .OnItemClick("periodGroupItemClick"))
-                                                </div>
-                                                </div>
+                                            <div id="period-scrollview" class="text-center">
+                                                @(Html.DevExtreme().ButtonGroup().KeyExpr("period")
+                                                .ID("period-group")
+                                               .StylingMode(ButtonStylingMode.Outlined)
+                                               .FocusStateEnabled(true)
+                                               .Items(items =>
+                                               {
+                                                   items.Add().Text("Today").Option("period", "today");
+                                                   items.Add().Text("Yesterday").Option("period", "yesterday");
+                                                   items.Add().Text("This month").Option("period", "this_month");
+                                                   items.Add().Text("Last month").Option("period", "last_month");
+                                               }).SelectedItemKeys(new[] { "today" })
+                                               .OnItemClick("periodGroupItemClick"))
                                             </div>
-                                            <div class="card-footer">
-                                                <div class="d-flex justify-content-between">
-                                                    <div class="m-3">
-                                                    </div>
-                                                    <div>
-                                                        @(Html.DevExtreme().Button()
-                                                      .Text("Search")
-                                                      .Width(230)
-                                                      .Height(48)
-                                                      .ID("btn-search")
-                                                      .Template(new TemplateName("btn-indicator-template")).OnClick("loadReportClick"))
-                                                    </div>
-                                                    <div>
-                                                        @(Html.DevExtreme().Button().Icon("chevronup").Width(48).Height(48)
-                                                          .ID("btn-toggle").ElementAttr("class", "button-icon").OnClick("toggleCriteria"))
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="content">
-                                            @RenderBody()
                                         </div>
                                     </div>
+                                    <div class="card-footer">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="m-3">
+                                            </div>
+                                            <div>
+                                                @(Html.DevExtreme().Button()
+                                           .Text("Search")
+                                           .Width(230)
+                                           .Height(48)
+                                           .ID("btn-search")
+                                           .Template(new TemplateName("btn-indicator-template")).OnClick("loadReportClick"))
+                                            </div>
+                                            <div>
+                                                @(Html.DevExtreme().Button().Icon("chevronup").Width(48).Height(48)
+                                               .ID("btn-toggle").ElementAttr("class", "button-icon").OnClick("toggleCriteria"))
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="content">
+                                    <div class="text-center m-4" id="reportHeader"></div>
+                                    @RenderBody()
+                                </div>
+                            </div>
                 </text>).Template(new TemplateName("navigation-menu"))
             )
         </div>

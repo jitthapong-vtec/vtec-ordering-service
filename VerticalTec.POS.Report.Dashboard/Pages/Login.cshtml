@@ -72,10 +72,14 @@
                 dataType: 'json',
                 data: JSON.stringify(payload),
                 success: function (data) {
-                    var staff = data.data;
+                    var staff = data.data.StaffData;
+                    var properties = data.data.Properties;
+
                     localStorage.setItem('staff', JSON.stringify(staff));
+                    localStorage.setItem('properties', JSON.stringify(properties));
+
                     var url = '@Url.Content("~/HourlyReport")';
-                    location.href = url + "?staffId=" + staff.StaffID;
+                    location.href = url + "?staffId=" + staff.StaffId;
                 }
             }).fail(function (err) {
                 try {

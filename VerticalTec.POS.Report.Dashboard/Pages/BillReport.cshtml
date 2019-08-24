@@ -24,20 +24,23 @@
 <script>
     var dataSource = new DevExpress.data.DataSource({
         store: new DevExpress.data.CustomStore({
-        loadMode: "raw",
-        load: function (loadOptions) {
+            loadMode: "raw",
+            load: function (loadOptions) {
                 let criteria = getCriteria();
+                let shopName = criteria.shopName;
                 let shopIds = criteria.shopIds;
                 let fromDate = moment(criteria.fromDate);
                 let toDate = moment(criteria.toDate);
                 let url = '@Url.Content("~/api/report/bills")?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString();
+
+                $("#reportHeader").html("<b>" + shopName + "</b></br>" + moment(fromDate).format("D/M/Y") + " - " + moment(toDate).format("D/M/Y"));
 
                 return $.getJSON(url);
             },
             onLoaded: function (result) {
             }
         })
-    }); 
+    });
 
 
     function groupItemClick(e) {
@@ -60,6 +63,18 @@
     }
 
     function pageLoaded() {
+        var currencyProp = getProperty(12);
+        var qtyProp = getProperty(15);
+        var cellTemplate = function (element, info) {
+            if (info.data.TransactionStatus == 99) {
+                element.append("<div>" + info.text + "</div>")
+                    .css("text-decoration", "line-through")
+                    .css("color", "red");
+            } else {
+                element.append("<div>" + info.text + "</div>");
+            }
+        };
+
         $("#billGrid").dxDataGrid({
             dataSource: dataSource,
             showBorders: true,
@@ -80,19 +95,72 @@
                 },
                 {
                     dataField: "ReceiptNumber",
+                    cellTemplate: cellTemplate
                 },
                 {
                     caption: 'Qty',
                     dataField: "Qty",
+                    format: qtyProp.PropertyTextValue,
                     alignment: 'right',
-                    width: '20%'
+                    width: '20%',
+                    cellTemplate: cellTemplate
                 },
                 {
                     dataField: "Amount",
+                    format: currencyProp.PropertyTextValue,
                     alignment: 'right',
-                    width:'20%'
+                    width:'30%',
+                    cellTemplate: cellTemplate
                 }
-            ]
+            ],
+            summary: {
+                groupItems: [{
+                    column: "Qty",
+                    summaryType: "sum",
+                    showInGroupFooter: true,
+                    valueFormat: qtyProp.PropertyTextValue,
+                    displayFormat: "{0}",
+                },{
+                    column: "Amount",
+                    summaryType: "sum",
+                    showInGroupFooter: true,
+                    valueFormat: currencyProp.PropertyTextValue,
+                    displayFormat: "{0}",
+                }],
+                totalItems: [{
+                    name: "Qty",
+                    showInColumn: "Qty",
+                    displayFormat: "{0}",
+                    valueFormat: qtyProp.PropertyTextValue,
+                    summaryType: "custom"
+                }, {
+                    name: "Amount",
+                    showInColumn: "Amount",
+                    displayFormat: "{0}",
+                    valueFormat: currencyProp.PropertyTextValue,
+                    summaryType: "custom"
+                    }],
+                calculateCustomSummary: function (options) {
+                    if (options.name === "Qty") {
+                        if (options.summaryProcess === "start") {
+                            options.totalValue = 0;
+                        }
+                        if (options.summaryProcess === "calculate") {
+                            if(options.value.TransactionStatus === 2)
+                                options.totalValue = options.totalValue + options.value.Qty;
+                        }
+                    }
+                    if (options.name === "Amount") {
+                        if (options.summaryProcess === "start") {
+                            options.totalValue = 0;
+                        }
+                        if (options.summaryProcess === "calculate") {
+                            if(options.value.TransactionStatus === 2)
+                                options.totalValue = options.totalValue + options.value.Amount;
+                        }
+                    }
+                }
+            }
         });
     }
 </script>

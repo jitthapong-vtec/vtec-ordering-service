@@ -71,24 +71,20 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                     var toDateStr = ToISODate(endDate);
 
                     var prop = await posRepo.GetProgramPropertyAsync(conn);
-                    var currencyFormat = prop.Select($"PropertyID = 12").FirstOrDefault()?.GetValue<string>("PropertyTextValue");
-                    var qtyFormat = prop.Select($"PropertyID = 15").FirstOrDefault()?.GetValue<string>("PropertyTextValue");
                     var dateFormat = prop.Select($"PropertyID = 13").FirstOrDefault()?.GetValue<string>("PropertyTextValue");
                     var ds = report.Report_BillData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);
 
                     var bills = new List<object>();
                     foreach (DataRow row in ds.Tables["BillData"].Rows)
                     {
-                        var statusId = row.GetValue<string>("TransactionStatusID");
-                        var status = (statusId == "99" || string.IsNullOrEmpty(statusId)) ? "Void" : ""; 
                         bills.Add(new
                         {
                             ShopName = row.GetValue<string>("ShopName"),
                             SaleDate = row.GetValue<DateTime>("SaleDate").ToString(dateFormat),
                             ReceiptNumber = row.GetValue<string>("ReceiptNumber"),
-                            Status = status,
-                            Qty = row.GetValue<decimal>("ReceiptTotalQty").ToString(qtyFormat),
-                            Amount = row.GetValue<decimal>("ReceiptPayPrice").ToString(currencyFormat)
+                            TransactionStatus = row.GetValue<int>("TransactionStatusID"),
+                            Qty = row.GetValue<decimal>("ReceiptTotalQty"),
+                            Amount = row.GetValue<decimal>("ReceiptPayPrice")
                         });
                     }
                     return Ok(bills);

@@ -4,7 +4,7 @@
     ViewData["Title"] = "Hourly Report";
 }
 
-<div class="mt-4 ml-1 mr-1 text-center">
+<div class="mt-4 mb-1 ml-1 mr-1 text-center">
     <div id="report-type-scrollview">
         @(Html.DevExtreme().ButtonGroup().ID("btn-group-report-type").KeyExpr("reportType")
                                             .FocusStateEnabled(true)
@@ -42,7 +42,10 @@
     </div>
 </div>
 
-<div id="html" class="m-4">
+<div class="card m-2">
+    <b class="card-header">Sales Hourly</b>
+    <div id="html" class="card-body">
+    </div>
 </div>
 
 <script>
@@ -52,16 +55,18 @@
 
     function loadReport() {
         let criteria = getCriteria();
+        let shopName = criteria.shopName;
         let shopIds = criteria.shopIds;
         let fromDate = moment(criteria.fromDate);
         let toDate = moment(criteria.toDate);
         let reportType = $("#btn-group-report-type").dxButtonGroup('instance').option('selectedItems')[0].reportType;
         let url = api + 'hourly?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString() + '&reportType=' + reportType;
 
+        $("#reportHeader").html("<b>" + shopName + "</b></br>" + moment(fromDate).format("D/M/Y") + " - " + moment(toDate).format("D/M/Y"));
+
         showLoading();
         $.getJSON(url, function (result) {
             var data = result.data;
-            console.log("hourlydata", data);
             $("#hourly_chart").dxChart('instance').option('dataSource', data.chartData);
             $("#stat-summary").text(data.stat.Summary);
             $("#stat-avg").text(data.stat.AvgPerHour);

@@ -8,16 +8,19 @@ using System.Threading.Tasks;
 using VerticalTec.POS.Report.Dashboard.Models;
 using vtecdbhelper;
 using VerticalTec.POS.Utils;
+using VerticalTec.POS.Database;
 
 namespace VerticalTec.POS.Report.Dashboard.Controllers
 {
     public class AuthenController : ApiControllerBase
     {
         IDbHelper _db;
+        IDatabase _db2;
 
-        public AuthenController(IDbHelper db)
+        public AuthenController(IDbHelper db, IDatabase db2)
         {
             _db = db;
+            _db2 = db2;
         }
 
         [HttpPost]
@@ -29,6 +32,17 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             {
                 using (var conn = await _db.ConnectAsync())
                 {
+                    var posRepo = new VtecRepo(_db2);
+                    var dtProp = await posRepo.GetProgramPropertyAsync(conn);
+                    var properies = new List<object>();
+                    foreach(var prop in dtProp.Select())
+                    {
+                        properies.Add(new {
+                            PropertyId = prop.GetValue<int>("PropertyID"),
+                            PropertyValue = prop.GetValue<int>("PropertyValue"),
+                            PropertyTextValue = prop.GetValue<string>("PropertyTextValue")
+                        });
+                    }
                     var cmd = _db.CreateCommand("select * from staffs where StaffCode=@userName and StaffPassword=@password", conn);
                     cmd.Parameters.Add(_db.CreateParameter("@userName", payload.Username ?? ""));
                     cmd.Parameters.Add(_db.CreateParameter("@password", HashUtil.SHA1(payload.Password ?? "")));
@@ -40,12 +54,15 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                     }
                     if (dtStaff.Rows.Count > 0)
                     {
-                        DataRow row = dtStaff.Rows[0];
+                        DataRow staffRow = dtStaff.Rows[0];
                         result.Data = new
                         {
-                            StaffID = row.GetValue<int>("StaffID"),
-                            StaffRoleID = row.GetValue<int>("StaffRoleID"),
-                            StaffName = $"{row.GetValue<string>("StaffFirstName")} {row.GetValue<string>("StaffLastName")}"
+                            StaffData = new {
+                                StaffId = staffRow.GetValue<int>("StaffID"),
+                                StaffRoleId = staffRow.GetValue<int>("StaffRoleID"),
+                                StaffName = $"{staffRow.GetValue<string>("StaffFirstName")} {staffRow.GetValue<string>("StaffLastName")}"
+                            },
+                            Properties = properies
                         };
                     }
                     else
