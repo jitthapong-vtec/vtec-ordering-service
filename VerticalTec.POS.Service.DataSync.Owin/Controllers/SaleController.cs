@@ -62,9 +62,9 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                     var brandId = 0;
                     try
                     {
-                        var shop = await shopData.GetShopDataAsync(conn, shopId);
-                        merchantId = shop.GetValue<int>("MerchantID");
-                        brandId = shop.GetValue<int>("BrandID");
+                        var dtShop = await shopData.GetShopDataAsync(conn, shopId);
+                        merchantId = dtShop.Rows[0].GetValue<int>("MerchantID");
+                        brandId = dtShop.Rows[0].GetValue<int>("BrandID");
                     }
                     catch (Exception) { }
                     var success = _posModule.SaleLogBranch(ref respText, ref dtSale, shopId, actionType, conn);
@@ -85,8 +85,6 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         {
                             KeyValuePair<string, string> saleData = new KeyValuePair<string, string>(saleDate, jsonSale);
                             exportSales.Add(saleData);
-
-                            await LogManager.Instance.WriteLogAsync($"Export sale {saleDate} => {jsonSale}", LogPrefix);
                         }
                     }
 

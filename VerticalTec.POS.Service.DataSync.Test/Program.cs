@@ -15,14 +15,14 @@ namespace VerticalTec.POS.Service.DataSync.Test
         {
             LogManager.Instance.InitLogManager("Log/");
 
-            string baseAddress = "http://localhost:9000/";
+            string baseAddress = "http://localhost:9001/";
 
             // Start OWIN host 
-            using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "mj").Configuration(appBuilder)))
+            using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "srifa").Configuration(appBuilder)))
             {
                 Task.Run(async () =>
                 {
-                    await TestCommissionApi(baseAddress);
+                    await TestSyncInv(baseAddress);
                 });
                 Console.ReadLine();
             }

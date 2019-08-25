@@ -57,72 +57,85 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                     }
 
                     var importApiUrl = $"{vdsUrl}/v1/inv/import";
-                    var respText = "";
-                    var exportJson = "";
-                    var dataSet = new DataSet();
-                    var exportType = 100;
-                    var documentId = 0;
-                    var keyShopId = 0;
+
                     var shopData = new ShopData(_database);
-                    var merchantId = 0;
-                    var brandId = 0;
-                    try
+                    var dtShop = await shopData.GetShopDataAsync(conn);
+                    var exportDatas = new Dictionary<int, string>();
+                    foreach (var shop in dtShop.Select($"IsInv=1"))
                     {
-                        var shop = await shopData.GetShopDataAsync(conn, shopId);
-                        merchantId = shop.GetValue<int>("MerchantID");
-                        brandId = shop.GetValue<int>("BrandID");
-                    }
-                    catch (Exception) { }
+                        var respText = "";
+                        var exportJson = "";
+                        var dataSet = new DataSet();
+                        var exportType = 100;
+                        var documentId = 0;
+                        var keyShopId = 0;
+                        var merchantId = shop.GetValue<int>("MerchantID");
+                        var brandId = shop.GetValue<int>("BrandID");
 
-                    var success = _posModule.ExportInventData(ref respText, ref dataSet, ref exportJson, exportType, docDate, shopId,
-                        documentId, keyShopId, merchantId, brandId, conn);
-                    if (success)
-                    {
-                        await LogManager.Instance.WriteLogAsync($"Export inven data => {exportJson}", LogPrefix);
+                        shopId = shop.GetValue<int>("ShopID");
 
-                        try
+                        var success = _posModule.ExportInventData(ref respText, ref dataSet, ref exportJson, exportType, docDate, shopId,
+                            documentId, keyShopId, merchantId, brandId, conn);
+                        if (success)
                         {
-                            await LogManager.Instance.WriteLogAsync($"Begin send inven data to hq", LogPrefix);
-
-                            var syncJson = await HttpClientManager.Instance.VDSPostAsync<string>(importApiUrl, exportJson);
-                            success = _posModule.SyncInventUpdate(ref respText, syncJson, conn);
-                            result.Success = success;
-                            if (success)
+                            var byteCount = 0;
+                            try
                             {
-                                result.Message = $"Send inventory data successfully";
-
-                                await LogManager.Instance.WriteLogAsync($"Import inven data at hq successfully", LogPrefix);
+                                byteCount = Encoding.UTF8.GetByteCount(exportJson);
                             }
-                            else
-                            {
-                                result.Message = respText;
-                            }
+                            catch (Exception) { }
+                            await LogManager.Instance.WriteLogAsync($"Export inven data of shop {shopId} {byteCount} bytes.", LogPrefix);
+                            exportDatas.Add(shopId, exportJson);
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            if (ex is HttpRequestException)
-                            {
-                                var reqEx = (ex as HttpRequestException);
-                                result.StatusCode = HttpStatusCode.RequestTimeout;
-                                result.Message = $"{reqEx.InnerException.Message} {vdsUrl}";
-                            }
-                            else if (ex is HttpResponseException)
-                            {
-                                var respEx = (ex as HttpResponseException);
-                                result.StatusCode = respEx.Response.StatusCode;
-                                result.Message = $"{(ex as HttpResponseException).Response.ReasonPhrase}";
-                            }
-                            else
-                            {
-                                result.Message = ex.Message;
-                            }
-                            await LogManager.Instance.WriteLogAsync($"Send inventory data fail {result.Message}", LogPrefix, LogManager.LogTypes.Error);
+                            await LogManager.Instance.WriteLogAsync($"Export inven data error => {respText}", LogPrefix);
                         }
                     }
-                    else
+
+                    if(exportDatas.Count > 0)
                     {
-                        result.StatusCode = HttpStatusCode.OK;
-                        result.Message = respText;
+                        foreach(var export in exportDatas)
+                        {
+                            try
+                            {
+                                await LogManager.Instance.WriteLogAsync($"Begin send inven data of shopId {export.Key} to hq", LogPrefix);
+
+                                var respText = "";
+                                var syncJson = await HttpClientManager.Instance.VDSPostAsync<string>(importApiUrl, export.Value);
+                                var success = _posModule.SyncInventUpdate(ref respText, syncJson, conn);
+                                result.Success = success;
+                                if (success)
+                                {
+                                    result.Message = $"Send inventory data successfully";
+                                    await LogManager.Instance.WriteLogAsync($"Import inven data at hq successfully", LogPrefix);
+                                }
+                                else
+                                {
+                                    result.Message = respText;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                if (ex is HttpRequestException)
+                                {
+                                    var reqEx = (ex as HttpRequestException);
+                                    result.StatusCode = HttpStatusCode.RequestTimeout;
+                                    result.Message = $"{reqEx.InnerException.Message} {vdsUrl}";
+                                }
+                                else if (ex is HttpResponseException)
+                                {
+                                    var respEx = (ex as HttpResponseException);
+                                    result.StatusCode = respEx.Response.StatusCode;
+                                    result.Message = $"{(ex as HttpResponseException).Response.ReasonPhrase}";
+                                }
+                                else
+                                {
+                                    result.Message = ex.Message;
+                                }
+                                await LogManager.Instance.WriteLogAsync($"Send inventory data fail {result.Message}", LogPrefix, LogManager.LogTypes.Error);
+                            }
+                        }
                     }
                 }
             }
