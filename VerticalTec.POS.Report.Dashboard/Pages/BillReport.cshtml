@@ -116,16 +116,18 @@
             summary: {
                 groupItems: [{
                     column: "Qty",
-                    summaryType: "sum",
+                    summaryType: "custom",
                     showInGroupFooter: true,
                     valueFormat: qtyProp.PropertyTextValue,
                     displayFormat: "{0}",
+                    showInColumn: "Qty"
                 },{
                     column: "Amount",
-                    summaryType: "sum",
+                    summaryType: "custom",
                     showInGroupFooter: true,
                     valueFormat: currencyProp.PropertyTextValue,
                     displayFormat: "{0}",
+                    showInColumn: "Amount"
                 }],
                 totalItems: [{
                     name: "Qty",

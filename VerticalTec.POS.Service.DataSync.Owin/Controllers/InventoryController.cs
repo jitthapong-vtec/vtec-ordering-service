@@ -66,7 +66,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         var respText = "";
                         var exportJson = "";
                         var dataSet = new DataSet();
-                        var exportType = 100;
+                        var exportType = 0;
                         var documentId = 0;
                         var keyShopId = 0;
                         var merchantId = shop.GetValue<int>("MerchantID");
