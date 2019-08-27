@@ -4,7 +4,7 @@
     ViewData["Title"] = "Hourly Report";
 }
 
-<div class="mt-4 mb-1 ml-1 mr-1 text-center">
+<div class="mt-4 ml-1 mr-1 text-center">
     <div id="report-type-scrollview">
         @(Html.DevExtreme().ButtonGroup().ID("btn-group-report-type").KeyExpr("reportType")
                                             .FocusStateEnabled(true)
@@ -18,15 +18,12 @@
     </div>
 </div>
 
-<div class="m-4">
+<div class="m-2">
     @Html.DevExtreme().Chart().ID("hourly_chart").Palette(VizPalette.Bright).CommonSeriesSettings(s => s.ArgumentField("Description").Type(SeriesType.Spline)).CommonAxisSettings(s => s.Grid(g => g.Visible(true))).Series(s =>
 {
-    s.Add().ValueField("Percentage").Name("Percentage");
-}).Tooltip(t => t.Enabled(true)).Legend(l => l
-    .VerticalAlignment(VerticalEdge.Bottom)
-    .HorizontalAlignment(HorizontalAlignment.Center)
+    s.Add().ValueField("Percentage");
+}).Tooltip(t => t.Enabled(true)).Legend(l => l.Visible(false)
     ).ArgumentAxis(a => a
-    .Label(l => l.Format(Format.Decimal))
     .AllowDecimals(false)
     .AxisDivisionFactor(60)
     ).Export(e => e.Enabled(false))
