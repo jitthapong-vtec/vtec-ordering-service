@@ -1,5 +1,9 @@
 ﻿@page
 @model VerticalTec.POS.Report.Dashboard.Pages.Public.FullTaxReportModel
-@{
-}
-<p>@Html.Raw(Model.Html)</p>
+
+<div class="m-2">
+    <div class="noprint float-right">
+        <a href="javascript: window.print()"><span>Print</span></a> | <a href="javascript: window.close()"><span>Close</span></a>
+    </div>
+    <p>@Html.Raw(Model.Html)</p>
+</div>
