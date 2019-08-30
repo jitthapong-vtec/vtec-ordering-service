@@ -4,6 +4,10 @@
     {
         Layout = "~/Pages/Shared/_LoginLayout.cshtml";
     }
+    else if(model is VerticalTec.POS.Report.Dashboard.Pages.Public.FullTaxReportModel)
+    {
+        Layout = "~/Pages/Shared/_PublicLayout.cshtml";
+    }
     else
     {
         Layout = "~/Pages/Shared/_Layout.cshtml";

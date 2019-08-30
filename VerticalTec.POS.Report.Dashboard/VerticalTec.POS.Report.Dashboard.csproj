@@ -33,6 +33,11 @@
   <ItemGroup>
     <Folder Include="Services\" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Update="Pages\Shared\_PublicLayout.cshtml">
+      <Pack>$(IncludeRazorContentInPack)</Pack>
+    </Content>
+  </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>
       <UserProperties TemplateFeatures="NETCORE CS RESPONSIVE" />
