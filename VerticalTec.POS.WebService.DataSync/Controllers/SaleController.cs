@@ -41,14 +41,6 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
                 result.Message = msg;
                 return result;
             }
-            try
-            {
-                await LogManager.Instance.WriteLogAsync($"Incoming sale import data {JsonConvert.SerializeObject(payload, formatting: Formatting.None)}", LogPrefix);
-            }
-            catch (Exception ex)
-            {
-                await LogManager.Instance.WriteLogAsync($"Invalid json format of inventory data {ex.Message}", LogPrefix, LogManager.LogTypes.Error);
-            }
             using (var conn = await _database.ConnectAsync() as SqlConnection)
             {
                 var importJson = "";
