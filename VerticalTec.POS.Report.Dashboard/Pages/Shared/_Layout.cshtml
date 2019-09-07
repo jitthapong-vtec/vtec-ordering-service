@@ -433,15 +433,15 @@
                 .Items(items =>
                 {
                     items.Add()
-                        .Text("Hourly")
-                        .Icon("clock")
-                        .Option("path", Url.Page("HourlyReport"))
-                        .Selected(IsCurrentPage("HourlyReport"));
-                    items.Add()
                         .Text("Summary")
                         .Icon("datafield")
                         .Option("path", Url.Page("SummaryReport"))
                         .Selected(IsCurrentPage("SummaryReport"));
+                    items.Add()
+                        .Text("Hourly")
+                        .Icon("clock")
+                        .Option("path", Url.Page("HourlyReport"))
+                        .Selected(IsCurrentPage("HourlyReport"));
                     items.Add()
                                 .Text("Bill")
                                 .Icon("money")

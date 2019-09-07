@@ -45,6 +45,9 @@
 
     function groupItemClick(e) {
         var grid = $("#billGrid").dxDataGrid('instance');
+
+        dataSource.filter("TransactionStatus", "=", 2);
+
         grid.columnOption("SaleDate", "groupIndex", undefined);
         grid.columnOption("ShopName", "groupIndex", undefined);
 
@@ -54,6 +57,10 @@
                 break;
             case "2":
                 grid.columnOption("ShopName", "groupIndex", 1);
+                break;
+            default:
+                dataSource.filter("TransactionStatus", ">", 1);
+                dataSource.reload();
                 break;
         }
     }
@@ -79,7 +86,7 @@
             dataSource: dataSource,
             showBorders: true,
             grouping: {
-                autoExpandAll: true,
+                autoExpandAll: false,
             },
             paging: {
                 pageSize: 100
@@ -103,6 +110,7 @@
                     format: qtyProp.PropertyTextValue,
                     alignment: 'right',
                     width: '20%',
+                    showInGroupFooter: true,
                     cellTemplate: cellTemplate
                 },
                 {
@@ -110,37 +118,40 @@
                     format: currencyProp.PropertyTextValue,
                     alignment: 'right',
                     width:'30%',
+                    showInGroupFooter: true,
                     cellTemplate: cellTemplate
                 }
             ],
             summary: {
-                //groupItems: [{
-                //    column: "Qty",
-                //    summaryType: "custom",
-                //    showInGroupFooter: true,
-                //    valueFormat: qtyProp.PropertyTextValue,
-                //    displayFormat: "{0}",
-                //    showInColumn: "Qty"
-                //},{
-                //    column: "Amount",
-                //    summaryType: "custom",
-                //    showInGroupFooter: true,
-                //    valueFormat: currencyProp.PropertyTextValue,
-                //    displayFormat: "{0}",
-                //    showInColumn: "Amount"
-                //}],
+                groupItems: [{
+                    column: "Qty",
+                    summaryType: "sum",
+                    valueFormat: qtyProp.PropertyTextValue,
+                    displayFormat: "{0}",
+                    alignByColumn: true,
+                    showInGroupFooter: false,
+                    showInColumn: "Qty"
+                },{
+                    column: "Amount",
+                    summaryType: "sum",
+                    valueFormat: currencyProp.PropertyTextValue,
+                    displayFormat: "{0}",
+                    alignByColumn: true,
+                    showInGroupFooter: false,
+                    showInColumn: "Amount"
+                }],
                 totalItems: [{
                     name: "Qty",
                     showInColumn: "Qty",
                     displayFormat: "{0}",
                     valueFormat: qtyProp.PropertyTextValue,
-                    summaryType: "custom"
+                    summaryType: "custom",
                 }, {
                     name: "Amount",
                     showInColumn: "Amount",
                     displayFormat: "{0}",
                     valueFormat: currencyProp.PropertyTextValue,
-                    summaryType: "custom"
+                    summaryType: "custom",
                     }],
                 calculateCustomSummary: function (options) {
                     if (options.name === "Qty") {
