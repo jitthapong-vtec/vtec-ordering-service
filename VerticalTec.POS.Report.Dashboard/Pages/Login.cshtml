@@ -1,31 +1,44 @@
 ﻿@page
 @model VerticalTec.POS.Report.Dashboard.Pages.LoginModel
-<div class="card m-4">
-    <b class="card-header">Login</b>
-    <div class="card-body">
-        <div class="dx-fieldset">
-            <div class="dx-field">
-                <div class="dx-field-label">User name</div>
-                <div class="dx-field-value">
-                    @Html.DevExtreme().TextBox().ID("txtUsername").StylingMode(EditorStylingMode.Outlined).Placeholder("Username")
+<div class="container">
+    <div class="d-flex flex-column">
+        <div class="card mt-4">
+            <b class="card-header">Login</b>
+            <div class="card-body">
+                <div class="dx-fieldset">
+                    <div class="dx-field">
+                        <div class="dx-field-label">User name</div>
+                        <div class="dx-field-value">
+                            @Html.DevExtreme().TextBox().ID("txtUsername").StylingMode(EditorStylingMode.Outlined).Placeholder("Username")
+                        </div>
+                    </div>
+                </div>
+                <div class="dx-fieldset">
+                    <div class="dx-field">
+                        <div class="dx-field-label">Password</div>
+                        <div class="dx-field-value">
+                            @Html.DevExtreme().TextBox().ID("txtPassword").StylingMode(EditorStylingMode.Outlined).Placeholder("Password").Mode(TextBoxMode.Password)
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="dx-fieldset">
-            <div class="dx-field">
-                <div class="dx-field-label">Password</div>
-                <div class="dx-field-value">
-                    @Html.DevExtreme().TextBox().ID("txtPassword").StylingMode(EditorStylingMode.Outlined).Placeholder("Password").Mode(TextBoxMode.Password)
-                </div>
+            <div class="card-footer text-center">
+                @Html.DevExtreme().Button().ID("btn-login").Text("Login").Height(48).Width(230).Template(@<text>
+                    @(Html.DevExtreme().LoadIndicator().ID("btn-login-indicator")
+                 .ElementAttr("class", "btn-indicator").Visible(false))
+                    <span class="dx-button-text"><%= text %></span>
+                </text>).OnClick("login")
             </div>
         </div>
-    </div>
-    <div class="card-footer text-center">
-        @Html.DevExtreme().Button().ID("btn-login").Text("Login").Height(48).Width(230).Template(@<text>
-            @(Html.DevExtreme().LoadIndicator().ID("btn-login-indicator")
-              .ElementAttr("class", "btn-indicator").Visible(false))
-            <span class="dx-button-text"><%= text %></span>
-        </text>).OnClick("login")
+        <div class="mt-5 text-center">
+            Powered by
+            <div>
+                <img src="~/img/receiptlogo.png" height="50" />
+            </div>
+            <small>
+                VerticalTec Co., Ltd.
+            </small>
+        </div>
     </div>
 </div>
 
@@ -78,7 +91,7 @@
                     localStorage.setItem('staff', JSON.stringify(staff));
                     localStorage.setItem('properties', JSON.stringify(properties));
 
-                    var url = '@Url.Content("~/HourlyReport")';
+                    var url = '@Url.Content("~/SummaryReport")';
                     location.href = url + "?staffId=" + staff.StaffId;
                 }
             }).fail(function (err) {
