@@ -143,7 +143,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="INSTALL.bat" />
     <None Include="packages.config" />
+    <None Include="REMOVE.bat" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ProjectInstaller.resx">
