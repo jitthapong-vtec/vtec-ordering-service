@@ -30,9 +30,9 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
 
         [HttpPost]
         [Route("v1/inv/import")]
-        public async Task<IHttpActionResult> ImportInventoryDataAsync([FromBody]object payload)
+        public async Task<IHttpActionResult> ImportInventoryDataAsync(int shopId, [FromBody]object payload)
         {
-            var result = new HttpActionResult<string>(Request);
+            var result = new HttpActionResult<object>(Request);
             if (payload == null)
             {
                 var msg = $"Very large JSON or invalid format!";
@@ -49,11 +49,17 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
                 var success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, payload.ToString(), conn as SqlConnection);
                 if (success)
                 {
+                    var exchInvJson = "";
+                    _posModule.ExchangeInventData(ref respText, ref exchInvJson, ref dataSet, shopId, conn as SqlConnection);
+                    var body = new
+                    {
+                        SyncLogJson = importJson,
+                        ExchInvJson = exchInvJson
+                    };
                     result.Success = success;
                     result.StatusCode = HttpStatusCode.Created;
-                    result.Data = importJson;
-
-                    await LogManager.Instance.WriteLogAsync("Import inventory data successfully", LogPrefix);
+                    result.Data = body;
+                    await LogManager.Instance.WriteLogAsync($"Import inventory data successfully", LogPrefix);
                 }
                 else
                 {

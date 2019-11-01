@@ -109,6 +109,7 @@
     <Compile Include="Models\GlobalExceptionHandler.cs" />
     <Compile Include="Models\HttpActionResult.cs" />
     <Compile Include="Models\HttpClientManager.cs" />
+    <Compile Include="Models\InvExchangeData.cs" />
     <Compile Include="Models\ProgramProperty.cs" />
     <Compile Include="Models\ResponseBody.cs" />
     <Compile Include="Models\ShopData.cs" />

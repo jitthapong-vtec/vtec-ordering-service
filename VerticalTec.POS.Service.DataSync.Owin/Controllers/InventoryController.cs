@@ -102,18 +102,19 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                                 await LogManager.Instance.WriteLogAsync($"Begin send inven data of shopId {export.Key} to hq", LogPrefix);
 
                                 var respText = "";
-                                var syncJson = await HttpClientManager.Instance.VDSPostAsync<string>(importApiUrl, export.Value);
-                                var success = _posModule.SyncInventUpdate(ref respText, syncJson, conn);
-                                result.Success = success;
+                                var exchInvData = await HttpClientManager.Instance.VDSPostAsync<InvExchangeData>($"{importApiUrl}?shopId={export.Key}", export.Value);
+                                var success = _posModule.ImportDocumentData(ref respText, exchInvData.ExchInvJson, conn);
+                                success = _posModule.SyncInventUpdate(ref respText, exchInvData.SyncLogJson, conn);
                                 if (success)
                                 {
-                                    result.Message = $"Send inventory data successfully";
-                                    await LogManager.Instance.WriteLogAsync($"Import inven data at hq successfully", LogPrefix);
+                                    result.Message = $"Sync inven data successfully";
+                                    await LogManager.Instance.WriteLogAsync($"Sync inven data successfully", LogPrefix);
                                 }
                                 else
                                 {
                                     result.Message = respText;
                                 }
+                                result.Success = success;
                             }
                             catch (Exception ex)
                             {
