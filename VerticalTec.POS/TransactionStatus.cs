@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VerticalTec.POS
+﻿namespace VerticalTec.POS
 {
     public enum TransactionStatus
     {
         New = 1,
         Success = 2,
-        Hold = 9,
-        Cancel = 97
+        Hold = 9
     }
 }

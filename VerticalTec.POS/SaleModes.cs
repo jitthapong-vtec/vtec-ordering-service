@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VerticalTec.POS
+﻿namespace VerticalTec.POS
 {
     public enum SaleModes
     {

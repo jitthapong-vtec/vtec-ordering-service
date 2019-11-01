@@ -6,21 +6,10 @@ namespace VerticalTec.POS
 {
     public class VtecPOSException : Exception
     {
-        public VtecPOSException(string tag) : base()
-        {
-            Tag = tag;
-        }
+        public VtecPOSException() { }
 
-        public VtecPOSException(string tag, string message) : base(message)
-        {
-            Tag = tag;
-        }
+        public VtecPOSException(string message) : base(message) { }
 
-        public VtecPOSException(string tag, string message, Exception innerException) : base(message, innerException)
-        {
-            Tag = tag;
-        }
-
-        public string Tag { get; set; }
+        public VtecPOSException(string message, Exception inner) : base(message, inner) { }
     }
 }
