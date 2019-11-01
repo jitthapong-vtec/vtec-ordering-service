@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using VerticalTec.POS.Restaurant.Core.Extensions;
 
 namespace VerticalTec.POS
 {

@@ -55,8 +55,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Ordering.Mo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.Ordering.Mobile", "VerticalTec.POS.Ordering.Mobile\VerticalTec.POS.Ordering.Mobile\VerticalTec.POS.Ordering.Mobile.csproj", "{18E53395-F89B-4820-9DD0-E65752B4DEB1}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "VerticalTec.POS.Service.DataSync.Setup", "VerticalTec.POS.Service.DataSync.Setup\VerticalTec.POS.Service.DataSync.Setup.vdproj", "{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -303,18 +301,6 @@ Global
 		{18E53395-F89B-4820-9DD0-E65752B4DEB1}.Release|iPhone.Build.0 = Release|Any CPU
 		{18E53395-F89B-4820-9DD0-E65752B4DEB1}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{18E53395-F89B-4820-9DD0-E65752B4DEB1}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Debug|Any CPU.ActiveCfg = Debug
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Debug|Any CPU.Build.0 = Debug
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Debug|iPhone.ActiveCfg = Debug
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Debug|iPhone.Build.0 = Debug
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Debug|iPhoneSimulator.ActiveCfg = Debug
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Debug|iPhoneSimulator.Build.0 = Debug
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Release|Any CPU.ActiveCfg = Release
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Release|Any CPU.Build.0 = Release
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Release|iPhone.ActiveCfg = Release
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Release|iPhone.Build.0 = Release
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Release|iPhoneSimulator.ActiveCfg = Release
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A}.Release|iPhoneSimulator.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -340,7 +326,6 @@ Global
 		{08C43FD2-DF73-4F82-86F2-30FFCCBBA2AE} = {D54526C9-9B57-4E58-A6FD-C55191E0F08B}
 		{3F1CBE22-5177-4773-AAF3-78B54495E230} = {D54526C9-9B57-4E58-A6FD-C55191E0F08B}
 		{18E53395-F89B-4820-9DD0-E65752B4DEB1} = {D54526C9-9B57-4E58-A6FD-C55191E0F08B}
-		{4F0C807F-A39C-45DB-BE4E-F3A93CA1296A} = {57A163AA-84E0-4C9B-A60A-143D02F2B4C3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {78C7C73D-61E1-4D50-8A64-4A27D7E782F9}

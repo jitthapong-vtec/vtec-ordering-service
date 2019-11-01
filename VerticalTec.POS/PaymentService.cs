@@ -5,10 +5,8 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VerticalTec.POS.Restaurant.Core.Database;
-using VerticalTec.POS.Restaurant.Core.Exceptions;
-using VerticalTec.POS.Restaurant.Core.Extensions;
-using VerticalTec.POS.Restaurant.Core.Models;
+using VerticalTec.POS.Database;
+using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Restaurant.Core.Services
