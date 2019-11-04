@@ -74,15 +74,15 @@ namespace VerticalTec.POS
             throw new NotImplementedException();
         }
 
-        public async Task<DataSet> CheckBillAsync(IDbConnection conn, Transaction transaction)
+        public async Task<DataSet> CheckBillAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int terminalId, int staffId, int langId)
         {
             var myConn = conn as MySqlConnection;
             var responseText = "";
             var unSubmitOrder = 0;
-            var saleDate = await _posRepo.GetSaleDateAsync(conn, transaction.ShopID, true);
+            var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
 
-            _posModule.Table_CheckSubmitOrder(ref responseText, "front", ref unSubmitOrder, transaction.TransactionID,
-                transaction.ComputerID, transaction.ShopID, saleDate, transaction.LangID, myConn);
+            _posModule.Table_CheckSubmitOrder(ref responseText, "front", ref unSubmitOrder, transactionId,
+                computerId, shopId, saleDate, langId, myConn);
             if (unSubmitOrder > 0)
             {
                 throw new VtecPOSException(string.IsNullOrEmpty(responseText) ? "Some orders are not submit to kitchen please submit orders first" : responseText);
@@ -93,8 +93,8 @@ namespace VerticalTec.POS
             var noPrintCopy = 0;
             DataSet dsPrintData = new DataSet();
             var isSuccess = _posModule.BillCheck(ref responseText, ref receiptHtml, ref receiptCopyHtml, ref noPrintCopy, ref dsPrintData,
-                (int)ViewBillTypes.Print, transaction.TransactionID, transaction.ComputerID, transaction.ShopID, 0,
-                "front", transaction.LangID, transaction.StaffID, transaction.TerminalID, 1, myConn);
+                (int)ViewBillTypes.Print, transactionId, computerId, shopId, 0,
+                "front", langId, staffId, terminalId, 1, myConn);
             if (!isSuccess)
                 throw new VtecPOSException(responseText);
             return dsPrintData;
@@ -141,11 +141,11 @@ namespace VerticalTec.POS
             DataTable dtComment = await _posRepo.GetProductFixModifierAsync(conn, shopId, productCode, saleMode);
             DataSet orderDataSet = await _posRepo.GetOrderDataAsync(conn, transactionId, computerId);
 
-            var orders = (from order in orderDataSet.Tables["Orders"].AsEnumerable()
+            var orders = (from order in orderDataSet.Tables["Orders"].ToEnumerable()
                           where order.GetValue<int>("OrderDetailLinkID") == parentOrderDetailId
                           select order).ToList();
 
-            var modifierOrder = (from commentProduct in dtComment.AsEnumerable()
+            var modifierOrder = (from commentProduct in dtComment.ToEnumerable()
                                  join order in orders
                                  on commentProduct.GetValue<int>("ProductID") equals order.GetValue<int>("ProductID") into gj
                                  from orderComment in gj.DefaultIfEmpty()
@@ -214,7 +214,7 @@ namespace VerticalTec.POS
 
             var ds = await _posRepo.GetOrderDataAsync(conn, transactionId, computerId, langId);
 
-            dataSet = (from bill in ds.Tables["Bill"].AsEnumerable()
+            dataSet = (from bill in ds.Tables["Bill"].ToEnumerable()
                        select new
                        {
                            TransactionID = bill.GetValue<int>("TransactionID"),
@@ -249,7 +249,7 @@ namespace VerticalTec.POS
                            ReceiptGrandTotal = bill.GetValue<decimal>("ReceiptGrandTotal"),
                            ReceiptVAT = bill.GetValue<double>("ReceiptVAT"),
                            ReferenceNo = bill.GetValue<string>("ReferenceNo"),
-                           Orders = (from order in ds.Tables["Orders"].AsEnumerable()
+                           Orders = (from order in ds.Tables["Orders"].ToEnumerable()
                                      select new
                                      {
                                          TransactionID = bill.GetValue<int>("TransactionID"),

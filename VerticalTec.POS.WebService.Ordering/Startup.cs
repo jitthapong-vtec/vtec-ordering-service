@@ -41,7 +41,7 @@ namespace VerticalTec.POS.WebService.Ordering
             .UseLiteDbStorage(Configuration.GetConnectionString("Hangfire")));
             services.AddHangfireServer();
 
-            services.AddSingleton<INLogManager, NLogManager>();
+            services.AddSingleton<ILogService, LogService>();
             services.AddTransient<IDatabase>(db => new MySqlDatabase(Configuration.GetConnectionString("MySql")));
             services.AddTransient<IOrderingService, OrderingService>();
 

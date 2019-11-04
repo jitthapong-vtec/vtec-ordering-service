@@ -23,10 +23,10 @@ namespace VerticalTec.POS.WebService.Ordering.Controllers
     {
         IDatabase _database;
         IOrderingService _orderingService;
-        INLogManager _log;
+        ILogService _log;
         VtecPOSRepo _posRepo;
 
-        public OrderingController(IDatabase database, IOrderingService orderingService, INLogManager log)
+        public OrderingController(IDatabase database, IOrderingService orderingService, ILogService log)
         {
             _database = database;
             _orderingService = orderingService;

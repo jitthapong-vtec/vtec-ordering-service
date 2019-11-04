@@ -39,6 +39,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Models
             }
         }
 
+        public ErrorCodes ErrorCode
+        {
+            set
+            {
+                _errorCode = value;
+            }
+        }
+
         public bool Success
         {
             set

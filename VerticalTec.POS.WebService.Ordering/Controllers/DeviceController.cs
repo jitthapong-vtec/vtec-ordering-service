@@ -16,10 +16,10 @@ namespace VerticalTec.POS.WebService.Ordering.Controllers
     public class DeviceController : ControllerBase
     {
         IDatabase _database;
-        INLogManager _log;
+        ILogService _log;
         VtecPOSRepo _posRepo;
 
-        public DeviceController(IDatabase database, INLogManager log)
+        public DeviceController(IDatabase database, ILogService log)
         {
             _database = database;
             _log = log;

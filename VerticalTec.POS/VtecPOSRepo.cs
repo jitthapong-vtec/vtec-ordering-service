@@ -73,10 +73,10 @@ namespace VerticalTec.POS
                 DataTable dtAditionOrder = await GetOrderDetailAsync(conn, transactionId, computerId);
                 DataTable dtCurrentStock = await GetCurrentStockAsync(conn, 0, 0);
 
-                var query = from order in dtOrders.AsEnumerable()
-                            join order2 in dtAditionOrder.AsEnumerable()
+                var query = from order in dtOrders.ToEnumerable()
+                            join order2 in dtAditionOrder.ToEnumerable()
                             on order.GetValue<int>("OrderDetailID") equals order2.GetValue<int>("OrderDetailID") into orderJoin
-                            join stock in dtCurrentStock.AsEnumerable()
+                            join stock in dtCurrentStock.ToEnumerable()
                             on order.GetValue<int>("ProductID") equals stock.GetValue<int>("ProductID") into stockJoin
                             from od in orderJoin.DefaultIfEmpty()
                             let ordArr = new object[]
@@ -267,7 +267,7 @@ namespace VerticalTec.POS
                     }
                     else if (dtBuffetSetting.Rows.Count > 0)
                     {
-                        var buffetTimes = (from settingRow in dtBuffetSetting.AsEnumerable()
+                        var buffetTimes = (from settingRow in dtBuffetSetting.ToEnumerable()
                                            where totalMinute >= settingRow.GetValue<int>("TimeMinute")
                                            select settingRow).ToArray();
                         if (buffetTimes.Count() > 0)
@@ -449,8 +449,8 @@ namespace VerticalTec.POS
                 {
                     try
                     {
-                        var query = (from fixComment in dtFixComment.AsEnumerable()
-                                     join comment in dtComment.AsEnumerable()
+                        var query = (from fixComment in dtFixComment.ToEnumerable()
+                                     join comment in dtComment.ToEnumerable()
                                      on fixComment.GetValue<string>("CommentCode") equals comment.GetValue<string>("ProductCode")
                                      select comment).ToList();
                         if (query.Count > 0)
@@ -1032,7 +1032,7 @@ namespace VerticalTec.POS
                 else if (propLevel == 2)
                     keyId = computerId;
 
-                var propLevelShop = dtProp.AsEnumerable().Where(row => row.GetValue<int>("KeyID") == keyId).FirstOrDefault();
+                var propLevelShop = dtProp.ToEnumerable().Where(row => row.GetValue<int>("KeyID") == keyId).FirstOrDefault();
                 if (propLevelShop != null)
                     propRow = propLevelShop;
             }

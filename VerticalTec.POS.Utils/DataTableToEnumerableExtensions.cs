@@ -7,7 +7,7 @@ namespace VerticalTec.POS.Utils
 {
     public static class DataTableToEnumerableExtensions
     {
-        public static IEnumerable<DataRow> AsEnumerable(this DataTable dt)
+        public static IEnumerable<DataRow> ToEnumerable(this DataTable dt)
         {
             foreach(DataRow row in dt.Rows)
             {

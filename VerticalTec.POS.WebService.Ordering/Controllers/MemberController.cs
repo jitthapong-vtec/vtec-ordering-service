@@ -18,11 +18,11 @@ namespace VerticalTec.POS.WebService.Ordering.Controllers
     [ApiController]
     public class MemberController : ControllerBase
     {
-        INLogManager _log;
+        ILogService _log;
         IDatabase _database;
         VtecPOSRepo _posRepo;
 
-        public MemberController(IDatabase database, INLogManager log)
+        public MemberController(IDatabase database, ILogService log)
         {
             _database = database;
             _log = log;

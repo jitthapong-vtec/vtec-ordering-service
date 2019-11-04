@@ -18,10 +18,10 @@ namespace VerticalTec.POS.OrderingApi.Services
     {
         IDatabase _db;
         IOrderingService _orderingService;
-        INLogManager _log;
+        ILogService _log;
         VtecPOSRepo _posRepo;
 
-        public PrintService(IDatabase database, IOrderingService orderingService, INLogManager log)
+        public PrintService(IDatabase database, IOrderingService orderingService, ILogService log)
         {
             _db = database;
             _orderingService = orderingService;

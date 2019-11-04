@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace VerticalTec.POS.WebService.Ordering.Models
+namespace VerticalTec.POS.Service.Ordering.Owin.Models
 {
     public class PrintData
     {

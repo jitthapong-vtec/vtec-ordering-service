@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http.Dependencies;
 using Unity;
+using Unity.Exceptions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin
 {
