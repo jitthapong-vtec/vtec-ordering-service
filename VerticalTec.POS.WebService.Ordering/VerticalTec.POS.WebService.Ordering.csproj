@@ -1,25 +1,64 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Models\" />
+    <Content Remove="nlog.config" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.9" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-rc2" />
+    <None Include="nlog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.7" />
+    <PackageReference Include="Hangfire.Core" Version="1.7.7" />
+    <PackageReference Include="Hangfire.LiteDB" Version="0.2.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-rc4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj" />
     <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj" />
     <ProjectReference Include="..\VerticalTec.POS\VerticalTec.POS.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="LoyaltyGateWayLib">
+      <HintPath>..\DLLs\LoyaltyGateWayLib.dll</HintPath>
+    </Reference>
+    <Reference Include="PrintingObjLib">
+      <HintPath>..\DLLs\PrintingObjLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <HintPath>..\DLLs\System.Windows.Forms.dll</HintPath>
+    </Reference>
+    <Reference Include="VerticalTec.Device.Printer">
+      <HintPath>..\DLLs\VerticalTec.Device.Printer.dll</HintPath>
+    </Reference>
+    <Reference Include="VtecMessenger">
+      <HintPath>..\DLLs\VtecMessenger.dll</HintPath>
+    </Reference>
+    <Reference Include="vtecPOS">
+      <HintPath>..\DLLs\vtecPOS.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

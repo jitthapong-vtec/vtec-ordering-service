@@ -268,7 +268,7 @@ namespace VerticalTec.POS
                     else if (dtBuffetSetting.Rows.Count > 0)
                     {
                         var buffetTimes = (from settingRow in dtBuffetSetting.AsEnumerable()
-                                           where totalMinute >= settingRow.Field<int>("TimeMinute")
+                                           where totalMinute >= settingRow.GetValue<int>("TimeMinute")
                                            select settingRow).ToArray();
                         if (buffetTimes.Count() > 0)
                         {
@@ -452,9 +452,15 @@ namespace VerticalTec.POS
                         var query = (from fixComment in dtFixComment.AsEnumerable()
                                      join comment in dtComment.AsEnumerable()
                                      on fixComment.GetValue<string>("CommentCode") equals comment.GetValue<string>("ProductCode")
-                                     select comment).CopyToDataTable();
-                        if (query.Rows.Count > 0)
-                            dtComment = query;
+                                     select comment).ToList();
+                        if (query.Count > 0)
+                        {
+                            dtComment.Clear();
+                            foreach(var row in query)
+                            {
+                                dtComment.ImportRow(row);
+                            }
+                        }
                     }
                     catch (Exception) { }
                 }
@@ -981,6 +987,33 @@ namespace VerticalTec.POS
                 dtResult.Load(reader);
             }
             return dtResult;
+        }
+
+        public async Task<string> GetLoyaltyApiAsync(IDbConnection conn)
+        {
+            var baseUrl = await GetPropertyValueAsync(conn, 1013, "LoyaltyWebServiceUrl");
+            if (!baseUrl.EndsWith("/"))
+                baseUrl += "/";
+            return baseUrl;
+        }
+
+        public async Task<string> GetMenuImageBaseUrlAsync(IDbConnection conn, int shopId)
+        {
+            var baseImageUrl = await GetImageBaseUrlAsync(conn, shopId);
+            return $"{baseImageUrl}Products/";
+        }
+
+        public async Task<string> GetKioskMenuImageBaseUrlAsync(IDbConnection conn, int shopId)
+        {
+            var baseImageUrl = await GetImageBaseUrlAsync(conn, shopId);
+            return $"{baseImageUrl}Kiosk/Products/";
+        }
+
+        public async Task<string> GetImageBaseUrlAsync(IDbConnection conn, int shopId)
+        {
+            var rootDir = await GetPropertyValueAsync(conn, 1012, "RootWebDir", shopId);
+            var backoffice = await GetPropertyValueAsync(conn, 1012, "BackOfficePath", shopId);
+            return $"{rootDir}/{backoffice}/UploadImage/";
         }
 
         public async Task<string> GetPropertyValueAsync(IDbConnection conn, int propertyId, string param, int shopId = 0, int computerId = 0)

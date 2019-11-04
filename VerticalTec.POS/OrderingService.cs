@@ -74,7 +74,7 @@ namespace VerticalTec.POS
             throw new NotImplementedException();
         }
 
-        public async Task<bool> CheckBillAsync(IDbConnection conn, Transaction transaction)
+        public async Task<DataSet> CheckBillAsync(IDbConnection conn, Transaction transaction)
         {
             var myConn = conn as MySqlConnection;
             var responseText = "";
@@ -97,7 +97,7 @@ namespace VerticalTec.POS
                 "front", transaction.LangID, transaction.StaffID, transaction.TerminalID, 1, myConn);
             if (!isSuccess)
                 throw new VtecPOSException(responseText);
-            return isSuccess;
+            return dsPrintData;
         }
 
         public async Task<List<OrderDetail>> DeleteOrdersAsync(IDbConnection conn, List<OrderDetail> orders)
@@ -541,6 +541,19 @@ namespace VerticalTec.POS
             if (!isSuccess)
                 throw new VtecPOSException(responseText);
             return Task.FromResult(printData);
+        }
+
+        public Task<DataSet> GetBillDetail(IDbConnection conn, int transactionId, int computerId, int shopId, int langId)
+        {
+            var responseText = "";
+            var receiptText = "";
+            var copyReceiptText = "";
+            var noPrintCopy = 0;
+            var dsPrintData = new DataSet();
+            var isSuccess = _posModule.BillDetail(ref responseText, ref receiptText, ref copyReceiptText, ref noPrintCopy, ref dsPrintData, (int)ViewBillTypes.Print, transactionId, computerId, shopId, 0, "front", langId, 1, conn as MySqlConnection);
+            if (!isSuccess)
+                throw new VtecPOSException(responseText);
+            return Task.FromResult(dsPrintData);
         }
     }
 }

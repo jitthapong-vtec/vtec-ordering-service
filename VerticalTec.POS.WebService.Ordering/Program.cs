@@ -7,6 +7,7 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace VerticalTec.POS.WebService.Ordering
 {
@@ -14,6 +15,7 @@ namespace VerticalTec.POS.WebService.Ordering
     {
         public static void Main(string[] args)
         {
+            LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(), "/nlog.config"));
             CreateWebHostBuilder(args).Build().Run();
         }
 

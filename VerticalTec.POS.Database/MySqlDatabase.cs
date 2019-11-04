@@ -16,6 +16,11 @@ namespace VerticalTec.POS.Database
             _connectionString = $"Port={dbPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={dbServer};DATABASE={dbName};old guids=true;";
         }
 
+        public MySqlDatabase(string conStr)
+        {
+            _connectionString = conStr;
+        }
+
         public IDbConnection Connect()
         {
             var conn = new MySqlConnection(_connectionString);
