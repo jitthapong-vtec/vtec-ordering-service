@@ -57,6 +57,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             _container.RegisterType<IOrderingService, OrderingService>(new TransientLifetimeManager());
             _container.RegisterSingleton<ILogService, LogService>();
             _container.RegisterSingleton<IMessengerService, MessengerService>();
+            _container.RegisterSingleton<IPrintService, PrintService>();
             config.DependencyResolver = new UnityResolver(_container);
 
             config.EnableSwagger(c => c.SingleApiVersion("v1", "Vtec Ordering Api")).EnableSwaggerUi();

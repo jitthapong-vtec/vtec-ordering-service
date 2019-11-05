@@ -300,7 +300,7 @@ namespace VerticalTec.POS
                     ComputerID = row.GetValue<int>("ComputerID"),
                     TerminalID = row.GetValue<int>("OrderComputerID"),
                     ShopID = shopId,
-                    // TODO: OrderStaffID = staffId,
+                    OrderStaffID = row.GetValue<int>("OrderStaffID"),
                     OrderDetailLinkID = row.GetValue<int>("OrderDetailLinkID"),
                     OrderDetailID = row.GetValue<int>("OrderDetailID"),
                     OrderStatusID = row.GetValue<int>("OrderStatusID"),
@@ -339,7 +339,7 @@ namespace VerticalTec.POS
             await EditOrderAsync(conn, orderDetail, OrdersModifyTypes.ModifyQty);
             orderDetail.TotalQty = orderDetail.ToQty;
         }
-        //TODO: handle print kds
+
         public async Task<DataSet> MoveOrderAsync(IDbConnection conn, TableManage tableManage)
         {
             var myConn = conn as MySqlConnection;
@@ -423,7 +423,7 @@ namespace VerticalTec.POS
                 cmd.Parameters.Add(_database.CreateParameter("@computerId", computerId));
                 await _database.ExecuteNonQueryAsync(cmd);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new VtecPOSException(ex.Message);
             }
@@ -464,15 +464,14 @@ namespace VerticalTec.POS
                 await _posRepo.AddQuestionAsync(conn, tranData);
 
                 await _posRepo.SetComputerAccessAsync(conn, tranData.TableID, tranData.TerminalID);
-                //TODO: need update opentime?
-                //try
-                //{
-                //    var cmd = _database.CreateCommand("update ordertransactionfront set OpenTime=Now() where TransactionID=@tranId and ComputerID=@compId", conn);
-                //    cmd.Parameters.Add(_database.CreateParameter("@tranId", transactionId));
-                //    cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
-                //    cmd.ExecuteNonQuery();
-                //}
-                //catch (Exception) { }
+                try
+                {
+                    var cmd = _database.CreateCommand("update ordertransactionfront set OpenTime=Now() where TransactionID=@tranId and ComputerID=@compId", conn);
+                    cmd.Parameters.Add(_database.CreateParameter("@tranId", transactionId));
+                    cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
+                    cmd.ExecuteNonQuery();
+                }
+                catch (Exception) { }
             }
             else
             {
@@ -519,17 +518,17 @@ namespace VerticalTec.POS
                 throw new VtecPOSException(responseText);
             return Task.FromResult(isSuccess);
         }
-        //TODO: must call PrintKdsDataFromDataSet
+
         public Task<DataSet> MoveTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
         {
             return ManageTableOrder(conn, OrdersManagementActions.MoveTable, transactionId, computerId, shopId, saleDate, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);
         }
-        //TODO: must call PrintKdsDataFromDataSet
+
         public Task<DataSet> MergeTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
         {
             return ManageTableOrder(conn, OrdersManagementActions.MergeTable, transactionId, computerId, shopId, saleDate, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);
         }
-        //TODO: must call PrintKdsDataFromDataSet
+
         public Task<DataSet> SplitTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
         {
             return ManageTableOrder(conn, OrdersManagementActions.SplitTable, transactionId, computerId, shopId, saleDate, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);

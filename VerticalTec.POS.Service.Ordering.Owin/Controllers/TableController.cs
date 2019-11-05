@@ -1,4 +1,5 @@
-﻿using MySql.Data.MySqlClient;
+﻿using Hangfire;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using System;
 using System.Data;
@@ -41,8 +42,11 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                 try
                 {
                     var saleDate = await _posRepo.GetSaleDateAsync(conn, table.ShopID, true);
-                    await _orderingService.MoveTableOrderAsync(conn, table.TransactionID, table.ComputerID,
+                    var dsPrintData = await _orderingService.MoveTableOrderAsync(conn, table.TransactionID, table.ComputerID,
                         table.ShopID, saleDate, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
+
+                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80));
+                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, m => m.SendMessage("102|101"));
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
@@ -68,8 +72,11 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                 try
                 {
                     var saleDate = await _posRepo.GetSaleDateAsync(conn, table.ShopID, true);
-                    await _orderingService.MergeTableOrderAsync(conn, table.TransactionID, table.ComputerID,
+                    var dsPrintData = await _orderingService.MergeTableOrderAsync(conn, table.TransactionID, table.ComputerID,
                         table.ShopID, saleDate, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
+
+                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80));
+                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, m => m.SendMessage("102|101"));
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
@@ -95,8 +102,11 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                 try
                 {
                     var saleDate = await _posRepo.GetSaleDateAsync(conn, table.ShopID, true);
-                    await _orderingService.MergeTableOrderAsync(conn, table.TransactionID, table.ComputerID,
+                    var dsPrintData = await _orderingService.MergeTableOrderAsync(conn, table.TransactionID, table.ComputerID,
                         table.ShopID, saleDate, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
+                    
+                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80));
+                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, m => m.SendMessage("102|101"));
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;

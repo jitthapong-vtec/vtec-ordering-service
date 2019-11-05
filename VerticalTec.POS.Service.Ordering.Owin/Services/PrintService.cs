@@ -14,7 +14,7 @@ using vtecPOS.POSControl;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Services
 {
-    public class PrintService
+    public class PrintService : IPrintService
     {
         IDatabase _db;
         IOrderingService _orderingService;
@@ -162,7 +162,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             }
         }
 
-        Task Print(int shopId, int computerId, string printerIds, string printerNames, DataSet dsPrintData, int paperSize = 80)
+        public Task Print(int shopId, int computerId, string printerIds, string printerNames, DataSet dsPrintData, int paperSize = 80)
         {
             try
             {

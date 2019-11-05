@@ -65,6 +65,7 @@ namespace VerticalTec.POS
             if (isSuccess)
             {
                 DataTable dtOrderClone = dtOrders.Clone();
+                dtOrderClone.Columns.Add("OrderStaffID", typeof(int));
                 dtOrderClone.Columns.Add("SetGroupNo", typeof(int));
                 dtOrderClone.Columns.Add("PGroupID", typeof(int));
                 dtOrderClone.Columns.Add("QtyRatio", typeof(double));
@@ -81,6 +82,7 @@ namespace VerticalTec.POS
                             from od in orderJoin.DefaultIfEmpty()
                             let ordArr = new object[]
                             {
+                                od == null ? null : od["OrderStaffID"],
                                 od == null ? null : od["SetGroupNo"],
                                 od == null ? null : od["PGroupID"],
                                 od == null ? null : od["QtyRatio"]

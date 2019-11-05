@@ -183,7 +183,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                         PrinterNames = payload.PrinterNames,
                         PaperSize = payload.PaperSize
                     };
-                    BackgroundJob.Enqueue<PrintService>(p => p.PrintBill(printData));
+                    BackgroundJob.Enqueue<IPrintService>(p => p.PrintBill(printData));
                     _messenger.SendMessage();
                 }
                 catch (VtecPOSException ex)
@@ -394,7 +394,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                                 };
 
                                 await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.TableID);
-                                BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(tran));
+                                BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(tran));
 
                                 await ConfirmKioskPaymentAsync(conn, payload);
                                 result.Body = grc;
@@ -514,7 +514,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                                 };
 
                                 await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.TableID);
-                                BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(tran));
+                                BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(tran));
 
                                 await ConfirmKioskPaymentAsync(conn, payload);
                                 result.Body = grc;
@@ -615,7 +615,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                     PaperSize = payload.PaperSize
                 };
 
-                var parentId = BackgroundJob.Enqueue<PrintService>(p => p.PrintBill(printData));
+                var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.PrintBill(printData));
                 BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage("102|101"));
             }
             else

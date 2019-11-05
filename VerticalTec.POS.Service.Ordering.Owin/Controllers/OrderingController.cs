@@ -441,7 +441,11 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             {
                 try
                 {
-                    await _orderingService.MoveOrderAsync(conn, tableManage);
+                    var dsPrintData = await _orderingService.MoveOrderAsync(conn, tableManage);
+
+                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.Print(tableManage.ShopID, tableManage.ComputerID, "", "", dsPrintData, 80));
+                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage("102|101"));
+
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = tableManage;
 
@@ -468,7 +472,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                 await _orderingService.SubmitOrderAsync(conn, transaction.TransactionID, transaction.ComputerID, transaction.ShopID, transaction.TableID);
             }
             _messengerService.SendMessage($"102|101|{transaction.TableID}");
-            var parentId = BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(transaction));
+            var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(transaction));
             BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage($"102|101|{transaction.TableID}"));
             return result;
         }
@@ -478,7 +482,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
         public IHttpActionResult CheckBillAsync(TransactionPayload payload)
         {
             var result = new HttpActionResult<string>(Request);
-            BackgroundJob.Enqueue<PrintService>(p => p.PrintCheckBill(payload));
+            BackgroundJob.Enqueue<IPrintService>(p => p.PrintCheckBill(payload));
             result.StatusCode = HttpStatusCode.OK;
             result.Body = "";
             return result;
@@ -503,12 +507,12 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                     await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, 
                         payload.ShopID, payload.TableID);
                     _messengerService.SendMessage($"102|101|{payload.TableID}");
-                    var parentId = BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(payload));
+                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(payload));
                     BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage($"102|101|{payload.TableID}"));
                 }
                 else if (shopType == ShopTypes.FastFood)
                 {
-                    BackgroundJob.Enqueue<PrintService>(p => p.PrintCheckBill(payload));
+                    BackgroundJob.Enqueue<IPrintService>(p => p.PrintCheckBill(payload));
                 }
             }
             result.StatusCode = HttpStatusCode.OK;
@@ -572,7 +576,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                         cmd.ExecuteNonQuery();
                     }
 
-                    BackgroundJob.Enqueue<PrintService>(p => p.PrintCheckBill(transaction));
+                    BackgroundJob.Enqueue<IPrintService>(p => p.PrintCheckBill(transaction));
                 }
                 catch (VtecPOSException ex)
                 {
