@@ -6,29 +6,30 @@ namespace VerticalTec.POS.Utils
     {
         private static ILogger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public LogService()
-        {
-
-        }
+        public bool Enabled { get; set; } = true;
 
         public void LogDebug(string message)
         {
-            logger.Debug(message);
+            if (Enabled)
+                logger.Debug(message);
         }
 
         public void LogError(string message)
         {
-            logger.Error(message);
+            if (Enabled)
+                logger.Error(message);
         }
 
         public void LogInfo(string message)
         {
-            logger.Info(message);
+            if (Enabled)
+                logger.Info(message);
         }
 
         public void LogWarn(string message)
         {
-            logger.Warn(message);
+            if (Enabled)
+                logger.Warn(message);
         }
     }
 }

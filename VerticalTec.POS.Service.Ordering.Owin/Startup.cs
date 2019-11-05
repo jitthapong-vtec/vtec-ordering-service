@@ -24,11 +24,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin
     {
         IUnityContainer _container;
 
-        public Startup(string dbServer, string dbName)
+        public Startup(string dbServer, string dbName, bool enableLog = true)
         {
             AppConfig.Instance.DbServer = dbServer;
-            AppConfig.Instance.DbName = dbName; 
-            NLog.LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(), "/nlog.config"));
+            AppConfig.Instance.DbName = dbName;
+            AppConfig.Instance.EnableLog = enableLog;
         }
 
         private IEnumerable<IDisposable> GetHangfireServers()
@@ -58,6 +58,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             _container.RegisterSingleton<ILogService, LogService>();
             _container.RegisterSingleton<IMessengerService, MessengerService>();
             _container.RegisterSingleton<IPrintService, PrintService>();
+
+            _container.Resolve<ILogService>().Enabled = AppConfig.Instance.EnableLog;
+
             config.DependencyResolver = new UnityResolver(_container);
 
             config.EnableSwagger(c => c.SingleApiVersion("v1", "Vtec Ordering Api")).EnableSwaggerUi();
@@ -66,7 +69,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             config.MapHttpAttributeRoutes();
 
             appBuilder.UseHangfireAspNet(GetHangfireServers);
-            appBuilder.UseHangfireDashboard();
+            appBuilder.UseHangfireDashboard("/jobs");
             appBuilder.UseWebApi(config);
         }
     }

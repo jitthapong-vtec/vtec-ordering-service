@@ -3,7 +3,7 @@ using System.Configuration;
 
 namespace VerticalTec.POS.Service.Ordering
 {
-    public class Config
+    public class ServiceConfig
     {
         public static string GetDatabaseServer()
         {
@@ -17,13 +17,13 @@ namespace VerticalTec.POS.Service.Ordering
             return config.AppSettings.Settings["DBName"].Value;
         }
 
-        public static string GetPort()
+        public static string GetListenerPort()
         {
             var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
-            return config.AppSettings.Settings["Port"].Value;
+            return config.AppSettings.Settings["ListenerPort"].Value;
         }
 
-        public static bool IsEnableLog()
+        public static bool EnableLog()
         {
             var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
             return Convert.ToBoolean(config.AppSettings.Settings["EnableLog"].Value);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Owin.Hosting;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,29 +9,33 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
+using VerticalTec.POS.Service.Ordering.Owin;
 using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Service.Ordering
 {
     public partial class VtecOrderingService : ServiceBase
     {
-        const string LogPrefix = "Service_";
+        IDisposable _server;
 
         public VtecOrderingService()
         {
             InitializeComponent();
-            var logPath = $"{Path.GetDirectoryName(Config.GetExecPath())}/Log/";
-            LogManager.Instance.InitLogManager(logPath);
-            var enableLog = Config.IsEnableLog();
-            LogManager.Instance.EnableLog = enableLog;
         }
 
         protected override void OnStart(string[] args)
         {
+            var dbServer = ServiceConfig.GetDatabaseServer();
+            var dbName = ServiceConfig.GetDatabaseName();
+            var port = ServiceConfig.GetListenerPort();
+            var enableLog = ServiceConfig.EnableLog();
+            string baseAddress = $"http://+:{port}/";
+            _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName, enableLog).Configuration(appBuilder));
         }
 
         protected override void OnStop()
         {
+            _server?.Dispose();
         }
     }
 }

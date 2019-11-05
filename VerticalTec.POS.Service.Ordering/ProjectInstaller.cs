@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Microsoft.TeamFoundation.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Configuration.Install;
 using System.Linq;
+using System.ServiceProcess;
 using System.Threading.Tasks;
 
 namespace VerticalTec.POS.Service.Ordering
@@ -46,12 +49,12 @@ namespace VerticalTec.POS.Service.Ordering
                 // Get the current profile
                 profile = icfMgr.LocalPolicy.CurrentProfile;
 
-                var port = Config.GetPort();
+                var port = ServiceConfig.GetListenerPort();
                 // Set the port properties
                 portClass.Scope = NET_FW_SCOPE_.NET_FW_SCOPE_ALL;
                 portClass.Enabled = true;
                 portClass.Protocol = NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_TCP;
-                portClass.Name = "Vtec Data Synchronization Service";
+                portClass.Name = "Vtec Ordering Service";
                 portClass.Port = Convert.ToInt32(port);
 
                 // Add the port to the ICF Permissions List
