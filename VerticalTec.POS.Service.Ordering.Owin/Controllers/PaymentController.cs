@@ -382,7 +382,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                                 };
                                 payload.ExtraParam = JsonConvert.SerializeObject(edcObject);
 
-                                var tran = new Transaction()
+                                var tran = new TransactionPayload()
                                 {
                                     ShopID = payload.ShopID,
                                     TransactionID = payload.TransactionID,
@@ -393,7 +393,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                                     PrinterNames = payload.PrinterNames
                                 };
 
-                                await _orderingService.SubmitOrderAsync(conn, tran);
+                                await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.TableID);
                                 BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(tran));
 
                                 await ConfirmKioskPaymentAsync(conn, payload);
@@ -502,7 +502,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                                 };
                                 payload.ExtraParam = JsonConvert.SerializeObject(edcObject);
 
-                                var tran = new Transaction()
+                                var tran = new TransactionPayload()
                                 {
                                     ShopID = payload.ShopID,
                                     TransactionID = payload.TransactionID,
@@ -513,7 +513,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                                     PrinterNames = payload.PrinterNames
                                 };
 
-                                await _orderingService.SubmitOrderAsync(conn, tran);
+                                await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.TableID);
                                 BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(tran));
 
                                 await ConfirmKioskPaymentAsync(conn, payload);

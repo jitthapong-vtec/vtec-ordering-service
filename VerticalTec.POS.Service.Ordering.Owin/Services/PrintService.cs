@@ -29,27 +29,27 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             _posRepo = new VtecPOSRepo(database);
         }
 
-        public async Task<bool> PrintOrder(Transaction transaction)
+        public async Task<bool> PrintOrder(TransactionPayload payload)
         {
             using (var conn = await _db.ConnectAsync())
             {
                 var myConn = conn as MySqlConnection;
                 var posModule = new POSModule();
                 int defaultDecimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
-                string saleDate = await _posRepo.GetSaleDateAsync(conn, transaction.ShopID, true);
+                string saleDate = await _posRepo.GetSaleDateAsync(conn, payload.ShopID, true);
                 DataSet dsSummaryData = new DataSet();
                 DataSet dsSummaryOrderData = new DataSet();
                 DataSet dsOrderData = new DataSet();
                 var responseText = "";
 
-                var ePosPrint = await _posRepo.GetPropertyValueAsync(conn, 1010, "ePosPrint", transaction.ShopID);
-                var mobileSummaryPrint = await _posRepo.GetPropertyValueAsync(conn, 1010, "MobileSummaryPrint", transaction.ShopID);
+                var ePosPrint = await _posRepo.GetPropertyValueAsync(conn, 1010, "ePosPrint", payload.ShopID);
+                var mobileSummaryPrint = await _posRepo.GetPropertyValueAsync(conn, 1010, "MobileSummaryPrint", payload.ShopID);
 
                 var isSuccess = false;
                 if (mobileSummaryPrint == "1")
                 {
-                    isSuccess = posModule.Summary_Print(ref responseText, ref dsSummaryData, "front", transaction.ShopID, saleDate,
-                        transaction.TransactionID, transaction.ComputerID, transaction.StaffID, transaction.TerminalID, transaction.PrinterIds, myConn);
+                    isSuccess = posModule.Summary_Print(ref responseText, ref dsSummaryData, "front", payload.ShopID, saleDate,
+                        payload.TransactionID, payload.ComputerID, payload.StaffID, payload.TerminalID, payload.PrinterIds, myConn);
 
                     if (!isSuccess)
                     {
@@ -58,13 +58,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 }
 
                 int batchId = 0;
-                isSuccess = posModule.Table_PrintSummaryOrder(ref responseText, ref batchId, "front", transaction.PrinterIds,
-                    transaction.TransactionID, transaction.ComputerID, transaction.ShopID, saleDate, transaction.StaffID,
-                    transaction.TerminalID, transaction.TableID, transaction.LangID, defaultDecimalDigit, myConn);
+                isSuccess = posModule.Table_PrintSummaryOrder(ref responseText, ref batchId, "front", payload.PrinterIds,
+                    payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.StaffID,
+                    payload.TerminalID, payload.TableID, payload.LangID, defaultDecimalDigit, myConn);
                 if (isSuccess)
                 {
                     isSuccess = posModule.Table_PrintSummaryOrderData(ref responseText, ref dsSummaryOrderData, batchId, "front",
-                        transaction.TransactionID, transaction.ComputerID, transaction.ShopID, saleDate, transaction.LangID, myConn);
+                        payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
                     if (!isSuccess)
                     {
                         _log.LogError("An error occurred when Table_PrintSummaryOrderData " + responseText);
@@ -76,13 +76,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 }
 
                 batchId = 0;
-                isSuccess = posModule.Table_PrintOrder(ref responseText, ref batchId, "front", transaction.TransactionID,
-                    transaction.ComputerID, transaction.ShopID, saleDate, transaction.StaffID,
-                    transaction.TerminalID, transaction.TableID, transaction.LangID, defaultDecimalDigit, myConn);
+                isSuccess = posModule.Table_PrintOrder(ref responseText, ref batchId, "front", payload.TransactionID,
+                    payload.ComputerID, payload.ShopID, saleDate, payload.StaffID,
+                    payload.TerminalID, payload.TableID, payload.LangID, defaultDecimalDigit, myConn);
                 if (isSuccess)
                 {
                     isSuccess = posModule.Table_PrintOrderData(ref responseText, ref dsOrderData, batchId, "front",
-                        transaction.TransactionID, transaction.ComputerID, transaction.ShopID, saleDate, transaction.LangID, myConn);
+                        payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
                     if (!isSuccess)
                     {
                         _log.LogError(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrderDetail" : responseText);
@@ -110,15 +110,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     try
                     {
                         CDBUtil dbUtil = new CDBUtil();
-                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, transaction.ShopID,
-                            transaction.ComputerID, dsSummaryData);
-                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, transaction.ShopID,
-                            transaction.ComputerID, dsSummaryOrderData);
-                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, transaction.ShopID,
-                            transaction.ComputerID, dsOrderData);
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                            payload.ComputerID, dsSummaryData);
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                            payload.ComputerID, dsSummaryOrderData);
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                            payload.ComputerID, dsOrderData);
 
-                        posModule.Table_UpdateStatus(ref responseText, "front", transaction.TransactionID, transaction.ComputerID,
-                            transaction.ShopID, saleDate, transaction.LangID, myConn);
+                        posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
+                            payload.ShopID, saleDate, payload.LangID, myConn);
                     }
                     catch (Exception ex)
                     {
@@ -151,9 +151,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             {
                 try
                 {
-                    var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionId, payload.ComputerId, 
-                        payload.ShopId, payload.TerminalId, payload.StaffId, payload.LangId);
-                    await Print(payload.ShopId, payload.ComputerId, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
+                    var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionID, payload.ComputerID, 
+                        payload.ShopID, payload.TerminalID, payload.StaffID, payload.LangID);
+                    await Print(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
                 }
                 catch (Exception ex)
                 {

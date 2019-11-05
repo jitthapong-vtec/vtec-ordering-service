@@ -458,14 +458,14 @@ namespace VerticalTec.POS.OrderingApi.Controllers
         //TODO: v1/orders/submit http method to Post
         [HttpPost]
         [Route("v1/orders/submit")]
-        public async Task<IHttpActionResult> SubmitOrderAsync(Transaction transaction)
+        public async Task<IHttpActionResult> SubmitOrderAsync(TransactionPayload transaction)
         {
             _log.LogInfo($"Submit order {JsonConvert.SerializeObject(transaction)}");
 
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())
             {
-                await _orderingService.SubmitOrderAsync(conn, transaction);
+                await _orderingService.SubmitOrderAsync(conn, transaction.TransactionID, transaction.ComputerID, transaction.ShopID, transaction.TableID);
             }
             _messengerService.SendMessage($"102|101|{transaction.TableID}");
             var parentId = BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(transaction));
@@ -486,27 +486,29 @@ namespace VerticalTec.POS.OrderingApi.Controllers
         //TODO: v1/orders/salemode/submit to POST
         [HttpPost]
         [Route("v1/orders/salemode/submit")]
-        public async Task<IHttpActionResult> SubmitSaleModeOrderAsync(Transaction transaction)
+        public async Task<IHttpActionResult> SubmitSaleModeOrderAsync(TransactionPayload payload)
         {
-            _log.LogInfo($"Submit order {JsonConvert.SerializeObject(transaction)}");
+            _log.LogInfo($"Submit order {JsonConvert.SerializeObject(payload)}");
 
             var result = new HttpActionResult<string>(Request);
 
             using (var conn = await _database.ConnectAsync())
             {
-                await _orderingService.SubmitSaleModeOrderAsync(conn, transaction);
+                await _orderingService.SubmitSaleModeOrderAsync(conn, payload.TransactionID, payload.ComputerID, 
+                    payload.TransactionName, payload.TotalCustomer, payload.TransactionStatus);
 
-                var shopType = await _posRepo.GetShopTypeAsync(conn, transaction.ShopID);
+                var shopType = await _posRepo.GetShopTypeAsync(conn, payload.ShopID);
                 if (shopType == ShopTypes.RestaurantTable)
                 {
-                    await _orderingService.SubmitOrderAsync(conn, transaction);
-                    _messengerService.SendMessage($"102|101|{transaction.TableID}");
-                    var parentId = BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(transaction));
-                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage($"102|101|{transaction.TableID}"));
+                    await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, 
+                        payload.ShopID, payload.TableID);
+                    _messengerService.SendMessage($"102|101|{payload.TableID}");
+                    var parentId = BackgroundJob.Enqueue<PrintService>(p => p.PrintOrder(payload));
+                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage($"102|101|{payload.TableID}"));
                 }
                 else if (shopType == ShopTypes.FastFood)
                 {
-                    BackgroundJob.Enqueue<PrintService>(p => p.PrintCheckBill(transaction));
+                    BackgroundJob.Enqueue<PrintService>(p => p.PrintCheckBill(payload));
                 }
             }
             result.StatusCode = HttpStatusCode.OK;
@@ -551,7 +553,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
         //TODO: v1/orders/kiosk/printcheckbill POST
         [HttpPost]
         [Route("v1/orders/kiosk/printcheckbill")]
-        public async Task<IHttpActionResult> KioskPrintCheckBill(Transaction transaction)
+        public async Task<IHttpActionResult> KioskPrintCheckBill(TransactionPayload transaction)
         {
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())

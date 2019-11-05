@@ -369,19 +369,22 @@ namespace VerticalTec.POS
             return resultData;
         }
 
-        public async Task<bool> SubmitOrderAsync(IDbConnection conn, Transaction transaction)
+        public async Task<bool> SubmitOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int tableId)
         {
+            if (tableId == 0)
+                throw new VtecPOSException("TableID is require");
+
             string responseText = string.Empty;
             DataSet resultData = new DataSet();
             try
             {
-                string saleDate = await _posRepo.GetSaleDateAsync(conn, transaction.ShopID, true);
-                bool isSuccess = _posModule.KDS_Submit(ref responseText, ref resultData, transaction.TransactionID,
-                    transaction.ComputerID, transaction.ShopID, saleDate, "front", conn as MySqlConnection);
+                string saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
+                bool isSuccess = _posModule.KDS_Submit(ref responseText, ref resultData, transactionId,
+                    computerId, shopId, saleDate, "front", conn as MySqlConnection);
                 if (!isSuccess)
                     throw new VtecPOSException(string.IsNullOrEmpty(responseText) ? "An error occurred at SubmitOrders " : responseText);
 
-                await _posRepo.SetComputerAccessAsync(conn, transaction.TableID, 0);
+                await _posRepo.SetComputerAccessAsync(conn, tableId, 0);
                 return isSuccess;
             }
             catch (Exception ex)
@@ -390,7 +393,7 @@ namespace VerticalTec.POS
             }
         }
 
-        public async Task<bool> SubmitSaleModeOrderAsync(IDbConnection conn, Transaction transaction)
+        public async Task<bool> SubmitSaleModeOrderAsync(IDbConnection conn, int transactionId, int computerId, string transactionName, int totalCustomer, TransactionStatus status)
         {
             try
             {
@@ -398,26 +401,26 @@ namespace VerticalTec.POS
                     " set TransactionStatusID=@status";
                 var cmd = _database.CreateCommand(conn);
 
-                if (!string.IsNullOrEmpty(transaction.TransactionName))
+                if (!string.IsNullOrEmpty(transactionName))
                 {
                     sqlUpdate += ",TableName=@tableName";
-                    cmd.Parameters.Add(_database.CreateParameter("@tableName", transaction.TransactionName));
+                    cmd.Parameters.Add(_database.CreateParameter("@tableName", transactionName));
                 }
-                if (!string.IsNullOrEmpty(transaction.TransactionName))
+                if (!string.IsNullOrEmpty(transactionName))
                 {
                     sqlUpdate += ",TransactionName=@transactionName";
-                    cmd.Parameters.Add(_database.CreateParameter("@transactionName", transaction.TransactionName));
+                    cmd.Parameters.Add(_database.CreateParameter("@transactionName", transactionName));
                 }
-                if (transaction.TotalCustomer > 0)
+                if (totalCustomer > 0)
                 {
                     sqlUpdate += ",NoCustomer=@totalCustomer";
-                    cmd.Parameters.Add(_database.CreateParameter("@totalCustomer", transaction.TotalCustomer));
+                    cmd.Parameters.Add(_database.CreateParameter("@totalCustomer", totalCustomer));
                 }
                 sqlUpdate += " where TransactionID=@transactionId and ComputerID=@computerId";
                 cmd.CommandText = sqlUpdate;
-                cmd.Parameters.Add(_database.CreateParameter("@status", (int)transaction.TransactionStatus));
-                cmd.Parameters.Add(_database.CreateParameter("@transactionId", transaction.TransactionID));
-                cmd.Parameters.Add(_database.CreateParameter("@computerId", transaction.TerminalID));
+                cmd.Parameters.Add(_database.CreateParameter("@status", (int)status));
+                cmd.Parameters.Add(_database.CreateParameter("@transactionId", transactionId));
+                cmd.Parameters.Add(_database.CreateParameter("@computerId", computerId));
                 await _database.ExecuteNonQueryAsync(cmd);
             }
             catch(Exception ex)

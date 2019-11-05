@@ -11,6 +11,7 @@ namespace VerticalTec.POS
         public int TransactionID { get; set; }
         public int ComputerID { get; set; }
         public int TerminalID { get; set; }
+        public int TableID { get; set; }
         public int ShopID { get; set; }
         public int StoreID { get; set; }
         public string BrandName { get; set; }

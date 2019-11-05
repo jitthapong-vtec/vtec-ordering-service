@@ -363,14 +363,13 @@ namespace VerticalTec.POS.OrderingApi.Controllers
         }
 
         [HttpGet]
-        [Route("v1/tables/status")]
+        [Route("v1/tables/{shopId:int}/{tableId:int}")]
         public async Task<IHttpActionResult> GetTableStatusAsync(int shopId, int tableId)
         {
-            var result = new HttpActionResult<bool>(Request);
+            var result = new HttpActionResult<object>(Request);
             using (var conn = await _database.ConnectAsync())
             {
-                bool isOpen = false;
-                var cmd = _database.CreateCommand("select a.Status from tableno a join tablezone b " +
+                var cmd = _database.CreateCommand("select a.* from tableno a join tablezone b " +
                     "on a.ZoneID=b.ZoneID where a.Deleted=0 and a.TableID=@tableId and b.ShopID=@shopId", conn);
                 cmd.Parameters.Add(_database.CreateParameter("@tableId", tableId));
                 cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
@@ -378,12 +377,21 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                 {
                     if (reader.Read())
                     {
-                        if (reader.GetValue<int>("Status") > 0)
-                            isOpen = true;
+                        result.StatusCode = HttpStatusCode.OK;
+                        result.Body = new
+                        {
+                            TableID = reader.GetValue<int>("TableID"),
+                            ZoneID = reader.GetValue<int>("ZoneID"),
+                            TableNumber = reader.GetValue<string>("TableNumber"),
+                            TableName = reader.GetValue<string>("TableName"),
+                            Status = reader.GetValue<int>("Status")
+                        };
+                    }
+                    else
+                    {
+                        result.StatusCode = HttpStatusCode.NoContent;
                     }
                 }
-                result.StatusCode = HttpStatusCode.OK;
-                result.Body = isOpen;
             }
             return result;
         }

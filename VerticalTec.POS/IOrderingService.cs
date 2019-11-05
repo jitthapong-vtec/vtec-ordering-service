@@ -24,8 +24,8 @@ namespace VerticalTec.POS
         Task<string> GetBillHtmlAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int langId = 1);
         Task<DataSet> GetBillDetail(IDbConnection conn, int transactionId, int computerId, int shopId, int langId);
         Task<DataSet> CheckBillAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int terminalId, int staffId, int langId);
-        Task<bool> SubmitSaleModeOrderAsync(IDbConnection conn, Transaction transaction);
+        Task<bool> SubmitSaleModeOrderAsync(IDbConnection conn, int transactionId, int computerId, string transactionName, int totalCustomer, TransactionStatus status);
         Task<bool> CancelTransactionAsync(IDbConnection conn, int transactionId, int computerId);
-        Task<bool> SubmitOrderAsync(IDbConnection conn, Transaction transaction);
+        Task<bool> SubmitOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int tableId);
     }
 }
