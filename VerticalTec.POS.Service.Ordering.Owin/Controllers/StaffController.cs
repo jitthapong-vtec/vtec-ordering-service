@@ -19,9 +19,9 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             _database = database;
             _posRepo = new VtecPOSRepo(database);
         }
-        //TODO: not hash password
+
         [HttpPost]
-        [Route("v1/staffs")]
+        [Route("v1/staffs/identify")]
         public async Task<IHttpActionResult> IdentifyStaff(string staffCode = "", string password = "")
         {
             var result = new HttpActionResult<object>(Request);

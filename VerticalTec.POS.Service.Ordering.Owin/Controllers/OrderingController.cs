@@ -194,7 +194,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return response;
         }
-        //TODO: change v1/orders/update and http method
+
         [HttpPost]
         [Route("v1/orders/update")]
         public async Task<IHttpActionResult> UpdateOrderAsync(OrderDetail orderDetail)
@@ -257,7 +257,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return response;
         }
-        // TODO: change v1/orders/delete http method
+
         [HttpPost]
         [Route("v1/orders/delete")]
         public async Task<IHttpActionResult> DeleteOrdersAsync(List<OrderDetail> orders)
@@ -345,7 +345,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return response;
         }
-        //TODO: Change v1/orders/cancel http method to POST
+
         [HttpPost]
         [Route("v1/orders/cancel")]
         public async Task<IHttpActionResult> CancelTransactionAsync(int transactionId, int computerId)
@@ -431,7 +431,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return result;
         }
-        //TODO: change v1/orders/move http method to POST
+
         [HttpPost]
         [Route("v1/orders/move")]
         public async Task<IHttpActionResult> MoveOrderAsync(TableManage tableManage)
@@ -459,7 +459,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return result;
         }
-        //TODO: v1/orders/submit http method to Post
+
         [HttpPost]
         [Route("v1/orders/submit")]
         public async Task<IHttpActionResult> SubmitOrderAsync(TransactionPayload transaction)
@@ -476,7 +476,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage($"102|101|{transaction.TableID}"));
             return result;
         }
-        //TODO: change v1/orders/checkbill to POST
+
         [HttpPost]
         [Route("v1/orders/checkbill")]
         public IHttpActionResult CheckBillAsync(TransactionPayload payload)
@@ -487,7 +487,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             result.Body = "";
             return result;
         }
-        //TODO: v1/orders/salemode/submit to POST
+
         [HttpPost]
         [Route("v1/orders/salemode/submit")]
         public async Task<IHttpActionResult> SubmitSaleModeOrderAsync(TransactionPayload payload)

@@ -82,9 +82,9 @@ namespace VerticalTec.POS.OrderingApi.Controllers
 
             return result;
         }
-        //TODO: v1/promotions/member change to POST
+
         [HttpPost]
-        [Route("v1/promotions/member")]
+        [Route("v1/promotions/member/apply")]
         public async Task<IHttpActionResult> ApplyMemberPromotionAsync(OrderPromotion orderPromotion)
         {
             _log.LogInfo($"ApplyMember:{JsonConvert.SerializeObject(orderPromotion)}");
@@ -180,9 +180,9 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return result;
         }
-        //TODO: v1/promotions/vouchers to POST
+
         [HttpPost]
-        [Route("v1/promotions/vouchers")]
+        [Route("v1/promotions/vouchers/apply")]
         public async Task<IHttpActionResult> ApplyPromotionAsync(OrderPromotion orderPromotion)
         {
             _log.LogInfo($"ApplyVoucher:{JsonConvert.SerializeObject(orderPromotion)}");
@@ -229,8 +229,8 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             return result;
         }
 
-        [HttpDelete]
-        [Route("v1/promotions/vouchers")]
+        [HttpPost]
+        [Route("v1/promotions/vouchers/clear")]
         public async Task<IHttpActionResult> ClearPromotionAsync(int shopId, int terminalId, int transactionId, int computerId, int staffId, string voucherSn)
         {
             _log.LogInfo($"ClearVoucher: TransactionID {transactionId}, ComputerID {computerId}, VoucherSn {voucherSn}");

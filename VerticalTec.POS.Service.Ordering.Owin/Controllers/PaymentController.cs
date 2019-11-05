@@ -67,7 +67,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
         }
 
         [HttpPost]
-        [Route("v1/payments")]
+        [Route("v1/payments/add")]
         public async Task<IHttpActionResult> AddPaymentDetailAsync(PaymentData paymentData)
         {
             _log.LogInfo($"AddPayment => {JsonConvert.SerializeObject(paymentData)}");
@@ -82,8 +82,8 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             return result;
         }
 
-        [HttpDelete]
-        [Route("v1/payments")]
+        [HttpPost]
+        [Route("v1/payments/del")]
         public async Task<IHttpActionResult> DeletePaymentDetailAsync(int transactionId, int computerId, int payDetailId)
         {
             var result = new HttpActionResult<string>(Request);
@@ -158,7 +158,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return result;
         }
-        //TODO: v1/payments/finalize change to POST
+
         [HttpPost]
         [Route("v1/payments/finalize")]
         public async Task<IHttpActionResult> FinalizeBillAsync(PaymentData payload)

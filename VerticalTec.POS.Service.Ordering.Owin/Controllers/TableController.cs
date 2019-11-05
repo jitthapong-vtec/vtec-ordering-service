@@ -31,7 +31,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             _messenger = messenger;
             _posRepo = new VtecPOSRepo(database);
         }
-        //TODO: v1/tables/move to POST
+
         [HttpPost]
         [Route("v1/tables/move")]
         public async Task<IHttpActionResult> MoveTableAsync(TableManage table)
@@ -61,7 +61,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return result;
         }
-        //TODO: v1/tables/merge to POST
+
         [HttpPost]
         [Route("v1/tables/merge")]
         public async Task<IHttpActionResult> MergeTableAsync(TableManage table)
@@ -122,7 +122,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             return result;
         }
 
-        [HttpPut]
+        [HttpPost]
         [Route("v1/tables/open")]
         public async Task<IHttpActionResult> OpenTableAsync(OrderTransaction tranData)
         {
@@ -197,7 +197,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
         }
 
         [HttpGet]
-        [Route("v1/tables/computer")]
+        [Route("v1/tables/getaccess")]
         public async Task<IHttpActionResult> CheckAccessAsync(int tableId)
         {
             var result = new HttpActionResult<DataTable>(Request);
@@ -219,9 +219,9 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return result;
         }
-        //TODO: v1/tables/computer to POST
+
         [HttpPost]
-        [Route("v1/tables/computer")]
+        [Route("v1/tables/setaccess")]
         public async Task<IHttpActionResult> SetComputerAccessAsync(int tableId, int terminalId)
         {
             var result = new HttpActionResult<string>(Request);
@@ -233,7 +233,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             }
             return result;
         }
-        //TODO: v1/tables/transaction change to v1/tables/ordertran/update and POST
+
         [HttpPost]
         [Route("v1/tables/ordertran/update")]
         public async Task<IHttpActionResult> UpdateTableAsync(OrderTransaction data)
