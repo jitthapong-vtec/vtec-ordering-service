@@ -380,44 +380,57 @@ namespace VerticalTec.POS
 
         public async Task InsertUpdateMemberAsync(IDbConnection conn, MemberData member)
         {
-            string sql = "DELETE FROM Members WHERE MemberID=@memberId";
-            var cmd = _database.CreateCommand(sql, conn);
+            var alreadyExists = false;
+            var cmd = _database.CreateCommand("select count(MemberID) from Members WHERE MemberID=@memberId", conn);
             cmd.Parameters.Add(_database.CreateParameter("@memberId", member.MemberId));
-            await _database.ExecuteNonQueryAsync(cmd);
+            using (var reader = await _database.ExecuteReaderAsync(cmd))
+            {
+                if (reader.Read() && reader.GetInt32(0) > 0)
+                    alreadyExists = true;
+            }
 
-            sql = "INSERT INTO Members (MemberID, MemberGroupID, MemberCode,  MemberFirstName, MemberLastName, " +
-                    "MemberAddress1, MemberAddress2, MemberCity, MemberZipCode, " +
-                    "InputBy, InputDate, UpdateBy, UpdateDate, InsertAtShopID, Activated, Deleted) " +
-                    "VALUES (@memberId, @memberGroupId, @memberCode, @firstName, @lastName, @addr1, " +
-                    "@addr2, @city, @zipCode, @inputBy, @inputDate, @inputBy, @updateDate, @shopId, 1, 0)";
+            if (!alreadyExists)
+            {
+                var shopData = await GetShopDataAsync(conn);
+                cmd.CommandText = "INSERT INTO Members (MemberID, MemberGroupID, MemberCode,  MemberFirstName, MemberLastName, " +
+                        "MemberAddress1, MemberAddress2, MemberCity, MemberZipCode, " +
+                        "InputBy, InputDate, UpdateBy, UpdateDate, InsertAtShopID, Activated, Deleted) " +
+                        "VALUES (@memberId, @memberGroupId, @memberCode, @firstName, @lastName, @addr1, " +
+                        "@addr2, @city, @zipCode, @inputBy, @inputDate, @inputBy, @updateDate, @shopId, 1, 0)";
+                cmd.Parameters.Clear();
+                cmd.Parameters.Add(_database.CreateParameter("@memberId", member.MemberId));
+                cmd.Parameters.Add(_database.CreateParameter("@memberGroupId", member.MemberGroupId));
+                cmd.Parameters.Add(_database.CreateParameter("@memberCode", member.MemberCode));
+                cmd.Parameters.Add(_database.CreateParameter("@firstName", member.FirstName));
+                cmd.Parameters.Add(_database.CreateParameter("@lastName", member.LastName));
+                cmd.Parameters.Add(_database.CreateParameter("@addr1", member.Address1));
+                cmd.Parameters.Add(_database.CreateParameter("@addr2", member.Address2));
+                cmd.Parameters.Add(_database.CreateParameter("@city", member.City));
+                cmd.Parameters.Add(_database.CreateParameter("@zipCode", member.ZipCode));
+                cmd.Parameters.Add(_database.CreateParameter("@inputBy", 2));
+                cmd.Parameters.Add(_database.CreateParameter("@inputDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+                cmd.Parameters.Add(_database.CreateParameter("@updateDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+                cmd.Parameters.Add(_database.CreateParameter("@shopId", shopData.Rows[0].GetValue<int>("ShopID")));
+                await _database.ExecuteNonQueryAsync(cmd);
+            }
 
-            var shopData = await GetShopDataAsync(conn);
-            cmd = _database.CreateCommand(sql, conn);
+            var alreadyExistsMemberCard = false;
+            cmd.CommandText = "select count(MemberID) from Member_Card WHERE MemberID=@memberId";
+            cmd.Parameters.Clear();
             cmd.Parameters.Add(_database.CreateParameter("@memberId", member.MemberId));
-            cmd.Parameters.Add(_database.CreateParameter("@memberGroupId", member.MemberGroupId));
-            cmd.Parameters.Add(_database.CreateParameter("@memberCode", member.MemberCode));
-            cmd.Parameters.Add(_database.CreateParameter("@firstName", member.FirstName));
-            cmd.Parameters.Add(_database.CreateParameter("@lastName", member.LastName));
-            cmd.Parameters.Add(_database.CreateParameter("@addr1", member.Address1));
-            cmd.Parameters.Add(_database.CreateParameter("@addr2", member.Address2));
-            cmd.Parameters.Add(_database.CreateParameter("@city", member.City));
-            cmd.Parameters.Add(_database.CreateParameter("@zipCode", member.ZipCode));
-            cmd.Parameters.Add(_database.CreateParameter("@inputBy", 1));
-            cmd.Parameters.Add(_database.CreateParameter("@inputDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
-            cmd.Parameters.Add(_database.CreateParameter("@updateDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
-            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopData.Rows[0].GetValue<int>("ShopID")));
-            await _database.ExecuteNonQueryAsync(cmd);
-
-            sql = "DELETE FROM Member_Card WHERE MemberID=@memberId";
-            cmd = _database.CreateCommand(sql, conn);
-            cmd.Parameters.Add(_database.CreateParameter("@memberId", member.MemberId));
-            await _database.ExecuteNonQueryAsync(cmd);
-
-            sql = "INSERT INTO Member_Card (CardID, CardTypeID, MemberID, CardNumber, CardPoint, CardBalance, CardStatus) " +
-                        "VALUES (@cardId, 1, @cardId, '', 0, 0, 1)";
-            cmd = _database.CreateCommand(sql, conn);
-            cmd.Parameters.Add(_database.CreateParameter("@cardId", member.MemberId));
-            await _database.ExecuteNonQueryAsync(cmd);
+            using (var reader = await _database.ExecuteReaderAsync(cmd))
+            {
+                if (reader.Read() && reader.GetInt32(0) > 0)
+                    alreadyExistsMemberCard = true;
+            }
+            if (!alreadyExistsMemberCard)
+            {
+                cmd.CommandText = "INSERT INTO Member_Card (CardID, CardTypeID, MemberID, CardNumber, CardPoint, CardBalance, CardStatus) " +
+                            "VALUES (@cardId, 1, @cardId, '', 0, 0, 1)";
+                cmd.Parameters.Clear();
+                cmd.Parameters.Add(_database.CreateParameter("@cardId", member.MemberId));
+                await _database.ExecuteNonQueryAsync(cmd);
+            }
         }
 
         public async Task SetComputerAccessAsync(IDbConnection conn, int tableId, int accessComputerId)
@@ -458,7 +471,7 @@ namespace VerticalTec.POS
                         if (query.Count > 0)
                         {
                             dtComment.Clear();
-                            foreach(var row in query)
+                            foreach (var row in query)
                             {
                                 dtComment.ImportRow(row);
                             }
