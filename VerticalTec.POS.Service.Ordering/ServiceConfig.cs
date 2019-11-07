@@ -17,10 +17,10 @@ namespace VerticalTec.POS.Service.Ordering
             return config.AppSettings.Settings["DBName"].Value;
         }
 
-        public static string GetListenerPort()
+        public static string GetApiPort()
         {
             var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
-            return config.AppSettings.Settings["ListenerPort"].Value;
+            return config.AppSettings.Settings["ApiPort"].Value;
         }
 
         public static bool EnableLog()

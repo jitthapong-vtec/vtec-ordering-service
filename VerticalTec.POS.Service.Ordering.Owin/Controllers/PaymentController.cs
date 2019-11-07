@@ -16,7 +16,7 @@ using VerticalTec.POS.Service.Ordering.Owin.Services;
 using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
 
-namespace VerticalTec.POS.OrderingApi.Controllers
+namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class PaymentController : ApiController
     {

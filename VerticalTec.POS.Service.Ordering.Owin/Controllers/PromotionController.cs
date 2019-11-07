@@ -13,7 +13,7 @@ using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
 using vtecPOS.POSControl;
 
-namespace VerticalTec.POS.OrderingApi.Controllers
+namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class PromotionController : ApiController
     {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Owin.Hosting;
+using Microsoft.TeamFoundation.Common;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,10 +28,12 @@ namespace VerticalTec.POS.Service.Ordering
         {
             var dbServer = ServiceConfig.GetDatabaseServer();
             var dbName = ServiceConfig.GetDatabaseName();
-            var port = ServiceConfig.GetListenerPort();
+            var apiPort = ServiceConfig.GetApiPort();
             var enableLog = ServiceConfig.EnableLog();
-            string baseAddress = $"http://+:{port}/";
-            _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName, enableLog).Configuration(appBuilder));
+            string baseAddress = $"http://+:{apiPort}/";
+
+            var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
+            _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName, hangfireConStr, enableLog).Configuration(appBuilder));
         }
 
         protected override void OnStop()

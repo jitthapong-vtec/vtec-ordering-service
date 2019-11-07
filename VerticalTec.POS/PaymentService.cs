@@ -9,7 +9,7 @@ using VerticalTec.POS.Database;
 using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
 
-namespace VerticalTec.POS.Restaurant.Core.Services
+namespace VerticalTec.POS
 {
     public class PaymentService : IPaymentService
     {

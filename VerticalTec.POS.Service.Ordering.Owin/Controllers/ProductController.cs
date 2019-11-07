@@ -11,7 +11,7 @@ using VerticalTec.POS.Utils;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin;
 
-namespace VerticalTec.POS.OrderingApi.Controllers
+namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class ProductController : ApiController
     {
@@ -33,9 +33,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             {
                 var pageIndex = -1;
 
-                var rootDir = await _posRepo.GetPropertyValueAsync(conn, 1012, "RootWebDir", shopId);
-                var backoffice = _posRepo.GetPropertyValueAsync(conn, 1012, "BackOfficePath", shopId);
-                var imageBaseUrl = $"{rootDir}/{backoffice}/";
+                var hqUrl = await _posRepo.GetBackofficeHQPathAsync(conn, shopId);
 
                 DataTable dtPage = await _posRepo.GetFavoritePageIndexAsync(conn, shopId, pageType);
                 DataTable dtFavorite = await _posRepo.GetFavoritProductsAsync(conn, shopId, pageType, pageIndex, saleMode);
@@ -66,7 +64,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                                             ProductName1 = product.GetValue<string>("ProductName1"),
                                             ProductName2 = product.GetValue<string>("ProductName2"),
                                             ProductName3 = product.GetValue<string>("ProductName3"),
-                                            ProductImage = $"{imageBaseUrl}{product.GetValue<string>("ProductPictureServer")}",
+                                            ProductImage = $"{hqUrl}{product.GetValue<string>("ProductPictureServer")}",
                                             ProductPrice = product["ProductPrice"] == DBNull.Value ? -1 : product.GetValue<decimal>("ProductPrice"),
                                             CurrentStock = product.GetValue<double>("CurrentStock"),
                                             EnableCountDownStock = product["CurrentStock"] != DBNull.Value,
@@ -147,9 +145,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                 DataTable dtProductDept = await _posRepo.GetProductDeptsAsync(conn, 0, productDeptIds);
                 DataTable dtProducts = await _posRepo.GetProductsAsync(conn, shopId, 0, 0, productIds, saleMode);
 
-                var rootDir = await _posRepo.GetPropertyValueAsync(conn, 1012, "RootWebDir", shopId);
-                var backoffice = _posRepo.GetPropertyValueAsync(conn, 1012, "BackOfficePath", shopId);
-                var imageBaseUrl = $"{rootDir}/{backoffice}/";
+                var hqUrl = await _posRepo.GetBackofficeHQPathAsync(conn, shopId);
                 var products = new
                 {
                     ProductGroups = (from groupRow in dtProductGroup.AsEnumerable()
@@ -178,7 +174,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
                                     ProductName1 = item.GetValue<string>("ProductName1"),
                                     ProductName2 = item.GetValue<string>("ProductName2"),
                                     ProductName3 = item.GetValue<string>("ProductName3"),
-                                    ProductImage = $"{imageBaseUrl}/{item.GetValue<string>("ProductPictureServer")}",
+                                    ProductImage = $"{hqUrl}{item.GetValue<string>("ProductPictureServer")}",
                                     ProductPrice = item["ProductPrice"] == DBNull.Value ? -1 : item.GetValue<decimal>("ProductPrice"),
                                     CurrentStock = item.GetValue<double>("CurrentStock"),
                                     EnableCountDownStock = item["CurrentStock"] != DBNull.Value,
@@ -411,7 +407,7 @@ namespace VerticalTec.POS.OrderingApi.Controllers
             catch (Exception ex)
             {
                 result.StatusCode = HttpStatusCode.InternalServerError;
-                result.Message = $"An error occurred when try to load menu template => {ex.Message}";
+                result.Message = ex.Message;
             }
             return result;
         }

@@ -24,11 +24,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin
     {
         IUnityContainer _container;
 
-        public Startup(string dbServer, string dbName, bool enableLog = true)
+        public Startup(string dbServer, string dbName, string hangfileConnStr, bool enableLog = true)
         {
             AppConfig.Instance.DbServer = dbServer;
             AppConfig.Instance.DbName = dbName;
             AppConfig.Instance.EnableLog = enableLog;
+            AppConfig.Instance.HangfileConnStr = hangfileConnStr;
         }
 
         private IEnumerable<IDisposable> GetHangfireServers()
@@ -38,7 +39,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
                 .UseUnityActivator(_container)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UseLiteDbStorage("Hangfire.db");
+                .UseLiteDbStorage(AppConfig.Instance.HangfileConnStr);
 
             yield return new BackgroundJobServer();
         }
@@ -55,6 +56,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
                 AppConfig.Instance.DbName, 
                 AppConfig.Instance.DbPort));
             _container.RegisterType<IOrderingService, OrderingService>(new TransientLifetimeManager());
+            _container.RegisterType<IPaymentService, PaymentService>(new TransientLifetimeManager());
             _container.RegisterSingleton<ILogService, LogService>();
             _container.RegisterSingleton<IMessengerService, MessengerService>();
             _container.RegisterSingleton<IPrintService, PrintService>();

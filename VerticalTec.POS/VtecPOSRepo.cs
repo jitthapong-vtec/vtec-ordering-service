@@ -999,23 +999,23 @@ namespace VerticalTec.POS
             return baseUrl;
         }
 
-        public async Task<string> GetMenuImageBaseUrlAsync(IDbConnection conn, int shopId)
-        {
-            var baseImageUrl = await GetImageBaseUrlAsync(conn, shopId);
-            return $"{baseImageUrl}Products/";
-        }
-
         public async Task<string> GetKioskMenuImageBaseUrlAsync(IDbConnection conn, int shopId)
         {
-            var baseImageUrl = await GetImageBaseUrlAsync(conn, shopId);
-            return $"{baseImageUrl}Kiosk/Products/";
+            var baseImageUrl = await GetBackofficeHQPathAsync(conn, shopId);
+            return $"{baseImageUrl}UploadImage/Kiosk/Products/";
         }
 
-        public async Task<string> GetImageBaseUrlAsync(IDbConnection conn, int shopId)
+        public async Task<string> GetKioskAdsImageBaseUrlAsync(IDbConnection conn, int shopId)
+        {
+            var baseImageUrl = await GetBackofficeHQPathAsync(conn, shopId);
+            return $"{baseImageUrl}UploadImage/Kiosk/Ads/";
+        }
+
+        public async Task<string> GetBackofficeHQPathAsync(IDbConnection conn, int shopId)
         {
             var rootDir = await GetPropertyValueAsync(conn, 1012, "RootWebDir", shopId);
             var backoffice = await GetPropertyValueAsync(conn, 1012, "BackOfficePath", shopId);
-            return $"{rootDir}/{backoffice}/UploadImage/";
+            return $"{rootDir}/{backoffice}/";
         }
 
         public async Task<string> GetPropertyValueAsync(IDbConnection conn, int propertyId, string param, int shopId = 0, int computerId = 0)

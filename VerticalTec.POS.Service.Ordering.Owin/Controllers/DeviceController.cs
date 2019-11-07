@@ -46,9 +46,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     if (dtTerminal.Rows.Count > 0)
                     {
                         var shopId = dtTerminal.Rows[0].GetValue<int>("ShopID");
-                        var rootDir = await _posRepo.GetPropertyValueAsync(conn, 1012, "RootWebDir", shopId);
-                        var backoffice = await _posRepo.GetPropertyValueAsync(conn, 1012, "BackOfficePath", shopId);
-                        string imageBaseUrl = $"{rootDir}/{backoffice}/UploadImage/Kiosk/Ads/";
+                        string imageBaseUrl = await _posRepo.GetKioskAdsImageBaseUrlAsync(conn, shopId);
 
                         cmd.CommandText =
                             " select * from programpropertyvalue;" +

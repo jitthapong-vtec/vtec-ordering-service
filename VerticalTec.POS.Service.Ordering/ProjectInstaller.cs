@@ -49,7 +49,7 @@ namespace VerticalTec.POS.Service.Ordering
                 // Get the current profile
                 profile = icfMgr.LocalPolicy.CurrentProfile;
 
-                var port = ServiceConfig.GetListenerPort();
+                var port = ServiceConfig.GetApiPort();
                 // Set the port properties
                 portClass.Scope = NET_FW_SCOPE_.NET_FW_SCOPE_ALL;
                 portClass.Enabled = true;
@@ -78,13 +78,13 @@ namespace VerticalTec.POS.Service.Ordering
         {
             string dbServer = Context.Parameters["DBServer"];
             string dbName = Context.Parameters["DBName"];
-            string port = Context.Parameters["Port"];
+            string apiPort = Context.Parameters["ApiPort"];
 
             var execPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var config = ConfigurationManager.OpenExeConfiguration(execPath);
             config.AppSettings.Settings["DBServer"].Value = dbServer;
             config.AppSettings.Settings["DBName"].Value = dbName;
-            config.AppSettings.Settings["Port"].Value = port;
+            config.AppSettings.Settings["ApiPort"].Value = apiPort;
             config.Save();
 
             base.Install(stateSaver);
