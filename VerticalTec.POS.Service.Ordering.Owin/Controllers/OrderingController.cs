@@ -36,15 +36,24 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpGet]
         [Route("v1/orders")]
-        public async Task<IHttpActionResult> GetOrdersDetailAsync(int transactionId, int computerId, int shopId, int langId)
+        public async Task<IHttpActionResult> GetOrdersDetailAsync(int transactionId, int computerId, int shopId, int langId = 1)
         {
             var result = new HttpActionResult<List<OrderDetail>>(Request);
             using (var conn = await _database.ConnectAsync())
             {
                 try
                 {
-                    result.StatusCode = HttpStatusCode.OK;
-                    result.Body = await _orderingService.GetOrderDetailsAsync(conn, transactionId, computerId, shopId, langId: langId);
+                    var orders = await _orderingService.GetOrderDetailsAsync(conn, transactionId, computerId, shopId, langId: langId);
+                    if (orders.Count > 0)
+                    {
+                        result.StatusCode = HttpStatusCode.OK;
+                        result.Body = orders;
+                    }
+                    else
+                    {
+                        result.StatusCode = HttpStatusCode.NotFound;
+                        result.Message = "Not found orders";
+                    }
                 }
                 catch (VtecPOSException ex)
                 {
@@ -59,7 +68,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpGet]
         [Route("v1/orders/summary")]
-        public async Task<IHttpActionResult> GetOrderSummaryAsync(int transactionId, int computerId, int shopId, int langId = 0)
+        public async Task<IHttpActionResult> GetOrderSummaryAsync(int transactionId, int computerId, int shopId, int langId = 1)
         {
             var result = new HttpActionResult<object>(Request);
             using (var conn = await _database.ConnectAsync())
@@ -67,8 +76,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 try
                 {
                     var dataSet = await _orderingService.GetOrderDataAsync(conn, transactionId, computerId, shopId, langId);
-                    result.StatusCode = HttpStatusCode.OK;
-                    result.Body = dataSet;
+                    if (dataSet != null)
+                    {
+                        result.StatusCode = HttpStatusCode.OK;
+                        result.Body = dataSet;
+                    }
+                    else
+                    {
+                        result.StatusCode = HttpStatusCode.NotFound;
+                        result.Message = "Not found order summary";
+                    }
                 }
                 catch (VtecPOSException ex)
                 {
@@ -128,15 +145,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())
             {
-                try
+                var billHtml = await _orderingService.GetBillHtmlAsync(conn, transactionId, computerId, shopId);
+                if (!string.IsNullOrEmpty(billHtml))
                 {
                     result.StatusCode = HttpStatusCode.OK;
-                    result.Body = await _orderingService.GetBillHtmlAsync(conn, transactionId, computerId, shopId);
+                    result.Body = billHtml;
                 }
-                catch (VtecPOSException ex)
+                else
                 {
-                    result.StatusCode = HttpStatusCode.InternalServerError;
-                    result.Message = ex.Message;
+                    result.StatusCode = HttpStatusCode.NotFound;
+                    result.Message = "Not found bill html";
                 }
             }
             return result;
@@ -498,13 +516,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
             using (var conn = await _database.ConnectAsync())
             {
-                await _orderingService.SubmitSaleModeOrderAsync(conn, payload.TransactionID, payload.ComputerID, 
+                await _orderingService.SubmitSaleModeOrderAsync(conn, payload.TransactionID, payload.ComputerID,
                     payload.TransactionName, payload.TotalCustomer, payload.TransactionStatus);
 
                 var shopType = await _posRepo.GetShopTypeAsync(conn, payload.ShopID);
                 if (shopType == ShopTypes.RestaurantTable)
                 {
-                    await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, 
+                    await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.ShopID, payload.TableID);
                     _messengerService.SendMessage($"102|101|{payload.TableID}");
                     var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(payload));
