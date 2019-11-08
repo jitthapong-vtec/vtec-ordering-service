@@ -29,6 +29,43 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
         }
 
         [HttpPost]
+        [Route("v1/inv/exchange")]
+        public async Task<IHttpActionResult> GetExchangeInvenDataAsync(List<int> shopIds)
+        {
+            var result = new HttpActionResult<IEnumerable<object>>(Request);
+            using (var conn = await _database.ConnectAsync())
+            {
+                List<object> exchangeJsons = new List<object>();
+                foreach (var shopId in shopIds)
+                {
+                    var responseText = "";
+                    var docJson = "";
+                    var ds = new DataSet();
+                    var isSuccess = _posModule.ExchangeInventData(ref responseText, ref docJson, ref ds, shopId, conn as SqlConnection);
+                    if (isSuccess)
+                    {
+                        exchangeJsons.Add(new
+                        {
+                            ShopId = shopId,
+                            ExchInvJson = docJson
+                        });
+                    }
+                }
+                if (exchangeJsons.Count > 0)
+                {
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Data = exchangeJsons;
+                }
+                else
+                {
+                    result.StatusCode = HttpStatusCode.NotFound;
+                    result.Message = "No exchange inventory data";
+                }
+            }
+            return result;
+        }
+
+        [HttpPost]
         [Route("v1/inv/import")]
         public async Task<IHttpActionResult> ImportInventoryDataAsync(int shopId, [FromBody]object payload)
         {

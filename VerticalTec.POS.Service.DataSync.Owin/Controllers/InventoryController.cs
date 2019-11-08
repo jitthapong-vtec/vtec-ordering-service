@@ -31,6 +31,45 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
             _posModule = posModule;
         }
 
+        [HttpPost]
+        [Route("v1/inv/exchange")]
+        public async Task<IHttpActionResult> ExchangeInventoryDataAsync(List<int> shopIds)
+        {
+            await LogManager.Instance.WriteLogAsync($"Call v1/inv/exchange", LogPrefix);
+            var result = new HttpActionResult<string>(Request);
+            using (var conn = await _database.ConnectAsync() as MySqlConnection)
+            {
+                var prop = new ProgramProperty(_database);
+                var vdsUrl = prop.GetVdsUrl(conn);
+                var apiUrl = $"{vdsUrl}/v1/inv/exchange";
+                try
+                {
+                    var exchanges = await HttpClientManager.Instance.VDSPostAsync<List<InvExchangeData>>(apiUrl, shopIds);
+                    foreach(var exchange in exchanges)
+                    {
+                        var responseText = "";
+                        var exchInvJson = exchange.ExchInvJson;
+                        var shopId = exchange.ShopId;
+                        var isSuccess = _posModule.ImportDocumentData(ref responseText, exchInvJson, conn);
+                        if (isSuccess)
+                        {
+                            await LogManager.Instance.WriteLogAsync($"Import document shop {shopId} successfully.", LogPrefix);
+                        }
+                        else
+                        {
+                            await LogManager.Instance.WriteLogAsync($"Import document shop {shopId} fail {responseText}", LogPrefix);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result.StatusCode = HttpStatusCode.InternalServerError;
+                    result.Message = ex.Message;
+                }
+            }
+            return result;
+        }
+
         [HttpGet]
         [Route("v1/inv/sendtohq")]
         public async Task<IHttpActionResult> SendInvAsync(int shopId = 0, string docDate = "")
@@ -43,19 +82,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                 using (var conn = await _database.ConnectAsync() as MySqlConnection)
                 {
                     var prop = new ProgramProperty(_database);
-                    var vdsUrl = "";
-                    try
-                    {
-                        vdsUrl = prop.GetVdsUrl(conn);
-                    }
-                    catch (Exception)
-                    {
-                        result.StatusCode = HttpStatusCode.InternalServerError;
-                        result.Message = "vdsurl parameter in property 1050 is not set or did not enabled this property";
-                        await LogManager.Instance.WriteLogAsync($"{result.Message}", LogPrefix, LogManager.LogTypes.Error);
-                        return result;
-                    }
-
+                    var vdsUrl = prop.GetVdsUrl(conn);
                     var importApiUrl = $"{vdsUrl}/v1/inv/import";
 
                     var shopData = new ShopData(_database);
@@ -93,9 +120,9 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         }
                     }
 
-                    if(exportDatas.Count > 0)
+                    if (exportDatas.Count > 0)
                     {
-                        foreach(var export in exportDatas)
+                        foreach (var export in exportDatas)
                         {
                             try
                             {

@@ -8,6 +8,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
 {
     public class InvExchangeData
     {
+        public int ShopId { get; set; }
         public string SyncLogJson { get; set; }
         public string ExchInvJson { get; set; }
     }
