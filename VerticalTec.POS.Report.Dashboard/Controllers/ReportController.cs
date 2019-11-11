@@ -19,11 +19,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
     {
         IDbHelper _db;
         IDatabase _db2;
+        VtecPOSRepo _posRepo;
 
         public ReportController(IDbHelper db, IDatabase db2)
         {
             _db = db;
             _db2 = db2;
+            _posRepo = new VtecPOSRepo(db2);
         }
 
         [HttpGet]
@@ -63,14 +65,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                 using (var conn = await _db.ConnectAsync())
                 {
                     var report = new VTECReports.Reports(_db);
-                    var posRepo = new VtecRepo(_db2);
 
                     var cate = new Dictionary<int, string>();
                     shopIds = ValidateShopIds(shopIds);
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
 
-                    var prop = await posRepo.GetProgramPropertyAsync(conn);
+                    var prop = await _posRepo.GetProgramPropertyAsync(conn);
                     var dateFormat = prop.Select($"PropertyID = 13").FirstOrDefault()?.GetValue<string>("PropertyTextValue");
                     var ds = report.Report_BillData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);
 
@@ -106,14 +107,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                 using (var conn = await _db.ConnectAsync())
                 {
                     var report = new VTECReports.Reports(_db);
-                    var posRepo = new VtecRepo(_db2);
 
                     var cate = new Dictionary<int, string>();
 
                     shopIds = ValidateShopIds(shopIds);
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
-                    var prop = await posRepo.GetProgramPropertyAsync(conn, 12);
+                    var prop = await _posRepo.GetProgramPropertyAsync(conn, 12);
                     var currencyFormat = prop.Rows[0].GetValue<string>("PropertyTextValue");
 
                     var ds = report.Report_HourlyData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);

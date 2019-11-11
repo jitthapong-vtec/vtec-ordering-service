@@ -1056,14 +1056,17 @@ namespace VerticalTec.POS
             return val;
         }
 
-        public async Task<DataTable> GetProgramPropertyAsync(IDbConnection conn, int propertyId)
+        public async Task<DataTable> GetProgramPropertyAsync(IDbConnection conn, int propertyId = 0)
         {
-            string sqlQuery = "select a.*, b.PropertyLevelID from programpropertyvalue a" +
+            IDbCommand cmd = _database.CreateCommand("select a.*, b.PropertyLevelID from programpropertyvalue a" +
                 " left join programproperty b" +
                 " on a.PropertyID=b.PropertyID" +
-                " where a.PropertyID=@propertyId";
-            IDbCommand cmd = _database.CreateCommand(sqlQuery, conn);
-            cmd.Parameters.Add(_database.CreateParameter("@propertyId", propertyId));
+                " where b.Deleted=0", conn);
+            if (propertyId > 0)
+            {
+                cmd.CommandText += " and a.PropertyID = @propertyId";
+                cmd.Parameters.Add(_database.CreateParameter("@propertyId", propertyId));
+            }
             DataTable dtResult = new DataTable();
             using (var reader = await _database.ExecuteReaderAsync(cmd))
             {

@@ -32,7 +32,7 @@ namespace VerticalTec_POS_Report_Dashboard
             var connString = $"Data Source={dbServer};Initial Catalog={dbName};User ID=vtecPOS; Password=vtecpwnet";
             services.AddSingleton<IDbHelper>(new vtecdbhelper.SqlServerDatabase(connString));
             services.AddSingleton<IDatabase>(new VerticalTec.POS.Database.SqlServerDatabase(dbServer, dbName));
-
+            
             services.AddMvc().AddRazorPagesOptions(option => 
             {
                 option.Conventions.AddPageRoute("/Landing", "/");

@@ -16,11 +16,13 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
     {
         IDbHelper _db;
         IDatabase _db2;
+        VtecPOSRepo _posRepo;
 
         public AuthenController(IDbHelper db, IDatabase db2)
         {
             _db = db;
             _db2 = db2;
+            _posRepo = new VtecPOSRepo(db2);
         }
 
         [HttpPost]
@@ -32,8 +34,7 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
             {
                 using (var conn = await _db.ConnectAsync())
                 {
-                    var posRepo = new VtecRepo(_db2);
-                    var dtProp = await posRepo.GetProgramPropertyAsync(conn);
+                    var dtProp = await _posRepo.GetProgramPropertyAsync(conn);
                     var properies = new List<object>();
                     foreach(var prop in dtProp.Select())
                     {
