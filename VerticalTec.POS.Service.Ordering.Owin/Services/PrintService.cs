@@ -162,6 +162,23 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             }
         }
 
+        public async Task KioskPrintCheckBill(TransactionPayload payload)
+        {
+            using (var conn = await _db.ConnectAsync())
+            {
+                try
+                {
+                    var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionID, payload.ComputerID,
+                        payload.ShopID, payload.TerminalID, payload.StaffID, payload.LangID, true);
+                    await Print(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
+                }
+                catch (Exception ex)
+                {
+                    _log.LogError(ex.Message);
+                }
+            }
+        }
+
         public Task Print(int shopId, int computerId, string printerIds, string printerNames, DataSet dsPrintData, int paperSize = 80)
         {
             try

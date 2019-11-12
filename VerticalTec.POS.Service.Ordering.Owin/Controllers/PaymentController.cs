@@ -401,8 +401,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             }
                             else
                             {
+                                var errMsg = $"{grc.response_message}\n{grc.response_description}";
+                                if (string.IsNullOrEmpty(grc.response_message))
+                                    errMsg = "Unknown error!";
+
                                 result.StatusCode = HttpStatusCode.InternalServerError;
-                                result.Message = $"{grc.response_message}\n{grc.response_description}";
+                                result.Message = errMsg;
                                 _log.LogError($"{baseUrl} Fail: {result.Message}");
                             }
                         }
@@ -521,10 +525,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             }
                             else
                             {
+                                var errMsg = $"{grc.response_message}\n{grc.response_description}";
+                                if (string.IsNullOrEmpty(grc.response_message))
+                                    errMsg = "Unknow error!";
+                                
                                 result.StatusCode = HttpStatusCode.InternalServerError;
-                                result.Message = $"{grc.response_message}\n{grc.response_description}";
+                                result.Message = errMsg;
 
-                                _log.LogError($"{baseUrl} Fail: {grc.response_message}\n{grc.response_description}");
+                                _log.LogError($"{baseUrl} Fail: {errMsg}");
                             }
                         }
                         else

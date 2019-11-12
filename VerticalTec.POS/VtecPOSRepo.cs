@@ -288,9 +288,6 @@ namespace VerticalTec.POS
 
         public async Task<bool> GetOpenedTableTransactionAsync(IDbConnection conn, Transaction transaction)
         {
-            if (await GetShopTypeAsync(conn, transaction.ShopID) != ShopTypes.RestaurantTable)
-                return false;
-
             if (transaction.TableID == 0)
                 throw new VtecPOSException("You try to GetOpenedTableTransaction by passing tableId = 0");
 
@@ -447,7 +444,7 @@ namespace VerticalTec.POS
             catch (Exception) { }
         }
 
-        public async Task<DataTable> GetProductFixModifierAsync(IDbConnection conn, int shopId, string productCode, SaleModes saleMode)
+        public async Task<DataTable> GetProductModifierAsync(IDbConnection conn, int shopId, string productCode, SaleModes saleMode)
         {
             DataTable dtComment = await GetProductsAsync(conn, shopId, 0, 0, "", "14,15,16", saleMode);
             if (!string.IsNullOrEmpty(productCode))
@@ -464,17 +461,18 @@ namespace VerticalTec.POS
                 {
                     try
                     {
-                        var query = (from fixComment in dtFixComment.ToEnumerable()
-                                     join comment in dtComment.ToEnumerable()
-                                     on fixComment.GetValue<string>("CommentCode") equals comment.GetValue<string>("ProductCode")
-                                     select comment).ToList();
-                        if (query.Count > 0)
+                        var fixCommentQuery = (from fixComment in dtFixComment.ToEnumerable()
+                                               join comment in dtComment.ToEnumerable()
+                                               on fixComment.GetValue<string>("CommentCode") equals comment.GetValue<string>("ProductCode")
+                                               select comment);
+                        if (fixCommentQuery.Count() > 0)
                         {
-                            dtComment.Clear();
-                            foreach (var row in query)
+                            var dtClone = dtComment.Clone();
+                            foreach (var fixComment in fixCommentQuery)
                             {
-                                dtComment.ImportRow(row);
+                                dtClone.ImportRow(fixComment);
                             }
+                            dtComment = dtClone;
                         }
                     }
                     catch (Exception) { }
@@ -511,7 +509,7 @@ namespace VerticalTec.POS
                 " from staffs a" +
                 " left join language b" +
                 " on a.LangID=b.LangID" +
-                " where a.Deleted = 0";
+                " where a.Deleted = 0 and a.Activated=1";
             var cmd = _database.CreateCommand(conn);
             if (loginType == 0 || loginType == 1)
             {

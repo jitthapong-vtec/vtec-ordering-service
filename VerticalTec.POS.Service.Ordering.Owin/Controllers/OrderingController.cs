@@ -537,7 +537,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             result.Body = "";
             return result;
         }
-        //TODO: v1/orders/kiosk/cancel to POST
+
         [HttpPost]
         [Route("v1/orders/kiosk/cancel")]
         public async Task<IHttpActionResult> KioskCancelTransactionAsync(int transactionId, int computerId)
@@ -572,7 +572,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             return result;
         }
-        //TODO: v1/orders/kiosk/printcheckbill POST
+
         [HttpPost]
         [Route("v1/orders/kiosk/printcheckbill")]
         public async Task<IHttpActionResult> KioskPrintCheckBill(TransactionPayload transaction)
@@ -594,7 +594,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         cmd.ExecuteNonQuery();
                     }
 
-                    BackgroundJob.Enqueue<IPrintService>(p => p.PrintCheckBill(transaction));
+                    BackgroundJob.Enqueue<IPrintService>(p => p.KioskPrintCheckBill(transaction));
                 }
                 catch (VtecPOSException ex)
                 {

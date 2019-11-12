@@ -13,6 +13,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         Task<bool> PrintOrder(TransactionPayload payload);
         Task PrintBill(PrintData payload);
         Task PrintCheckBill(TransactionPayload payload);
+        Task KioskPrintCheckBill(TransactionPayload payload);
         Task Print(int shopId, int computerId, string printerIds, string printerNames, DataSet dsPrintData, int paperSize);
     }
 }

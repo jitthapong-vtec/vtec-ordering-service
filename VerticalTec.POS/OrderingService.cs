@@ -74,18 +74,21 @@ namespace VerticalTec.POS
             throw new NotImplementedException();
         }
 
-        public async Task<DataSet> CheckBillAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int terminalId, int staffId, int langId)
+        public async Task<DataSet> CheckBillAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int terminalId, int staffId, int langId, bool bypassChkUnsubmit)
         {
             var myConn = conn as MySqlConnection;
             var responseText = "";
             var unSubmitOrder = 0;
             var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
 
-            _posModule.Table_CheckSubmitOrder(ref responseText, "front", ref unSubmitOrder, transactionId,
-                computerId, shopId, saleDate, langId, myConn);
-            if (unSubmitOrder > 0)
+            if (!bypassChkUnsubmit)
             {
-                throw new VtecPOSException(string.IsNullOrEmpty(responseText) ? "Some orders are not submit to kitchen please submit orders first" : responseText);
+                _posModule.Table_CheckSubmitOrder(ref responseText, "front", ref unSubmitOrder, transactionId,
+                    computerId, shopId, saleDate, langId, myConn);
+                if (unSubmitOrder > 0)
+                {
+                    throw new VtecPOSException(string.IsNullOrEmpty(responseText) ? "Some orders are not submit to kitchen please submit orders first" : responseText);
+                }
             }
 
             var receiptHtml = "";
@@ -138,7 +141,7 @@ namespace VerticalTec.POS
 
         public async Task<DataTable> GetModifierOrderAsync(IDbConnection conn, int shopId, int transactionId, int computerId, int parentOrderDetailId, string productCode = "", SaleModes saleMode = SaleModes.DineIn)
         {
-            DataTable dtComment = await _posRepo.GetProductFixModifierAsync(conn, shopId, productCode, saleMode);
+            DataTable dtComment = await _posRepo.GetProductModifierAsync(conn, shopId, productCode, saleMode);
             DataSet orderDataSet = await _posRepo.GetOrderDataAsync(conn, transactionId, computerId);
 
             var orders = (from order in orderDataSet.Tables["Orders"].ToEnumerable()
@@ -437,6 +440,10 @@ namespace VerticalTec.POS
             {
                 if (await _posRepo.GetOpenedTableTransactionAsync(conn, tranData))
                     return;
+            }
+            else
+            {
+                return;
             }
 
             var saleDate = await _posRepo.GetSaleDateAsync(conn, tranData.ShopID, true);
