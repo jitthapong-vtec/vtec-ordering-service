@@ -23,14 +23,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         IOrderingService _orderingService;
         ILogService _log;
         IMessengerService _messengerService;
+        IPrintService _printService;
         VtecPOSRepo _posRepo;
 
-        public OrderingController(IDatabase database, IOrderingService orderingService, ILogService log, IMessengerService messenger)
+        public OrderingController(IDatabase database, IOrderingService orderingService, ILogService log, IMessengerService messenger, IPrintService printService)
         {
             _database = database;
             _orderingService = orderingService;
             _log = log;
             _messengerService = messenger;
+            _printService = printService;
             _posRepo = new VtecPOSRepo(database);
         }
 
@@ -488,19 +490,21 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             using (var conn = await _database.ConnectAsync())
             {
                 await _orderingService.SubmitOrderAsync(conn, transaction.TransactionID, transaction.ComputerID, transaction.ShopID, transaction.TableID);
+                await _printService.PrintOrder(transaction);
+                _messengerService.SendMessage($"102|101|{transaction.TableID}");
             }
-            _messengerService.SendMessage($"102|101|{transaction.TableID}");
-            var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(transaction));
-            BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage($"102|101|{transaction.TableID}"));
             return result;
         }
 
         [HttpPost]
         [Route("v1/orders/checkbill")]
-        public IHttpActionResult CheckBillAsync(TransactionPayload payload)
+        public async Task<IHttpActionResult> CheckBillAsync(TransactionPayload payload)
         {
+            _log.LogInfo($"Check bill {JsonConvert.SerializeObject(payload)}");
+
             var result = new HttpActionResult<string>(Request);
-            BackgroundJob.Enqueue<IPrintService>(p => p.PrintCheckBill(payload));
+            await _printService.PrintCheckBill(payload);
+
             result.StatusCode = HttpStatusCode.OK;
             result.Body = "";
             return result;
@@ -577,6 +581,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders/kiosk/printcheckbill")]
         public async Task<IHttpActionResult> KioskPrintCheckBill(TransactionPayload transaction)
         {
+            _log.LogInfo($"Check bill {JsonConvert.SerializeObject(transaction)}");
+
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())
             {
@@ -594,7 +600,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         cmd.ExecuteNonQuery();
                     }
 
-                    BackgroundJob.Enqueue<IPrintService>(p => p.KioskPrintCheckBill(transaction));
+                    await _printService.KioskPrintCheckBill(transaction);
                 }
                 catch (VtecPOSException ex)
                 {

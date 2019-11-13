@@ -526,30 +526,31 @@ namespace VerticalTec.POS
             return Task.FromResult(isSuccess);
         }
 
-        public Task<DataSet> MoveTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
+        public async Task<DataSet> MoveTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
         {
-            return ManageTableOrder(conn, OrdersManagementActions.MoveTable, transactionId, computerId, shopId, saleDate, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);
+            return await ManageTableOrder(conn, OrdersManagementActions.MoveTable, transactionId, computerId, shopId, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);
         }
 
-        public Task<DataSet> MergeTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
+        public async Task<DataSet> MergeTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
         {
-            return ManageTableOrder(conn, OrdersManagementActions.MergeTable, transactionId, computerId, shopId, saleDate, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);
+            return await ManageTableOrder(conn, OrdersManagementActions.MergeTable, transactionId, computerId, shopId, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);
         }
 
-        public Task<DataSet> SplitTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
+        public async Task<DataSet> SplitTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
         {
-            return ManageTableOrder(conn, OrdersManagementActions.SplitTable, transactionId, computerId, shopId, saleDate, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);
+            return await ManageTableOrder(conn, OrdersManagementActions.SplitTable, transactionId, computerId, shopId, staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText);
         }
 
-        private Task<DataSet> ManageTableOrder(IDbConnection conn, OrdersManagementActions action, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
+        private async Task<DataSet> ManageTableOrder(IDbConnection conn, OrdersManagementActions action, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
         {
             var responseText = "";
             var printData = new DataSet();
+            var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
             bool isSuccess = _posModule.Table_MoveTable(ref responseText, ref printData, (int)action, "front", transactionId, computerId, shopId, saleDate,
                 staffId, langId, toTableIdList, modifyReasonIdList, modifyReasonText, conn as MySqlConnection);
             if (!isSuccess)
                 throw new VtecPOSException(responseText);
-            return Task.FromResult(printData);
+            return printData;
         }
 
         public Task<DataSet> GetBillDetail(IDbConnection conn, int transactionId, int computerId, int shopId, int langId)
@@ -563,6 +564,14 @@ namespace VerticalTec.POS
             if (!isSuccess)
                 throw new VtecPOSException(responseText);
             return Task.FromResult(dsPrintData);
+        }
+
+        public async Task UpdateTableStatusAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int langId = 1)
+        {
+            var respText = "";
+            var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
+            _posModule.Table_UpdateStatus(ref respText, "front", transactionId, computerId, shopId,
+                saleDate, langId, conn as MySqlConnection);
         }
     }
 }

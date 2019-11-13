@@ -14,9 +14,10 @@ namespace VerticalTec.POS
         Task DeleteChildComboAsync(IDbConnection conn, int transactionId, int computerId, int orderDetailId);
         Task AddOrderAsync(IDbConnection conn, OrderTransaction order);
         Task<DataSet> MoveOrderAsync(IDbConnection conn, TableManage tableManage);
-        Task<DataSet> MoveTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText);
-        Task<DataSet> MergeTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText);
-        Task<DataSet> SplitTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, string saleDate, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText);
+        Task<DataSet> MoveTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText);
+        Task<DataSet> MergeTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText);
+        Task<DataSet> SplitTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText);
+        Task UpdateTableStatusAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int langId = 1);
         Task<DataTable> GetModifierOrderAsync(IDbConnection conn, int shopId, int transactionId, int computerId, int parentOrderDetailId, string productCode = "", SaleModes saleMode = SaleModes.DineIn);
         Task<List<OrderDetail>> GetOrderDetailsAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId = 2, int langId = 1);
         Task<object> GetOrderDataAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int langId = 1);

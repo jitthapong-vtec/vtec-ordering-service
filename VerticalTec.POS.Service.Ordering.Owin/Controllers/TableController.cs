@@ -21,14 +21,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         IOrderingService _orderingService;
         ILogService _log;
         IMessengerService _messenger;
+        IPrintService _printService;
+
         VtecPOSRepo _posRepo;
 
-        public TableController(IDatabase database, IOrderingService orderingService, ILogService log, IMessengerService messenger)
+        public TableController(IDatabase database, IOrderingService orderingService, ILogService log, IMessengerService messenger, IPrintService printService)
         {
             _database = database;
             _orderingService = orderingService;
             _log = log;
             _messenger = messenger;
+            _printService = printService;
             _posRepo = new VtecPOSRepo(database);
         }
 
@@ -41,12 +44,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    var saleDate = await _posRepo.GetSaleDateAsync(conn, table.ShopID, true);
                     var dsPrintData = await _orderingService.MoveTableOrderAsync(conn, table.TransactionID, table.ComputerID,
-                        table.ShopID, saleDate, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
+                        table.ShopID, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
 
-                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80));
-                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, m => m.SendMessage("102|101"));
+                    await _printService.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80);
+                    _messenger.SendMessage();
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
@@ -57,6 +59,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
+
+                    _log.LogInfo($"MOVE_TABLE {ex.Message}");
                 }
             }
             return result;
@@ -71,12 +75,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    var saleDate = await _posRepo.GetSaleDateAsync(conn, table.ShopID, true);
                     var dsPrintData = await _orderingService.MergeTableOrderAsync(conn, table.TransactionID, table.ComputerID,
-                        table.ShopID, saleDate, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
+                        table.ShopID, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
 
-                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80));
-                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, m => m.SendMessage("102|101"));
+                    await _printService.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80);
+                    _messenger.SendMessage();
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
@@ -87,11 +90,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
+
+                    _log.LogInfo($"MOVE_TABLE {ex.Message}");
                 }
             }
             return result;
         }
-        //TODO: v1/tables/split POST
+
         [HttpPost]
         [Route("v1/tables/split")]
         public async Task<IHttpActionResult> SplitTableAsync(TableManage table)
@@ -101,12 +106,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    var saleDate = await _posRepo.GetSaleDateAsync(conn, table.ShopID, true);
                     var dsPrintData = await _orderingService.MergeTableOrderAsync(conn, table.TransactionID, table.ComputerID,
-                        table.ShopID, saleDate, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
-                    
-                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80));
-                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, m => m.SendMessage("102|101"));
+                        table.ShopID, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
+
+                    await _printService.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80);
+                    _messenger.SendMessage();
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
@@ -117,6 +121,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
+
+                    _log.LogInfo($"MOVE_TABLE {ex.Message}");
                 }
             }
             return result;

@@ -25,15 +25,19 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         IOrderingService _orderingService;
         ILogService _log;
         IMessengerService _messenger;
+        IPrintService _printService;
         VtecPOSRepo _posRepo;
 
-        public PaymentController(IDatabase database, IPaymentService paymentService, IOrderingService orderingService, ILogService log, IMessengerService messenger)
+        public PaymentController(IDatabase database, IPaymentService paymentService, 
+            IOrderingService orderingService, ILogService log, IMessengerService messenger,
+            IPrintService printService)
         {
             _database = database;
             _paymentService = paymentService;
             _orderingService = orderingService;
             _log = log;
             _messenger = messenger;
+            _printService = printService;
             _posRepo = new VtecPOSRepo(database);
         }
 
@@ -394,7 +398,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 };
 
                                 await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.TableID);
-                                BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(tran));
+                                await _printService.PrintOrder(tran);
 
                                 await ConfirmKioskPaymentAsync(conn, payload);
                                 result.Body = grc;
@@ -518,7 +522,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 };
 
                                 await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.TableID);
-                                BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(tran));
+                                await _printService.PrintOrder(tran);
 
                                 await ConfirmKioskPaymentAsync(conn, payload);
                                 result.Body = grc;
@@ -623,8 +627,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     PaperSize = payload.PaperSize
                 };
 
-                var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.PrintBill(printData));
-                BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage("102|101"));
+                await _printService.PrintBill(printData);
+                _messenger.SendMessage();
             }
             else
             {

@@ -93,6 +93,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     _log.LogError(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrders" : responseText);
                 }
 
+                posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
+                    payload.ShopID, saleDate, payload.LangID, myConn);
+
                 if (ePosPrint == "1")
                 {
                     var summaryResponse = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryData);
@@ -116,9 +119,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                             payload.ComputerID, dsSummaryOrderData);
                         PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
                             payload.ComputerID, dsOrderData);
-
-                        posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
-                            payload.ShopID, saleDate, payload.LangID, myConn);
                     }
                     catch (Exception ex)
                     {
@@ -154,6 +154,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionID, payload.ComputerID, 
                         payload.ShopID, payload.TerminalID, payload.StaffID, payload.LangID);
                     await Print(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
+
+                    await _orderingService.UpdateTableStatusAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.LangID);
                 }
                 catch (Exception ex)
                 {
@@ -171,6 +173,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.ShopID, payload.TerminalID, payload.StaffID, payload.LangID, true);
                     await Print(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
+
+                    await _orderingService.UpdateTableStatusAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.LangID);
                 }
                 catch (Exception ex)
                 {
@@ -178,7 +182,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 }
             }
         }
-
+        //TODO: add function print kitchen
         public Task Print(int shopId, int computerId, string printerIds, string printerNames, DataSet dsPrintData, int paperSize = 80)
         {
             try
