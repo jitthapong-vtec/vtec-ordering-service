@@ -238,7 +238,7 @@
     <Compile Include="Models\LoyaltyApiResult.cs" />
     <Compile Include="Models\OrderPromotion.cs" />
     <Compile Include="Models\PrintData.cs" />
-    <Compile Include="Models\SampleHub.cs" />
+    <Compile Include="Models\StaffCommunicationHub.cs" />
     <Compile Include="Models\TransactionPayload.cs" />
     <Compile Include="Models\VoucherData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

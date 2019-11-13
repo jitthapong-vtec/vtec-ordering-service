@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Models
 {
-    public class SampleHub : Hub
+    public class StaffCommunicationHub : Hub
     {
-        public async Task CallStaff(string compId, string tableId)
+        public async Task CallStaff(string compId, string tableName)
         {
-            await Clients.All.ReceiveStaffCalling(compId, tableId);
+            await Clients.All.OnReceiveStaffCalling(compId, tableName);
         }
 
         public async Task StaffAccepted(string staffId)
         {
-            await Clients.All.ReceiveStaffAccepted(staffId);
+            await Clients.All.OnReceiveStaffAccepted(staffId);
         }
     }
 }
