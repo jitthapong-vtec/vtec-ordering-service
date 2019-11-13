@@ -1,5 +1,6 @@
 ﻿using Hangfire;
 using Hangfire.LiteDB;
+using Microsoft.AspNet.SignalR;
 using Owin;
 using Swashbuckle.Application;
 using System;
@@ -70,6 +71,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             config.Filters.Add(new GlobalExceptionHandler());
             config.MapHttpAttributeRoutes();
 
+            appBuilder.MapSignalR("/signalr", new HubConfiguration());
             appBuilder.UseHangfireAspNet(GetHangfireServers);
             appBuilder.UseHangfireDashboard("/jobs");
             appBuilder.UseWebApi(config);

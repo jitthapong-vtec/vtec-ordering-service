@@ -46,16 +46,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 try
                 {
                     var orders = await _orderingService.GetOrderDetailsAsync(conn, transactionId, computerId, shopId, langId: langId);
-                    if (orders.Count > 0)
-                    {
-                        result.StatusCode = HttpStatusCode.OK;
-                        result.Body = orders;
-                    }
-                    else
-                    {
-                        result.StatusCode = HttpStatusCode.NotFound;
-                        result.Message = "Not found orders";
-                    }
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = orders;
                 }
                 catch (VtecPOSException ex)
                 {
@@ -78,16 +70,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 try
                 {
                     var dataSet = await _orderingService.GetOrderDataAsync(conn, transactionId, computerId, shopId, langId);
-                    if (dataSet != null)
-                    {
-                        result.StatusCode = HttpStatusCode.OK;
-                        result.Body = dataSet;
-                    }
-                    else
-                    {
-                        result.StatusCode = HttpStatusCode.NotFound;
-                        result.Message = "Not found order summary";
-                    }
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = dataSet;
                 }
                 catch (VtecPOSException ex)
                 {
@@ -463,8 +447,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     var dsPrintData = await _orderingService.MoveOrderAsync(conn, tableManage);
 
-                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.Print(tableManage.ShopID, tableManage.ComputerID, "", "", dsPrintData, 80));
-                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage("102|101"));
+                    await _printService.PrintAsync(tableManage.ShopID, tableManage.ComputerID, dsPrintData);
+                    _messengerService.SendMessage();
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = tableManage;
@@ -475,6 +459,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
+
+                    _log.LogInfo($"MOVE_ORDER {ex.Message}");
                 }
             }
             return result;

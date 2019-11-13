@@ -47,7 +47,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var dsPrintData = await _orderingService.MoveTableOrderAsync(conn, table.TransactionID, table.ComputerID,
                         table.ShopID, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
 
-                    await _printService.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80);
+                    await _printService.PrintAsync(table.ShopID, table.ComputerID, dsPrintData);
                     _messenger.SendMessage();
 
                     result.StatusCode = HttpStatusCode.OK;
@@ -78,7 +78,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var dsPrintData = await _orderingService.MergeTableOrderAsync(conn, table.TransactionID, table.ComputerID,
                         table.ShopID, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
 
-                    await _printService.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80);
+                    await _printService.PrintAsync(table.ShopID, table.ComputerID, dsPrintData);
                     _messenger.SendMessage();
 
                     result.StatusCode = HttpStatusCode.OK;
@@ -106,10 +106,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    var dsPrintData = await _orderingService.MergeTableOrderAsync(conn, table.TransactionID, table.ComputerID,
+                    var dsPrintData = await _orderingService.SplitTableOrderAsync(conn, table.TransactionID, table.ComputerID,
                         table.ShopID, table.StaffID, table.LangID, table.ToTableIds, table.ReasonList, table.ReasonText);
 
-                    await _printService.Print(table.ShopID, table.ComputerID, "", "", dsPrintData, 80);
+                    await _printService.PrintAsync(table.ShopID, table.ComputerID, dsPrintData);
                     _messenger.SendMessage();
 
                     result.StatusCode = HttpStatusCode.OK;

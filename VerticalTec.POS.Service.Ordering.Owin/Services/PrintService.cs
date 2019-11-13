@@ -136,7 +136,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 try
                 {
                     var dsPrintData = await _orderingService.GetBillDetail(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.LangID);
-                    await Print(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, payload.PaperSize);
+                    await PrintAsync(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, payload.PaperSize);
                 }
                 catch (Exception ex)
                 {
@@ -151,9 +151,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             {
                 try
                 {
-                    var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionID, payload.ComputerID, 
+                    var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.ShopID, payload.TerminalID, payload.StaffID, payload.LangID);
-                    await Print(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
+                    await PrintAsync(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
 
                     await _orderingService.UpdateTableStatusAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.LangID);
                 }
@@ -172,7 +172,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 {
                     var dsPrintData = await _orderingService.CheckBillAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.ShopID, payload.TerminalID, payload.StaffID, payload.LangID, true);
-                    await Print(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
+                    await PrintAsync(payload.ShopID, payload.ComputerID, payload.PrinterIds, payload.PrinterNames, dsPrintData, 80);
 
                     await _orderingService.UpdateTableStatusAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.LangID);
                 }
@@ -182,8 +182,22 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 }
             }
         }
-        //TODO: add function print kitchen
-        public Task Print(int shopId, int computerId, string printerIds, string printerNames, DataSet dsPrintData, int paperSize = 80)
+
+        public async Task PrintAsync(int shopId, int computerId, DataSet dsPrintData)
+        {
+            if (dsPrintData.Tables.Count > 0)
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var posModule = new POSModule();
+                    CDBUtil dbUtil = new CDBUtil();
+                    PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(conn as MySqlConnection, dbUtil, posModule,
+                        shopId, computerId, dsPrintData);
+                }
+            }
+        }
+
+        public async Task PrintAsync(int shopId, int computerId, string printerIds, string printerNames, DataSet dsPrintData, int paperSize = 80)
         {
             try
             {
@@ -192,14 +206,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 if (isIPFormat)
                 {
                     Device.Printer.Epson.EpsonResponse response = null;
-                    Task.Run(async () =>
-                    {
-                        var size = Device.Printer.Epson.PaperSizes.Size80;
-                        if (paperSize == 58)
-                            size = Device.Printer.Epson.PaperSizes.Size58;
-                        response = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintBillDetail(
-                            dsPrintData, printerIds, printerNames, size);
-                    }).Wait();
+                    var size = Device.Printer.Epson.PaperSizes.Size80;
+                    if (paperSize == 58)
+                        size = Device.Printer.Epson.PaperSizes.Size58;
+                    response = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintBillDetail(
+                        dsPrintData, printerIds, printerNames, size);
                     if (response != null && response.Success == false)
                         _log.LogError($"Printer error => {response.Message}");
                 }
@@ -226,7 +237,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             {
                 _log.LogError($"Printer error => {ex.Message}");
             }
-            return Task.FromResult(true);
         }
     }
 }
