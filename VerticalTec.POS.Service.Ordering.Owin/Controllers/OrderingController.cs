@@ -495,7 +495,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             result.Body = "";
             return result;
         }
-
+        //TODO: must be print order for shop type fast food?
         [HttpPost]
         [Route("v1/orders/salemode/submit")]
         public async Task<IHttpActionResult> SubmitSaleModeOrderAsync(TransactionPayload payload)
@@ -512,16 +512,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var shopType = await _posRepo.GetShopTypeAsync(conn, payload.ShopID);
                 if (shopType == ShopTypes.RestaurantTable)
                 {
-                    await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID,
-                        payload.ShopID, payload.TableID);
-                    _messengerService.SendMessage($"102|101|{payload.TableID}");
-                    var parentId = BackgroundJob.Enqueue<IPrintService>(p => p.PrintOrder(payload));
-                    BackgroundJob.ContinueJobWith<IMessengerService>(parentId, (m) => m.SendMessage($"102|101|{payload.TableID}"));
+                    await _orderingService.SubmitOrderAsync(conn, payload.TransactionID, payload.ComputerID, payload.ShopID, payload.TableID);
+                    await _printService.PrintOrder(payload);
                 }
                 else if (shopType == ShopTypes.FastFood)
                 {
-                    BackgroundJob.Enqueue<IPrintService>(p => p.PrintCheckBill(payload));
+                    await _printService.PrintCheckBill(payload);
                 }
+                _messengerService.SendMessage($"102|101|{payload.TableID}");
             }
             result.StatusCode = HttpStatusCode.OK;
             result.Body = "";

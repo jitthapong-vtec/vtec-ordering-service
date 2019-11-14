@@ -389,9 +389,6 @@ namespace VerticalTec.POS
 
         public async Task<bool> SubmitOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int tableId)
         {
-            if (tableId == 0)
-                throw new VtecPOSException("TableID is require");
-
             string responseText = string.Empty;
             DataSet resultData = new DataSet();
             try
