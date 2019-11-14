@@ -14,9 +14,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Models
             await Clients.All.OnReceiveStaffCalling(compId, tableName);
         }
 
-        public async Task StaffAccepted(string staffId)
+        public async Task StaffAcknowledge(string staffId, string compId)
         {
-            await Clients.All.OnReceiveStaffAccepted(staffId);
+            await Clients.All.OnReceiveStaffAcknowledge(staffId, compId);
         }
     }
 }

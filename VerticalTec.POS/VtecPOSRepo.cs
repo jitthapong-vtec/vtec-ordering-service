@@ -288,9 +288,6 @@ namespace VerticalTec.POS
 
         public async Task<bool> GetOpenedTableTransactionAsync(IDbConnection conn, Transaction transaction)
         {
-            if (transaction.TableID == 0)
-                throw new VtecPOSException("You try to GetOpenedTableTransaction by passing tableId = 0");
-
             IDbCommand cmd = _database.CreateCommand(
                    "select * from order_tablefront " +
                    "where TableID=@tableId and ShopID=@shopId and SaleDate=@saleDate", conn);

@@ -69,9 +69,24 @@ namespace VerticalTec.POS
 
         }
 
-        public Task<bool> CancelTransactionAsync(IDbConnection conn, int transactionId, int computerId)
+        public async Task<bool> CancelTransactionAsync(IDbConnection conn, int transactionId, int computerId)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var cmd = _database.CreateCommand("update ordertransactionfront " +
+                                       " set TransactionStatusID=@status" +
+                                       " where TransactionID=@transactionId" +
+                                       " and ComputerID=@computerId", conn);
+                cmd.Parameters.Add(_database.CreateParameter("@status", 99));
+                cmd.Parameters.Add(_database.CreateParameter("@transactionId", transactionId));
+                cmd.Parameters.Add(_database.CreateParameter("@computerId", computerId));
+                await _database.ExecuteNonQueryAsync(cmd);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public async Task<DataSet> CheckBillAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int terminalId, int staffId, int langId, bool bypassChkUnsubmit)
