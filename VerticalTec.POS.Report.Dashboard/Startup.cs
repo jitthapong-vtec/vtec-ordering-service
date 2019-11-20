@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
 using VerticalTec.POS.Database;
@@ -33,10 +34,10 @@ namespace VerticalTec_POS_Report_Dashboard
             services.AddSingleton<IDbHelper>(new vtecdbhelper.SqlServerDatabase(connString));
             services.AddSingleton<IDatabase>(new VerticalTec.POS.Database.SqlServerDatabase(dbServer, dbName));
             
-            services.AddMvc().AddRazorPagesOptions(option => 
+            services.AddControllers().AddRazorPagesOptions(option => 
             {
                 option.Conventions.AddPageRoute("/Landing", "/");
-            }).AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+            }).AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
             services.AddSwaggerGen(c =>
             {
@@ -45,7 +46,7 @@ namespace VerticalTec_POS_Report_Dashboard
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -67,7 +68,11 @@ namespace VerticalTec_POS_Report_Dashboard
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Report API V1");
             });
             app.UseStaticFiles();
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
         }
     }
 }

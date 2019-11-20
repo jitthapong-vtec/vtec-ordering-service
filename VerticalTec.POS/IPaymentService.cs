@@ -11,7 +11,8 @@ namespace VerticalTec.POS
     {
         Task AddPaymentAsync(IDbConnection conn, PaymentData payment);
         Task DeletePaymentAsync(IDbConnection conn, int transactionId, int computerId, int payDetailId);
-        Task FinalizeBillAsync(IDbConnection conn, int transactionId, int computerId, int terminalId, int shopId, int staffId, int langId, string printerIds, string printerNames);
+        Task FinalizeBillAsync(IDbConnection conn, int transactionId, int computerId, int terminalId, int shopId, int staffId);
+        Task FinalizeOrderAsync(IDbConnection conn, int transactionId, int computerId, int terminalId, int shopId, int staffId, int langId, string printerIds, string printerNames);
         Task<DataTable> GetPaymentDetailAsync(IDbConnection conn, int transactionId, int computerId);
         Task<DataSet> GetPaymentDataAsync(IDbConnection conn, int computerId, int langId, int currencyId);
         Task<DataTable> GetPaymentCurrencyAsync(IDbConnection conn);

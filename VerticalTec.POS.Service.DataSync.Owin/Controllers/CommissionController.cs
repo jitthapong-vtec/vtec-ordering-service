@@ -115,7 +115,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         " on a.TransactionID=b.TransactionID" +
                         " and a.ComputerID=b.ComputerID" +
                         " and a.ShopID=b.ShopID" +
-                        " where SyncStatus=0 limit 10";
+                        " where SyncStatus=0 and b.TransactionNote != '' order by a.SaleDate desc limit 20";
 
                     var dt = new DataTable();
                     using (var reader = await _db.ExecuteReaderAsync(cmd))
@@ -157,6 +157,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                                 cmd.Parameters.Add(_db.CreateParameter("@taskId", taskId));
                                 await _db.ExecuteNonQueryAsync(cmd);
 
+                                result.Success = true;
                                 result.Message = $"Success send receipt data to commission api";
                                 await LogManager.Instance.WriteLogAsync(result.Message, LogPrefix);
                             }

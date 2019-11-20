@@ -130,18 +130,26 @@ namespace VerticalTec.POS
             await _database.ExecuteNonQueryAsync(cmd);
         }
 
-        public async Task FinalizeBillAsync(IDbConnection conn, int transactionId, int computerId, int terminalId, int shopId, int staffId, int langId, string printerIds, string printerNames)
+        public async Task FinalizeBillAsync(IDbConnection conn, int transactionId, int computerId, int terminalId, int shopId, int staffId)
         {
+
             var myConn = conn as MySqlConnection;
             string responseText = "";
             int defaultDecimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
-            string saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
             _posModule.OrderDetail_RefreshPromo(ref responseText, "front", transactionId, computerId, defaultDecimalDigit, myConn);
             _posModule.OrderDetail_CalBill(transactionId, computerId, shopId, defaultDecimalDigit, "front", myConn);
             var isSuccess = _posModule.OrderDetail_FinalizeBill(ref responseText, "front", transactionId, computerId, defaultDecimalDigit, staffId, terminalId, myConn);
             if (!isSuccess)
                 throw new VtecPOSException($"Finalize bill {responseText}");
-            isSuccess = _posModule.OrderDetail_Final(ref responseText, "front", transactionId, computerId, shopId, saleDate, defaultDecimalDigit, myConn);
+        }
+
+        public async Task FinalizeOrderAsync(IDbConnection conn, int transactionId, int computerId, int terminalId, int shopId, int staffId, int langId, string printerIds, string printerNames)
+        {
+            var myConn = conn as MySqlConnection;
+            string responseText = "";
+            int defaultDecimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
+            string saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
+            var isSuccess = _posModule.OrderDetail_Final(ref responseText, "front", transactionId, computerId, shopId, saleDate, defaultDecimalDigit, myConn);
             if (!isSuccess)
                 throw new VtecPOSException($"Final Order {responseText}");
             isSuccess = _posModule.ChkMoveTranData(ref responseText, shopId, saleDate, myConn);

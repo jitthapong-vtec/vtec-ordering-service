@@ -70,9 +70,9 @@ namespace VerticalTec.POS.Report.Dashboard.Controllers
                     shopIds = ValidateShopIds(shopIds);
                     var fromDateStr = ToISODate(startDate);
                     var toDateStr = ToISODate(endDate);
-
                     var prop = await _posRepo.GetProgramPropertyAsync(conn);
                     var dateFormat = prop.Select($"PropertyID = 13").FirstOrDefault()?.GetValue<string>("PropertyTextValue");
+
                     var ds = report.Report_BillData(shopIds, fromDateStr, toDateStr, reportType, langId, cate, conn);
 
                     var bills = new List<object>();

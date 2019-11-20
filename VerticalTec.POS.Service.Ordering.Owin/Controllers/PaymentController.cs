@@ -174,7 +174,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    await _paymentService.FinalizeBillAsync(conn, payload.TransactionID, payload.ComputerID,
+                    await _paymentService.FinalizeOrderAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.TerminalID, payload.ShopID, payload.StaffID, payload.LangID, payload.PrinterIds, payload.PrinterNames);
 
                     var printData = new PrintData()
@@ -601,6 +601,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     throw new VtecPOSException($"Not found PayType of EDCType {payload.EDCType}");
             }
 
+            await _paymentService.FinalizeBillAsync(conn, payload.TransactionID, payload.ComputerID, payload.TerminalID, payload.ShopID, payload.StaffID);
+
             var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, payload.TransactionID, payload.ComputerID, payload.PayTypeID);
             if (dtPendingPayment.Rows.Count > 0)
                 await _paymentService.DeletePaymentAsync(conn, dtPendingPayment.Rows[0].GetValue<int>("PayDetailID"), payload.TransactionID, payload.ComputerID);
@@ -613,7 +615,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
             if (isSuccess)
             {
-                await _paymentService.FinalizeBillAsync(conn, payload.TransactionID, payload.ComputerID, payload.TerminalID,
+                await _paymentService.FinalizeOrderAsync(conn, payload.TransactionID, payload.ComputerID, payload.TerminalID,
                     payload.ShopID, payload.StaffID, payload.LangID, payload.PrinterIds, payload.PrinterNames);
 
                 var printData = new PrintData()
