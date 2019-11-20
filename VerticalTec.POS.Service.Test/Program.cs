@@ -16,7 +16,7 @@ namespace VerticalTec.POS.Service.Test
 
             try
             {
-                using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "hny", "hangfire.db").Configuration(appBuilder)))
+                using (WebApp.Start(baseAddress, appBuilder => new Startup("127.0.0.1", "bkgm_gmp", "hangfire.db").Configuration(appBuilder)))
                 {
 
                     Console.ReadLine();

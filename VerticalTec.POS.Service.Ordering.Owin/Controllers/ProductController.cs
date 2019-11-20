@@ -354,7 +354,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             var detailId = detailRow.GetValue<int>("DetailID");
                             var suggestions = new List<object>();
-                            foreach (var sugest in dtSuggestionMenu.Select($"PageType=4 and PageDetailID={detailId}"))
+                            foreach (var sugest in dtSuggestionMenu.Select($"PageDetailID={detailId}"))
                             {
                                 suggestions.Add(new
                                 {
@@ -408,64 +408,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 result.StatusCode = HttpStatusCode.InternalServerError;
                 result.Message = ex.Message;
-            }
-            return result;
-        }
-
-        [HttpGet]
-        [Route("v1/products/kiosk/upsales")]
-        public async Task<IHttpActionResult> GetUpSale(int shopId)
-        {
-            var result = new HttpActionResult<IEnumerable<object>>(Request);
-            using (var conn = await _database.ConnectAsync())
-            {
-                string imageBaseUrl = await _posRepo.GetKioskMenuImageBaseUrlAsync(conn, shopId);
-                var cmd = _database.CreateCommand(
-                                   " select b.ProductID, b.ProductCode, b.ProductName, b.ProductTypeID, " +
-                                   " concat('" + imageBaseUrl + "', b.ProductPictureServer) as MenuImageUrl, " +
-                                   " case when c.ProductPrice is not null then c.ProductPrice else 0 end as ProductPrice " +
-                                   " from favoriteproductstemplate a " +
-                                   " inner join products b " +
-                                   " on a.ProductID = b.ProductID " +
-                                   " left join" +
-                                   " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) c" +
-                                   " on b.ProductID = c.ProductID" +
-                                   " where a.PageType = 3 and a.TemplateID = (select TemplateID from favoriteshoplink where ShopID=@shopId) and b.ProductActivate=1 and b.Deleted=0" +
-                                   " order by a.ButtonOrder, b.ProductOrdering, b.ProductName;", conn);
-
-                var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
-                var dfSaleMode = await _posRepo.GetDefaultSaleModeAsync(conn);
-                var saleModeId = 1;
-                try
-                {
-                    saleModeId = dfSaleMode.Rows[0].GetValue<int>("SaleModeID");
-                }
-                catch (Exception) { }
-                cmd.Parameters.Clear();
-                cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-                cmd.Parameters.Add(_database.CreateParameter("@dfSaleMode", saleModeId));
-                cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
-
-                var dt = new DataTable();
-                using (var reader = await _database.ExecuteReaderAsync(cmd))
-                {
-                    dt.Load(reader);
-                }
-
-                List<object> upsales = new List<object>();
-                foreach (DataRow row in dt.Rows)
-                {
-                    upsales.Add(new
-                    {
-                        ProductID = row.GetValue<int>("ProductID"),
-                        ProductCode = row.GetValue<string>("ProductCode"),
-                        ProductName = row.GetValue<string>("ProductName"),
-                        ProductPrice = row.GetValue<decimal>("ProductPrice"),
-                        ProductTypeID = row.GetValue<int>("ProductTypeID"),
-                        MenuImageUrl = row.GetValue<string>("MenuImageUrl")
-                    });
-                }
-                result.Body = upsales;
             }
             return result;
         }
@@ -599,19 +541,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
             string imageBaseUrl = await _posRepo.GetKioskMenuImageBaseUrlAsync(conn, shopId);
             cmd = _database.CreateCommand(
-                               " select a.PageDetailID, b.PageType, c.ProductID, c.ProductCode, c.ProductName, c.ProductTypeID, " +
-                               " concat('" + imageBaseUrl + "', c.ProductPictureServer) as MenuImageUrl, " +
-                               " case when d.ProductPrice is not null then d.ProductPrice else 0 end as ProductPrice " +
-                               " from kiosk_suggestion_menu_setting a " +
-                               " left join favoriteproductstemplate b " +
-                               " on a.ProductID = b.ProductID " +
-                               " inner join products c " +
-                               " on b.ProductID = c.ProductID " +
-                               " left join" +
-                               " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) d" +
-                               " on c.ProductID = d.ProductID" +
-                               " where b.PageType = 4 and b.TemplateID = (select TemplateID from favoriteshoplink where ShopID=@shopId) and c.ProductActivate=1 and c.Deleted=0" +
-                               " order by b.ButtonOrder, c.ProductOrdering, c.ProductName;", conn);
+                               " SELECT a.PageDetailID, b.ProductID, b.DisplayName AS ProductName, " +
+                               " CONCAT('" + imageBaseUrl + "', b.DetailImage) AS MenuImageUrl, c.ProductTypeID, " +
+                               " CASE WHEN d.ProductPrice IS NOT NULL THEN d.ProductPrice ELSE 0 END AS ProductPrice " +
+                               " FROM kiosk_suggestion_menu_setting a " +
+                               " LEFT JOIN kiosk_pagedetail b " +
+                               " ON a.ProductID = b.ProductID " +
+                               " INNER JOIN products c " +
+                               " ON b.ProductID = c.ProductID " +
+                               " LEFT JOIN (SELECT ProductID, ProductPrice FROM productprice WHERE FromDate <= @saleDate AND ToDate >= @saleDate AND SaleMode = @dfSaleMode) d " +
+                               " ON c.ProductID = d.ProductID WHERE b.Activated = 1 AND b.Deleted = 0 " +
+                               " ORDER BY b.RowPosition, b.DisplayName; ", conn);
 
             cmd.Parameters.Clear();
             cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
