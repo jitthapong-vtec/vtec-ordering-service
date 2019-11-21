@@ -326,7 +326,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     DataSet dsMenuTemplate = new DataSet("MenuTemplate");
                     adapter.Fill(dsMenuTemplate);
 
-                    var dtSuggestionMenu = await GetSuggestionMenuAsync(conn, shopId, saleDate, saleMode);
+                    var dtUpsales = await GetUpsalesMenuAsync(conn, shopId, saleDate, saleMode);
                     var pages = new List<object>();
                     foreach (DataRow pageRow in dsMenuTemplate.Tables["MenuPages"].Rows)
                     {
@@ -344,6 +344,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             PageName3 = pageRow.GetValue<string>("PageName3"),
                             PageDesp3 = pageRow.GetValue<string>("PageDesp3"),
                             PageLevelID = pageRow.GetValue<int>("PageLevelID"),
+                            IsSuggestion = pageRow.GetValue<int>("IsSuggestion"),
                             NoRows = pageRow.GetValue<int>("NoRow"),
                             NoColumns = pageRow.GetValue<int>("NoColumns"),
                             MenuPageDetails = new List<object>()
@@ -353,10 +354,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         foreach (DataRow detailRow in pageDetails)
                         {
                             var detailId = detailRow.GetValue<int>("DetailID");
-                            var suggestions = new List<object>();
-                            foreach (var sugest in dtSuggestionMenu.Select($"PageDetailID={detailId}"))
+                            var upsales = new List<object>();
+                            foreach (var sugest in dtUpsales.Select($"PageDetailID={detailId}"))
                             {
-                                suggestions.Add(new
+                                upsales.Add(new
                                 {
                                     ProductID = sugest.GetValue<int>("ProductID"),
                                     ProductCode = sugest.GetValue<string>("ProductCode"),
@@ -394,7 +395,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 SaleMode1 = detailRow.GetValue<int>("SaleMode1"),
                                 SaleMode2 = detailRow.GetValue<int>("SaleMode2"),
                                 CurrentStock = detailRow["CurrentStock"] as int?,
-                                SuggestionMenus = suggestions
+                                UpsaleMenus = upsales
                             };
                             page.MenuPageDetails.Add(pageDetail);
                         }
@@ -509,7 +510,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             return result;
         }
 
-        async Task<DataTable> GetSuggestionMenuAsync(IDbConnection conn, int shopId, string saleDate, int saleMode)
+        async Task<DataTable> GetUpsalesMenuAsync(IDbConnection conn, int shopId, string saleDate, int saleMode)
         {
             string dbName = AppConfig.Instance.DbName;
             var tableName = "kiosk_suggestion_menu_setting";

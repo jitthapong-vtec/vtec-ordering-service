@@ -62,9 +62,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             _container.RegisterSingleton<IMessengerService, MessengerService>();
             _container.RegisterSingleton<IPrintService, PrintService>();
 
-            _container.Resolve<ILogService>().Enabled = AppConfig.Instance.EnableLog;
-
             config.DependencyResolver = new UnityResolver(_container);
+
+            var logService = _container.Resolve<ILogService>();
+            logService.Enabled = AppConfig.Instance.EnableLog;
+
+            var db = _container.Resolve<IDatabase>();
+            DatabaseMigration.CheckAndUpdate(db, AppConfig.Instance.DbName);
 
             config.EnableSwagger(c => c.SingleApiVersion("v1", "Vtec Ordering Api")).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
