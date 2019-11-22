@@ -115,7 +115,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         " on a.TransactionID=b.TransactionID" +
                         " and a.ComputerID=b.ComputerID" +
                         " and a.ShopID=b.ShopID" +
-                        " where SyncStatus=0 and b.TransactionNote != '' order by a.SaleDate desc limit 20";
+                        " where SyncStatus=0 and b.TransactionNote != '' order by a.SaleDate desc limit 100";
 
                     var dt = new DataTable();
                     using (var reader = await _db.ExecuteReaderAsync(cmd))
@@ -184,7 +184,6 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 
                             await LogManager.Instance.WriteLogAsync($"Fail send receipt data to commission api {result.Message}", LogPrefix, LogManager.LogTypes.Error);
 
-                            result.StatusCode = HttpStatusCode.InternalServerError;
                             result.Message = errMsg;
                         }
                     }
@@ -192,7 +191,6 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
             }
             catch (Exception ex)
             {
-                result.StatusCode = HttpStatusCode.InternalServerError;
                 result.Message = ex.Message;
             }
             return result;
