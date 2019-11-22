@@ -108,7 +108,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                         catch (Exception) { }
                     }
 
-                    cmd.CommandText = "select a.TaskID, b.SaleDate, b.ReceiptNumber, b.TransactionNote, " +
+                    cmd.CommandText = "select a.TaskID, b.SaleDate, b.ReceiptNumber, upper(b.TransactionNote) as TransactionNote, " +
                         " b.ReceiptRetailPrice, b.TransactionVAT, b.ReceiptPayPrice" +
                         " from " + tableName + " a " +
                         " left join ordertransactionfront b" +
