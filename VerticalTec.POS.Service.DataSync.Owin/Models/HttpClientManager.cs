@@ -85,5 +85,17 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
                 throw new HttpResponseException(respMessage);
             }
         }
+
+        public TimeSpan ConnTimeOut
+        {
+            set
+            {
+                try
+                {
+                    _httpClient.Timeout = value;
+                }
+                catch (Exception) { }
+            }
+        }
     }
 }
