@@ -16,16 +16,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 {
     public class PrintService : IPrintService
     {
+        static readonly NLog.Logger _log = NLog.LogManager.GetCurrentClassLogger();
+
         IDatabase _db;
         IOrderingService _orderingService;
-        ILogService _log;
         VtecPOSRepo _posRepo;
 
-        public PrintService(IDatabase database, IOrderingService orderingService, ILogService log)
+        public PrintService(IDatabase database, IOrderingService orderingService)
         {
             _db = database;
             _orderingService = orderingService;
-            _log = log;
             _posRepo = new VtecPOSRepo(database);
         }
 
@@ -53,7 +53,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 
                     if (!isSuccess)
                     {
-                        _log.LogError(responseText);
+                        _log.Error(responseText);
                     }
                 }
 
@@ -67,12 +67,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                         payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
                     if (!isSuccess)
                     {
-                        _log.LogError("An error occurred when Table_PrintSummaryOrderData " + responseText);
+                        _log.Error("An error occurred when Table_PrintSummaryOrderData " + responseText);
                     }
                 }
                 else
                 {
-                    _log.LogError("An error occurred when PrintSummaryOrder " + responseText);
+                    _log.Error("An error occurred when PrintSummaryOrder " + responseText);
                 }
 
                 batchId = 0;
@@ -85,12 +85,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                         payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
                     if (!isSuccess)
                     {
-                        _log.LogError(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrderDetail" : responseText);
+                        _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrderDetail" : responseText);
                     }
                 }
                 else
                 {
-                    _log.LogError(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrders" : responseText);
+                    _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrders" : responseText);
                 }
 
                 posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
@@ -105,7 +105,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                         orderSummaryResponse?.Success == false ||
                         orderResponse?.Success == false)
                     {
-                        _log.LogError($"{summaryResponse?.Message}{orderSummaryResponse?.Message}{orderResponse?.Message}");
+                        _log.Error($"{summaryResponse?.Message}{orderSummaryResponse?.Message}{orderResponse?.Message}");
                     }
                 }
                 else
@@ -122,7 +122,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     }
                     catch (Exception ex)
                     {
-                        _log.LogError(ex.Message);
+                        _log.Error(ex.Message);
                     }
                 }
             }
@@ -140,7 +140,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex.Message);
+                    _log.Error(ex.Message);
                 }
             }
         }
@@ -159,7 +159,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex.Message);
+                    _log.Error(ex.Message);
                 }
             }
         }
@@ -178,7 +178,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex.Message);
+                    _log.Error(ex.Message);
                 }
             }
         }
@@ -212,7 +212,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     response = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintBillDetail(
                         dsPrintData, printerIds, printerNames, size);
                     if (response != null && response.Success == false)
-                        _log.LogError($"Printer error => {response.Message}");
+                        _log.Error($"Printer error => {response.Message}");
                 }
                 else
                 {
@@ -235,7 +235,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             }
             catch (Exception ex)
             {
-                _log.LogError($"Printer error => {ex.Message}");
+                _log.Error($"Printer error => {ex.Message}");
             }
         }
     }

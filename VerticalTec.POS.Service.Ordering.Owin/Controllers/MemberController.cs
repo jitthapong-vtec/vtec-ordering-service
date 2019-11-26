@@ -15,14 +15,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class MemberController : ApiController
     {
+        static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logmember");
         IDatabase _database;
-        ILogService _log;
         VtecPOSRepo _posRepo;
 
-        public MemberController(IDatabase database, ILogService log)
+        public MemberController(IDatabase database)
         {
             _database = database;
-            _log = log;
             _posRepo = new VtecPOSRepo(database);
         }
 
@@ -101,7 +100,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/members/thirdparty")]
         public async Task<IHttpActionResult> SearchThirdPartyMemberAsync(string memberId)
         {
-            _log.LogInfo($"GetMember: {memberId}");
+            _log.Info($"GetMember: {memberId}");
 
             var result = new HttpActionResult<object>(Request);
 
@@ -139,7 +138,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         public async Task<IHttpActionResult> ApplyMember(string memberCode, string memberFirstName, string memberLastName, string memberMobile,
             string memberGroupName, string memberEmail, int transactionId, int computerId, int shopId)
         {
-            _log.LogInfo($"Apply member: memberCode={memberCode}, memberFirstName={memberFirstName}, memberLastName={memberLastName}, memberMobile={memberMobile}, " +
+            _log.Info($"Apply member: memberCode={memberCode}, memberFirstName={memberFirstName}, memberLastName={memberLastName}, memberMobile={memberMobile}, " +
                $"memberGroupName={memberGroupName}, memberEmail={memberEmail}, transactionId={transactionId}, computerId={computerId}, shopId={shopId}");
 
             var result = new HttpActionResult<int>(Request);

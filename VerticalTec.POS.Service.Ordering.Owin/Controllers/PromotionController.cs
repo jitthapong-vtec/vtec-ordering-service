@@ -17,14 +17,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class PromotionController : ApiController
     {
+        static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logpromotion");
+
         IDatabase _database;
-        ILogService _log;
         VtecPOSRepo _posRepo;
 
-        public PromotionController(IDatabase database, ILogService log)
+        public PromotionController(IDatabase database)
         {
             _database = database;
-            _log = log;
             _posRepo = new VtecPOSRepo(database);
         }
 
@@ -61,7 +61,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         result.StatusCode = HttpStatusCode.NotFound;
                         result.Message = loyaltyResult.DataResult.ToString();
 
-                        _log.LogError($"GetVoucherDataWithVoucherSN {loyaltyResult.DataResult.ToString()}");
+                        _log.Error($"GetVoucherDataWithVoucherSN {loyaltyResult.DataResult.ToString()}");
                     }
                 }
                 else
@@ -69,7 +69,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     result.StatusCode = HttpStatusCode.NotFound;
                     result.Message = resp.ReasonPhrase;
 
-                    _log.LogError($"GetVoucherDataWithVoucherSN {result.Message}");
+                    _log.Error($"GetVoucherDataWithVoucherSN {result.Message}");
                 }
             }
             catch (Exception ex)
@@ -77,7 +77,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 result.StatusCode = HttpStatusCode.InternalServerError;
                 result.Message = ex.Message;
 
-                _log.LogError($"GetVoucherDataWithVoucherSN {ex.Message}");
+                _log.Error($"GetVoucherDataWithVoucherSN {ex.Message}");
             }
 
             return result;
@@ -87,7 +87,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/promotions/member/apply")]
         public async Task<IHttpActionResult> ApplyMemberPromotionAsync(OrderPromotion orderPromotion)
         {
-            _log.LogInfo($"ApplyMember:{JsonConvert.SerializeObject(orderPromotion)}");
+            _log.Info($"ApplyMember:{JsonConvert.SerializeObject(orderPromotion)}");
 
             var result = new HttpActionResult<string>(Request);
             try
@@ -117,7 +117,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         result.StatusCode = HttpStatusCode.InternalServerError;
                         result.Message = responseText;
 
-                        _log.LogError($"Apply Member {responseText}");
+                        _log.Error($"Apply Member {responseText}");
                     }
                 }
             }
@@ -126,7 +126,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 result.StatusCode = HttpStatusCode.InternalServerError;
                 result.Message = ex.Message;
 
-                _log.LogError($"Apply Member {ex.Message}");
+                _log.Error($"Apply Member {ex.Message}");
             }
             return result;
         }
@@ -135,7 +135,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/promotions/member")]
         public async Task<IHttpActionResult> ClearMemberPromotionAsync(int shopId, int terminalId, int transactionId, int computerId)
         {
-            _log.LogInfo($"ClearMember: TransactionID {transactionId}, ComputerID {computerId}");
+            _log.Info($"ClearMember: TransactionID {transactionId}, ComputerID {computerId}");
 
             var result = new HttpActionResult<string>(Request);
             try
@@ -167,7 +167,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         result.StatusCode = HttpStatusCode.InternalServerError;
                         result.Message = responseText;
 
-                        _log.LogError($"Clear Member {responseText}");
+                        _log.Error($"Clear Member {responseText}");
                     }
                 }
             }
@@ -176,7 +176,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 result.StatusCode = HttpStatusCode.InternalServerError;
                 result.Message = ex.Message;
 
-                _log.LogError($"Clear Member {ex.Message}");
+                _log.Error($"Clear Member {ex.Message}");
             }
             return result;
         }
@@ -185,7 +185,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/promotions/vouchers/apply")]
         public async Task<IHttpActionResult> ApplyPromotionAsync(OrderPromotion orderPromotion)
         {
-            _log.LogInfo($"ApplyVoucher:{JsonConvert.SerializeObject(orderPromotion)}");
+            _log.Info($"ApplyVoucher:{JsonConvert.SerializeObject(orderPromotion)}");
 
             var result = new HttpActionResult<object>(Request);
             try
@@ -215,7 +215,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         result.StatusCode = HttpStatusCode.InternalServerError;
                         result.Message = responseText;
 
-                        _log.LogError($"Apply Voucher {responseText}");
+                        _log.Error($"Apply Voucher {responseText}");
                     }
                 }
             }
@@ -224,7 +224,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 result.StatusCode = HttpStatusCode.InternalServerError;
                 result.Message = ex.Message;
 
-                _log.LogError($"Apply Voucher {ex.Message}");
+                _log.Error($"Apply Voucher {ex.Message}");
             }
             return result;
         }
@@ -233,7 +233,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/promotions/vouchers/clear")]
         public async Task<IHttpActionResult> ClearPromotionAsync(int shopId, int terminalId, int transactionId, int computerId, int staffId, string voucherSn)
         {
-            _log.LogInfo($"ClearVoucher: TransactionID {transactionId}, ComputerID {computerId}, VoucherSn {voucherSn}");
+            _log.Info($"ClearVoucher: TransactionID {transactionId}, ComputerID {computerId}, VoucherSn {voucherSn}");
 
             var result = new HttpActionResult<object>(Request);
             try
@@ -262,7 +262,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         result.StatusCode = HttpStatusCode.InternalServerError;
                         result.Message = responseText;
 
-                        _log.LogError($"Clear voucher {responseText}");
+                        _log.Error($"Clear voucher {responseText}");
                     }
                 }
             }
@@ -271,7 +271,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 result.StatusCode = HttpStatusCode.InternalServerError;
                 result.Message = ex.Message;
 
-                _log.LogError($"Clear voucher {ex.Message}");
+                _log.Error($"Clear voucher {ex.Message}");
             }
             return result;
         }

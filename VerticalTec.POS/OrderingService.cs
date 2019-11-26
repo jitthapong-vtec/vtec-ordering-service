@@ -142,7 +142,7 @@ namespace VerticalTec.POS
 
             DataSet resultData = new DataSet();
             var isSuccess = _posModule.BillDetail(ref responseText, ref receiptHtml, ref copyReceiptString, ref noCopy, ref resultData,
-                (int)ViewBillTypes.Default, transactionId, computerId, shopId, 0, "front", langId, 1, myConn);
+                (int)ViewBillTypes.Default, transactionId, computerId, shopId, 0, "front", langId, myConn);
             if (isSuccess)
             {
                 receiptHtml = receiptHtml.Replace("<body>", "<body style='max-width:300px; margin:auto;'>");
@@ -572,7 +572,7 @@ namespace VerticalTec.POS
             var copyReceiptText = "";
             var noPrintCopy = 0;
             var dsPrintData = new DataSet();
-            var isSuccess = _posModule.BillDetail(ref responseText, ref receiptText, ref copyReceiptText, ref noPrintCopy, ref dsPrintData, (int)ViewBillTypes.Print, transactionId, computerId, shopId, 0, "front", langId, 1, conn as MySqlConnection);
+            var isSuccess = _posModule.BillDetail(ref responseText, ref receiptText, ref copyReceiptText, ref noPrintCopy, ref dsPrintData, (int)ViewBillTypes.Print, transactionId, computerId, shopId, 0, "front", langId, conn as MySqlConnection);
             if (!isSuccess)
                 throw new VtecPOSException(responseText);
             return Task.FromResult(dsPrintData);

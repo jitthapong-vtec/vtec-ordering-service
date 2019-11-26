@@ -19,18 +19,18 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class OrderingController : ApiController
     {
+        static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("logordering");
+
         IDatabase _database;
         IOrderingService _orderingService;
-        ILogService _log;
         IMessengerService _messengerService;
         IPrintService _printService;
         VtecPOSRepo _posRepo;
 
-        public OrderingController(IDatabase database, IOrderingService orderingService, ILogService log, IMessengerService messenger, IPrintService printService)
+        public OrderingController(IDatabase database, IOrderingService orderingService, IMessengerService messenger, IPrintService printService)
         {
             _database = database;
             _orderingService = orderingService;
-            _log = log;
             _messengerService = messenger;
             _printService = printService;
             _posRepo = new VtecPOSRepo(database);
@@ -51,7 +51,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (VtecPOSException ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
@@ -75,7 +75,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (VtecPOSException ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
@@ -115,7 +115,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
@@ -150,7 +150,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders")]
         public async Task<IHttpActionResult> AddOrderAsync(OrderTransaction order)
         {
-            _log.LogInfo($"ADD_ORDER {JsonConvert.SerializeObject(order)}");
+            _logger.Info($"ADD_ORDER {JsonConvert.SerializeObject(order)}");
 
             var response = new HttpActionResult<OrderTransaction>(Request);
             using (var conn = await _database.ConnectAsync())
@@ -190,7 +190,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (VtecPOSException ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     response.StatusCode = HttpStatusCode.InternalServerError;
                     response.Message = ex.Message;
@@ -203,7 +203,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders/update")]
         public async Task<IHttpActionResult> UpdateOrderAsync(OrderDetail orderDetail)
         {
-            _log.LogInfo($"UPDATE_ORDER {JsonConvert.SerializeObject(orderDetail)}");
+            _logger.Info($"UPDATE_ORDER {JsonConvert.SerializeObject(orderDetail)}");
 
             var response = new HttpActionResult<OrderDetail>(Request);
             using (var conn = await _database.ConnectAsync())
@@ -227,7 +227,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (VtecPOSException ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     response.StatusCode = HttpStatusCode.InternalServerError;
                     response.Message = ex.Message;
@@ -253,7 +253,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (VtecPOSException ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     response.StatusCode = HttpStatusCode.InternalServerError;
                     response.Message = ex.Message;
@@ -266,7 +266,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders/delete")]
         public async Task<IHttpActionResult> DeleteOrdersAsync(List<OrderDetail> orders)
         {
-            _log.LogInfo($"DELETE_ORDER {JsonConvert.SerializeObject(orders)}");
+            _logger.Info($"DELETE_ORDER {JsonConvert.SerializeObject(orders)}");
 
             var response = new HttpActionResult<List<OrderDetail>>(Request);
             using (var conn = await _database.ConnectAsync())
@@ -279,7 +279,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (VtecPOSException ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     response.StatusCode = HttpStatusCode.InternalServerError;
                     response.Message = ex.Message;
@@ -332,7 +332,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         Orders = childOrders
                     };
 
-                    _log.LogInfo($"EDIT_COMBO {JsonConvert.SerializeObject(tranData)}");
+                    _logger.Info($"EDIT_COMBO {JsonConvert.SerializeObject(tranData)}");
 
                     await _orderingService.AddOrderAsync(conn, tranData);
                     var orderDetails = await _orderingService.GetOrderDetailsAsync(conn, transactionId, computerId, shopId);
@@ -341,7 +341,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     response.StatusCode = HttpStatusCode.InternalServerError;
                     response.Message = ex.Message;
@@ -366,7 +366,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = $"Cannot cancel transaction because {ex.Message}";
@@ -427,7 +427,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex.Message);
+                    _logger.Error(ex.Message);
 
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
@@ -453,14 +453,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = tableManage;
 
-                    _log.LogInfo($"MOVE_ORDER {JsonConvert.SerializeObject(tableManage)}");
+                    _logger.Info($"MOVE_ORDER {JsonConvert.SerializeObject(tableManage)}");
                 }
                 catch (VtecPOSException ex)
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
 
-                    _log.LogInfo($"MOVE_ORDER {ex.Message}");
+                    _logger.Info($"MOVE_ORDER {ex.Message}");
                 }
             }
             return result;
@@ -470,7 +470,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders/submit")]
         public async Task<IHttpActionResult> SubmitOrderAsync(TransactionPayload transaction)
         {
-            _log.LogInfo($"Submit order {JsonConvert.SerializeObject(transaction)}");
+            _logger.Info($"Submit order {JsonConvert.SerializeObject(transaction)}");
 
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())
@@ -486,7 +486,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders/checkbill")]
         public async Task<IHttpActionResult> CheckBillAsync(TransactionPayload payload)
         {
-            _log.LogInfo($"Check bill {JsonConvert.SerializeObject(payload)}");
+            _logger.Info($"Check bill {JsonConvert.SerializeObject(payload)}");
 
             var result = new HttpActionResult<string>(Request);
             await _printService.PrintCheckBill(payload);
@@ -500,7 +500,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders/salemode/submit")]
         public async Task<IHttpActionResult> SubmitSaleModeOrderAsync(TransactionPayload payload)
         {
-            _log.LogInfo($"Submit order {JsonConvert.SerializeObject(payload)}");
+            _logger.Info($"Submit order {JsonConvert.SerializeObject(payload)}");
 
             var result = new HttpActionResult<string>(Request);
 
@@ -565,7 +565,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders/kiosk/printcheckbill")]
         public async Task<IHttpActionResult> KioskPrintCheckBill(TransactionPayload transaction)
         {
-            _log.LogInfo($"Check bill {JsonConvert.SerializeObject(transaction)}");
+            _logger.Info($"Check bill {JsonConvert.SerializeObject(transaction)}");
 
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())

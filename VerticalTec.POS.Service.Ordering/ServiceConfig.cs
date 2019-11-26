@@ -23,12 +23,6 @@ namespace VerticalTec.POS.Service.Ordering
             return config.AppSettings.Settings["ApiPort"].Value;
         }
 
-        public static bool EnableLog()
-        {
-            var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
-            return Convert.ToBoolean(config.AppSettings.Settings["EnableLog"].Value);
-        }
-
         public static string GetExecPath()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().Location;

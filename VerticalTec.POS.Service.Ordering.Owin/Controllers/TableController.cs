@@ -17,19 +17,19 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class TableController : ApiController
     {
+        static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logtable");
+
         IDatabase _database;
         IOrderingService _orderingService;
-        ILogService _log;
         IMessengerService _messenger;
         IPrintService _printService;
 
         VtecPOSRepo _posRepo;
 
-        public TableController(IDatabase database, IOrderingService orderingService, ILogService log, IMessengerService messenger, IPrintService printService)
+        public TableController(IDatabase database, IOrderingService orderingService, IMessengerService messenger, IPrintService printService)
         {
             _database = database;
             _orderingService = orderingService;
-            _log = log;
             _messenger = messenger;
             _printService = printService;
             _posRepo = new VtecPOSRepo(database);
@@ -53,14 +53,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
 
-                    _log.LogInfo($"MOVE_TABLE {JsonConvert.SerializeObject(table)}");
+                    _log.Info($"MOVE_TABLE {JsonConvert.SerializeObject(table)}");
                 }
                 catch (VtecPOSException ex)
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
 
-                    _log.LogInfo($"MOVE_TABLE {ex.Message}");
+                    _log.Info($"MOVE_TABLE {ex.Message}");
                 }
             }
             return result;
@@ -84,14 +84,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
 
-                    _log.LogInfo($"MERGE_TABLE {JsonConvert.SerializeObject(table)}");
+                    _log.Info($"MERGE_TABLE {JsonConvert.SerializeObject(table)}");
                 }
                 catch (VtecPOSException ex)
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
 
-                    _log.LogInfo($"MOVE_TABLE {ex.Message}");
+                    _log.Info($"MOVE_TABLE {ex.Message}");
                 }
             }
             return result;
@@ -115,14 +115,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
 
-                    _log.LogInfo($"SPLIT_TABLE {JsonConvert.SerializeObject(table)}");
+                    _log.Info($"SPLIT_TABLE {JsonConvert.SerializeObject(table)}");
                 }
                 catch (VtecPOSException ex)
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
 
-                    _log.LogInfo($"MOVE_TABLE {ex.Message}");
+                    _log.Info($"MOVE_TABLE {ex.Message}");
                 }
             }
             return result;
@@ -140,7 +140,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     await _orderingService.OpenTransactionAsync(conn, tranData);
                     _messenger.SendMessage();
 
-                    _log.LogInfo($"OPEN_TABLE {JsonConvert.SerializeObject(tranData)}");
+                    _log.Info($"OPEN_TABLE {JsonConvert.SerializeObject(tranData)}");
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = tranData;
 

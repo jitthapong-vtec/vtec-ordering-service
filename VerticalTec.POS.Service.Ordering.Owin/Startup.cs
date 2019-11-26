@@ -25,11 +25,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin
     {
         IUnityContainer _container;
 
-        public Startup(string dbServer, string dbName, string hangfileConnStr, bool enableLog = true)
+        public Startup(string dbServer, string dbName, string hangfileConnStr)
         {
             AppConfig.Instance.DbServer = dbServer;
             AppConfig.Instance.DbName = dbName;
-            AppConfig.Instance.EnableLog = enableLog;
             AppConfig.Instance.HangfileConnStr = hangfileConnStr;
         }
 
@@ -58,14 +57,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin
                 AppConfig.Instance.DbPort));
             _container.RegisterType<IOrderingService, OrderingService>(new TransientLifetimeManager());
             _container.RegisterType<IPaymentService, PaymentService>(new TransientLifetimeManager());
-            _container.RegisterSingleton<ILogService, LogService>();
             _container.RegisterSingleton<IMessengerService, MessengerService>();
             _container.RegisterSingleton<IPrintService, PrintService>();
 
             config.DependencyResolver = new UnityResolver(_container);
-
-            var logService = _container.Resolve<ILogService>();
-            logService.Enabled = AppConfig.Instance.EnableLog;
 
             var db = _container.Resolve<IDatabase>();
             DatabaseMigration.CheckAndUpdate(db, AppConfig.Instance.DbName);
