@@ -69,11 +69,19 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Models
             var respMessage = await _httpClient.PostAsync(url, content);
             var respContent = await respMessage.Content.ReadAsStringAsync();
             ResponseBody<TResult> respBody = null;
-            try
+
+            respBody = await Task.Run(() =>
             {
-                respBody = await Task.Run(() => JsonConvert.DeserializeObject<ResponseBody<TResult>>(respContent));
-            }
-            catch (Exception) { }
+                try
+                {
+                    return JsonConvert.DeserializeObject<ResponseBody<TResult>>(respContent);
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            });
+
             if (respMessage.IsSuccessStatusCode)
             {
                 return respBody.Data;

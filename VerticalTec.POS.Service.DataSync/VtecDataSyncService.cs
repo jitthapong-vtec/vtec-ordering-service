@@ -28,7 +28,9 @@ namespace VerticalTec.POS.Service.DataSync
             var dbName = Config.GetDatabaseName();
             var port = Config.GetPort();
             string baseAddress = $"http://+:{port}/";
-            _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName).Configuration(appBuilder));
+            var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
+            
+            _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName, hangfireConStr).Configuration(appBuilder));
             LogManager.Instance.WriteLog("Start owin api", LogPrefix);
         }
 

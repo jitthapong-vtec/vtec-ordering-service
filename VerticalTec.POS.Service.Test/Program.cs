@@ -1,6 +1,7 @@
 ﻿using Microsoft.Owin.Hosting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +16,8 @@ namespace VerticalTec.POS.Service.Test
 
             try
             {
-                using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.DataSync.Owin.Startup("127.0.0.1", "srifa_sa").Configuration(appBuilder)))
+                var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
+                using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.DataSync.Owin.Startup("127.0.0.1", "srifa_sa", hangfireConStr).Configuration(appBuilder)))
                 {
                     Console.ReadLine();
                 }

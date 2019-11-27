@@ -21,5 +21,6 @@ namespace VerticalTec.POS.Service.DataSync.Owin
 
         public string DbServer { get; set; }
         public string DbName { get; set; }
+        public string HangfireConnStr { get; set; }
     }
 }
