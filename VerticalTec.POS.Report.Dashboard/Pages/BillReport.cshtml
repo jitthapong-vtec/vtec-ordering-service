@@ -4,65 +4,96 @@
     ViewData["Title"] = "Bill";
 }
 
-<div class="mt-4 ml-1 mr-1 text-center">
+<div class="mt-4 mb-4 ml-1 mr-1 text-center">
     <div id="report-type-scrollview">
         @(Html.DevExtreme().ButtonGroup().ID("btn-group-report-type").KeyExpr("group")
                                             .FocusStateEnabled(true)
                                             .Items(items =>
                                             {
-                                                items.Add().Text("Details").Option("group", "0");
-                                                items.Add().Text("Group By Date").Option("group", "1");
-                                                items.Add().Text("Group By Shop").Option("group", "2");
-                                            }).SelectedItemKeys(new[] { "0" })
+                                                items.Add().Text("Group By Shop").Option("group", "1");
+                                                items.Add().Text("Group By Date").Option("group", "2");
+                                            }).SelectedItemKeys(new[] { "1" })
                                             .OnItemClick("groupItemClick"))
     </div>
 </div>
 
-<div id="billGrid" class="m-2">
-</div>
+<div id="billTree" class="mb-2"></div>
+
+@(Html.DevExtreme().TreeList()
+    .ID("billTree")
+    .DataSource(new JS("dataSource"))
+    .KeyExpr("id")
+    .ParentIdExpr("parentId")
+    .HasItemsExpr("hasItem")
+    .ShowBorders(true)
+    .Scrolling(scrolling => scrolling.Mode(TreeListScrollingMode.Standard))
+    .Paging(paging => {
+        paging.Enabled(true);
+        paging.PageSize(500);
+    })
+    //.Pager(pager => {
+    //    pager.ShowPageSizeSelector(true);
+    //    pager.AllowedPageSizes(new[] { 5, 10, 20 });
+    //    pager.ShowInfo(true);
+    //})
+    .RemoteOperations(r => r.Filtering(true))
+    .ColumnAutoWidth(true)
+    .WordWrapEnabled(true)
+    .Columns(columns =>
+    {
+        columns.Add()
+            .Caption("Description")
+            .DataField("description");
+
+        columns.Add()
+            .Caption("Total Qty")
+            .Alignment(HorizontalAlignment.Right)
+            .DataField("totalQty");
+
+        columns.Add()
+            .Caption("Total Amount")
+            .Alignment(HorizontalAlignment.Right)
+            .DataField("totalAmount");
+    })
+    .RootValue("")
+)
 
 <script>
     var dataSource = new DevExpress.data.DataSource({
         store: new DevExpress.data.CustomStore({
-            loadMode: "raw",
-            load: function (loadOptions) {
+            load: function (options) {
                 let criteria = getCriteria();
                 let shopName = criteria.shopName;
-                let shopIds = criteria.shopIds;
+                let shopIds = criteria.shopIds.join(",");
                 let fromDate = moment(criteria.fromDate);
                 let toDate = moment(criteria.toDate);
-                let url = '@Url.Content("~/api/report/bills")?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString();
+                let reportType = criteria.reportType;
+                let staffId = JSON.parse(localStorage.getItem('staff')).staffId;
+                let url = '@Url.Content("~/api/report/bills")';
 
                 $("#reportHeader").html("<b>" + shopName + "</b></br>" + moment(fromDate).format("D/M/Y") + " - " + moment(toDate).format("D/M/Y"));
 
-                return $.getJSON(url);
+                 return $.ajax({
+                    url: url,
+                     dataType: "json",
+                     data: {
+                         staffId: staffId,
+                         shopIds: shopIds,
+                         startDate: fromDate.toISOString(),
+                         endDate: toDate.toISOString(),
+                         reportType: reportType,
+                         parentId: options.parentIds[0]
+                     }
+                });
             },
             onLoaded: function (result) {
             }
         })
     });
 
-
     function groupItemClick(e) {
-        var grid = $("#billGrid").dxDataGrid('instance');
-
-        dataSource.filter("TransactionStatus", "=", 2);
-
-        grid.columnOption("SaleDate", "groupIndex", undefined);
-        grid.columnOption("ShopName", "groupIndex", undefined);
-
-        switch (e.itemData.group) {
-            case "1":
-                grid.columnOption("SaleDate", "groupIndex", 1);
-                break;
-            case "2":
-                grid.columnOption("ShopName", "groupIndex", 1);
-                break;
-            default:
-                dataSource.filter("TransactionStatus", ">", 1);
-                dataSource.reload();
-                break;
-        }
+        reportType = e.itemData.group;
+        loadReportClick();
     }
 
     function loadReport() {
@@ -70,111 +101,6 @@
     }
 
     function pageLoaded() {
-        var currencyProp = getProperty(12);
-        var qtyProp = getProperty(15);
-        var cellTemplate = function (element, info) {
-            if (info.data.TransactionStatus == 99) {
-                element.append("<div>" + info.text + "</div>")
-                    .css("text-decoration", "line-through")
-                    .css("color", "red");
-            } else {
-                element.append("<div>" + info.text + "</div>");
-            }
-        };
-
-        $("#billGrid").dxDataGrid({
-            dataSource: dataSource,
-            showBorders: true,
-            grouping: {
-                autoExpandAll: false,
-            },
-            paging: {
-                pageSize: 100
-            },
-            columns: [
-                {
-                    dataField: "SaleDate",
-                    visible:false,
-                },
-                {
-                    dataField: "ShopName",
-                    visible:false
-                },
-                {
-                    dataField: "ReceiptNumber",
-                    cellTemplate: cellTemplate
-                },
-                {
-                    caption: 'Qty',
-                    dataField: "Qty",
-                    format: qtyProp.PropertyTextValue,
-                    alignment: 'right',
-                    width: '20%',
-                    showInGroupFooter: true,
-                    cellTemplate: cellTemplate
-                },
-                {
-                    dataField: "Amount",
-                    format: currencyProp.PropertyTextValue,
-                    alignment: 'right',
-                    width:'30%',
-                    showInGroupFooter: true,
-                    cellTemplate: cellTemplate
-                }
-            ],
-            summary: {
-                groupItems: [{
-                    column: "Qty",
-                    summaryType: "sum",
-                    valueFormat: qtyProp.PropertyTextValue,
-                    displayFormat: "{0}",
-                    alignByColumn: true,
-                    showInGroupFooter: false,
-                    showInColumn: "Qty"
-                },{
-                    column: "Amount",
-                    summaryType: "sum",
-                    valueFormat: currencyProp.PropertyTextValue,
-                    displayFormat: "{0}",
-                    alignByColumn: true,
-                    showInGroupFooter: false,
-                    showInColumn: "Amount"
-                }],
-                totalItems: [{
-                    name: "Qty",
-                    showInColumn: "Qty",
-                    displayFormat: "{0}",
-                    valueFormat: qtyProp.PropertyTextValue,
-                    summaryType: "custom",
-                }, {
-                    name: "Amount",
-                    showInColumn: "Amount",
-                    displayFormat: "{0}",
-                    valueFormat: currencyProp.PropertyTextValue,
-                    summaryType: "custom",
-                    }],
-                calculateCustomSummary: function (options) {
-                    if (options.name === "Qty") {
-                        if (options.summaryProcess === "start") {
-                            options.totalValue = 0;
-                        }
-                        if (options.summaryProcess === "calculate") {
-                            if(options.value.TransactionStatus === 2)
-                                options.totalValue = options.totalValue + options.value.Qty;
-                        }
-                    }
-                    if (options.name === "Amount") {
-                        if (options.summaryProcess === "start") {
-                            options.totalValue = 0;
-                        }
-                        if (options.summaryProcess === "calculate") {
-                            if(options.value.TransactionStatus === 2)
-                                options.totalValue = options.totalValue + options.value.Amount;
-                        }
-                    }
-                }
-            }
-        });
     }
 </script>
 

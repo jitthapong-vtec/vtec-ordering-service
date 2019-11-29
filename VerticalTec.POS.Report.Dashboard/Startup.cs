@@ -33,8 +33,15 @@ namespace VerticalTec_POS_Report_Dashboard
             var connString = $"Data Source={dbServer};Initial Catalog={dbName};User ID=vtecPOS; Password=vtecpwnet";
             services.AddSingleton<IDbHelper>(new vtecdbhelper.SqlServerDatabase(connString));
             services.AddSingleton<IDatabase>(new VerticalTec.POS.Database.SqlServerDatabase(dbServer, dbName));
-            
-            services.AddControllers().AddRazorPagesOptions(option => 
+
+            services.Configure<IISServerOptions>(options =>
+            {
+                options.AutomaticAuthentication = false;
+            });
+
+            services.AddControllers();
+
+            services.AddRazorPages().AddRazorPagesOptions(option =>
             {
                 option.Conventions.AddPageRoute("/Landing", "/");
             }).AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
@@ -71,6 +78,7 @@ namespace VerticalTec_POS_Report_Dashboard
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapRazorPages();
                 endpoints.MapControllers();
             });
         }

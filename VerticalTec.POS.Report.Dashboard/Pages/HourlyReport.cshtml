@@ -5,7 +5,7 @@
 }
 
 <div class="mt-4 ml-1 mr-1 text-center">
-    <div id="report-type-scrollview">
+    <div id="report-type-scrollview" class="m-2">
         @(Html.DevExtreme().ButtonGroup().ID("btn-group-report-type").KeyExpr("reportType")
                                             .FocusStateEnabled(true)
                                             .Items(items =>
@@ -19,9 +19,9 @@
 </div>
 
 <div class="m-2">
-    @Html.DevExtreme().Chart().ID("hourly_chart").Palette(VizPalette.Bright).CommonSeriesSettings(s => s.ArgumentField("Description").Type(SeriesType.Spline)).CommonAxisSettings(s => s.Grid(g => g.Visible(true))).Series(s =>
+    @Html.DevExtreme().Chart().ID("hourly_chart").Palette(VizPalette.Bright).CommonSeriesSettings(s => s.ArgumentField("description").Type(SeriesType.Spline)).CommonAxisSettings(s => s.Grid(g => g.Visible(true))).Series(s =>
 {
-    s.Add().ValueField("Percentage");
+    s.Add().ValueField("percentage");
 }).Tooltip(t => t.Enabled(true)).Legend(l => l.Visible(false)
     ).ArgumentAxis(a => a
     .AllowDecimals(false)
@@ -53,7 +53,7 @@
     function loadReport() {
         let criteria = getCriteria();
         let shopName = criteria.shopName;
-        let shopIds = criteria.shopIds;
+        let shopIds = criteria.shopIds.join(",");
         let fromDate = moment(criteria.fromDate);
         let toDate = moment(criteria.toDate);
         let reportType = $("#btn-group-report-type").dxButtonGroup('instance').option('selectedItems')[0].reportType;
@@ -65,8 +65,8 @@
         $.getJSON(url, function (result) {
             var data = result.data;
             $("#hourly_chart").dxChart('instance').option('dataSource', data.chartData);
-            $("#stat-summary").text(data.stat.Summary);
-            $("#stat-avg").text(data.stat.AvgPerHour);
+            $("#stat-summary").text(data.stat.summary);
+            $("#stat-avg").text(data.stat.avgPerHour);
             $("#html").html(data.html);
         }).fail(function (err) {
             console.log('hourly', err);

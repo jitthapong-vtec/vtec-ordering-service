@@ -24,8 +24,8 @@
     .ResolveLabelOverlapping(PieChartResolveLabelOverlapping.Shift)
     .Series(s =>
     s.Add()
-.ArgumentField("ProductCatName")
-.ValueField("Percentage")
+.ArgumentField("productCatName")
+.ValueField("percentage")
 .Label(l => l
         .Visible(true)
         .Font(f => f.Size(10))
@@ -66,17 +66,19 @@
 
     function loadReport() {
         let criteria = getCriteria();
-        let shopIds = criteria.shopIds;
+        let shopIds = criteria.shopIds.join(",");
         let shopName = criteria.shopName;
         let fromDate = moment(criteria.fromDate);
         let toDate = moment(criteria.toDate);
-        let param = '?shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString();
+        let staffId = JSON.parse(localStorage.getItem('staff')).staffId;
+        let param = '?staffId=' + staffId + '&shopIds=' + shopIds + '&startDate=' + fromDate.toISOString() + '&endDate=' + toDate.toISOString();
 
         $("#reportHeader").html("<b>" + shopName  + "</b></br>" + moment(fromDate).format("D/M/Y") + " - " + moment(toDate).format("D/M/Y"));
 
         showLoading();
 
         $.getJSON('@Url.Content("~/api/report/summary")' + param, function (result) {
+            //console.log('summary', result);
             var data = result.data;
             $("#productSale").html(data.saleByGroupHtml);
             $("#promotion").html(data.promoDataHtml);
