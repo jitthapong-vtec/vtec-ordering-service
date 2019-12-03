@@ -16,7 +16,7 @@ namespace VerticalTec.POS.Report.Mobile.ViewModels
 
         public Task LoadUrl()
         {
-            Url = "https://posinthanin.bangchakretail.com/mobilereport";
+            Url = "https://mreportamzkh.vtec-system.com";
             return Task.FromResult(true);
         }
 
