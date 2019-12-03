@@ -9,14 +9,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Models
 {
     public class StaffCommunicationHub : Hub
     {
-        public async Task CallStaff(string compId, string tableName)
+        public async Task CallStaff(int compId, int tableId, string tableName)
         {
-            await Clients.All.OnReceiveStaffCalling(compId, tableName);
+            await Clients.All.OnReceiveStaffCalling(compId, tableId, tableName);
         }
 
-        public async Task StaffAcknowledge(string staffId, string compId)
+        public async Task StaffAcknowledge(int staffId, int compId, int tableId)
         {
-            await Clients.All.OnReceiveStaffAcknowledge(staffId, compId);
+            await Clients.All.OnReceiveStaffAcknowledge(staffId, compId, tableId);
         }
     }
 }
