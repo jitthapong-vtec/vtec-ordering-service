@@ -535,6 +535,20 @@ namespace VerticalTec.POS
             return dataset.Tables[0];
         }
 
+        public async Task<bool> CheckStaffAccessShop(IDbConnection conn, int staffId, int shopId)
+        {
+            var allowAccess = false;
+            var cmd = _database.CreateCommand("select count(StaffID) from staffaccessshop where StaffID=@staffId and ShopID=@shopId", conn);
+            cmd.Parameters.Add(_database.CreateParameter("@staffId", staffId));
+            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+            using (var reader = await _database.ExecuteReaderAsync(cmd))
+            {
+                if (reader.Read() && reader.GetInt32(0) > 0)
+                    allowAccess = true;
+            }
+            return allowAccess;
+        }
+
         public async Task<DataTable> GetStaffPermissionAsync(IDbConnection conn, int staffRoleId = 0)
         {
             MySqlConnection myConn = conn as MySqlConnection;

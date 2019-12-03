@@ -22,7 +22,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/staffs/identify")]
-        public async Task<IHttpActionResult> IdentifyStaff(string staffCode = "", string password = "")
+        public async Task<IHttpActionResult> IdentifyStaff(string staffCode = "", string password = "", int shopId = 0)
         {
             var result = new HttpActionResult<object>(Request);
             using (IDbConnection conn = await _database.ConnectAsync())
@@ -32,22 +32,34 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                 if (dtStaff.Rows.Count > 0)
                 {
-                    var staff = (from row in dtStaff.AsEnumerable()
-                                 select new
-                                 {
-                                     StaffID = row.GetValue<int>("StaffID"),
-                                     StaffRoleID = row.GetValue<int>("StaffRoleID"),
-                                     StaffFirstName = row.GetValue<string>("StaffFirstName"),
-                                     StaffLastName = row.GetValue<string>("StaffLastName"),
-                                     LangID = row.GetValue<int>("LangID"),
-                                     Permissions = (from permission in dtStaffPermission.Select($"StaffRoleID={row.GetValue<int>("StaffRoleID")}")
-                                                    select new
-                                                    {
-                                                        PermissionItemID = permission.GetValue<int>("PermissionItemID")
-                                                    }).ToList()
-                                 }).FirstOrDefault();
-                    result.StatusCode = HttpStatusCode.OK;
-                    result.Body = staff;
+                    var staffId = dtStaff.Rows[0].GetValue<int>("StaffID");
+                    var allowAccess = true;
+                    if (shopId > 0)
+                        allowAccess = await _posRepo.CheckStaffAccessShop(conn, staffId, shopId);
+
+                    if (allowAccess)
+                    {
+                        var staff = (from row in dtStaff.AsEnumerable()
+                                     select new
+                                     {
+                                         StaffID = row.GetValue<int>("StaffID"),
+                                         StaffRoleID = row.GetValue<int>("StaffRoleID"),
+                                         StaffFirstName = row.GetValue<string>("StaffFirstName"),
+                                         StaffLastName = row.GetValue<string>("StaffLastName"),
+                                         LangID = row.GetValue<int>("LangID"),
+                                         Permissions = (from permission in dtStaffPermission.Select($"StaffRoleID={row.GetValue<int>("StaffRoleID")}")
+                                                        select new
+                                                        {
+                                                            PermissionItemID = permission.GetValue<int>("PermissionItemID")
+                                                        }).ToList()
+                                     }).FirstOrDefault();
+                        result.StatusCode = HttpStatusCode.OK;
+                        result.Body = staff;
+                    }
+                    else
+                    {
+                        result.StatusCode = HttpStatusCode.Unauthorized;
+                    }
                 }
                 else
                 {

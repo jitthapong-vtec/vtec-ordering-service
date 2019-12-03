@@ -482,7 +482,6 @@ namespace VerticalTec.POS
 
                 await _posRepo.AddQuestionAsync(conn, tranData);
 
-                await _posRepo.SetComputerAccessAsync(conn, tranData.TableID, tranData.TerminalID);
                 try
                 {
                     var cmd = _database.CreateCommand("update ordertransactionfront set OpenTime=Now() where TransactionID=@tranId and ComputerID=@compId", conn);

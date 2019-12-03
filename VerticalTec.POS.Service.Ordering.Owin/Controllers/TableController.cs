@@ -138,6 +138,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 try
                 {
                     await _orderingService.OpenTransactionAsync(conn, tranData);
+                    await _posRepo.SetComputerAccessAsync(conn, tranData.TableID, tranData.TerminalID);
                     _messenger.SendMessage();
 
                     _log.Info($"OPEN_TABLE {JsonConvert.SerializeObject(tranData)}");
