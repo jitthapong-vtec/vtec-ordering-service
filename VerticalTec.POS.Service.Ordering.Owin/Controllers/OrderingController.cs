@@ -235,7 +235,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             return response;
         }
-        //TODO: change v1/orders/combo/update http method
+
         [HttpPost]
         [Route("v1/orders/combo/update")]
         public async Task<IHttpActionResult> UpdateComboOrderAsync(OrderTransaction orderTransaction)
@@ -287,7 +287,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             return response;
         }
-        //TODO: Change v1/orders/combo/update http POST and parameter to query
+
         [HttpPost]
         [Route("v2/orders/combo/update")]
         public async Task<IHttpActionResult> EditComboOrdersAsync(int shopId, int transactionId, int computerId, int orderDetailId,
