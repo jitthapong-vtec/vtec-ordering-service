@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using VerticalTec.POS.Database;
 
-namespace VerticalTec.POS.WebService.LiveUpdate
+namespace VerticalTec.POS.Service.LiveUpdateHub
 {
     public class Startup
     {
@@ -22,29 +22,24 @@ namespace VerticalTec.POS.WebService.LiveUpdate
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSignalR().AddMessagePackProtocol();
-            services.AddControllers();
+            var connStr = Configuration.GetConnectionString("VtecPOS");
+            services.AddScoped<IDatabase>(db => new SqlServerDatabase(connStr));
+            services.AddSignalR();
+            services.AddHostedService<LiveUpdateWorker>();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
-
-            app.UseRouting();
-            app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
+                endpoints.MapHub<LiveUpdateHub>("/liveupdate");
             });
         }
     }

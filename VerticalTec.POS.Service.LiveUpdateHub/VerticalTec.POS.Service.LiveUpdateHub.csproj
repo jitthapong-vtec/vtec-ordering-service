@@ -5,17 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="Hubs\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="3.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj" />
     <ProjectReference Include="..\VerticalTec.POS.Share\VerticalTec.POS.Share.csproj" />
+    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj" />
   </ItemGroup>
-
 
 </Project>
