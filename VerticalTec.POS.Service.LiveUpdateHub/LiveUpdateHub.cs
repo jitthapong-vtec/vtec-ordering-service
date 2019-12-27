@@ -11,12 +11,21 @@ namespace VerticalTec.POS.Service.LiveUpdateHub
 {
     public class LiveUpdateHub : Hub<ILiveUpdateClient>
     {
-        public LiveUpdateHub()
+        IDatabase _db;
+        LiveUpdateDbContext _liveUpdateCtx;
+
+        public LiveUpdateHub(IDatabase db, LiveUpdateDbContext liveUpdateCtx)
         {
+            _db = db;
+            _liveUpdateCtx = liveUpdateCtx;
         }
 
-        public async Task UpdateClientInfo(VersionInfo info)
+        public async Task UpdateVersionInfo(VersionInfo info)
         {
+            using(var conn = await _db.ConnectAsync())
+            {
+                await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, info);
+            }
         }
     }
 }

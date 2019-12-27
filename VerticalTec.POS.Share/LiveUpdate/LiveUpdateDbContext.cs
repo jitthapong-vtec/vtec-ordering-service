@@ -53,14 +53,38 @@ namespace VerticalTec.POS.Share.LiveUpdate
                 cmd.Parameters.Add(_db.CreateParameter("@updateStatus", liveUpdate.UpdateStatus));
                 cmd.Parameters.Add(_db.CreateParameter("@syncStatus", liveUpdate.SyncStatus));
                 cmd.Parameters.Add(_db.CreateParameter("@messageLog", liveUpdate.MessageLog));
-                cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+                cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToISODateTime()));
                 await _db.ExecuteNonQueryAsync(cmd);
             }
             else
             {
                 cmd.CommandText = "insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion," +
-                    "RevFile, RevStartTime)" +
-                    " values ()";
+                    " RevFile, RevStartTime, RevEndTime, BackupStatus, BackupStartTime, BackupEndTime, ScheduleUpdate," +
+                    " UpdateStartTime, UpdateEndTime, RollbackStatus, UpdateStatus, SyncStatus, MessageLog, InsertDate, UpdateDate)" +
+                    " values (@batchId, @shopId, @computerId, @programId, @programName, @updateVersion, @revFile, @revStartTime," +
+                    " @revEndTime, @backupStatus, @backupStartTime, @backupEndTime, @scheduleUpdate, @updateStartTime," +
+                    " @updateEndTime, @rollbackStatus, @updateStatus, @syncStatus, @messageLog, @insertDate, @updateDate)";
+                cmd.Parameters.Add(_db.CreateParameter("@batchId", liveUpdate.BatchId));
+                cmd.Parameters.Add(_db.CreateParameter("@shopId", liveUpdate.ShopId));
+                cmd.Parameters.Add(_db.CreateParameter("@computerId", liveUpdate.ComputerId));
+                cmd.Parameters.Add(_db.CreateParameter("@programId", liveUpdate.ProgramId));
+                cmd.Parameters.Add(_db.CreateParameter("@programName", liveUpdate.ProgramName));
+                cmd.Parameters.Add(_db.CreateParameter("@updateVersion", liveUpdate.UpdateVersion));
+                cmd.Parameters.Add(_db.CreateParameter("@revFile", liveUpdate.RevFile));
+                cmd.Parameters.Add(_db.CreateParameter("@revStartTime", liveUpdate.RevStartTime.MinValueToDBNull()));
+                cmd.Parameters.Add(_db.CreateParameter("@revEndTime", liveUpdate.RevEndTime.MinValueToDBNull()));
+                cmd.Parameters.Add(_db.CreateParameter("@backupStatus", liveUpdate.BackupStatus));
+                cmd.Parameters.Add(_db.CreateParameter("@backupStartTime", liveUpdate.BackupStartTime.MinValueToDBNull()));
+                cmd.Parameters.Add(_db.CreateParameter("@backupEndTime", liveUpdate.BackupEndTime.MinValueToDBNull()));
+                cmd.Parameters.Add(_db.CreateParameter("@scheduleUpdate", liveUpdate.ScheduleUpdate.MinValueToDBNull()));
+                cmd.Parameters.Add(_db.CreateParameter("@updateStartTime", liveUpdate.UpdateStartTime.MinValueToDBNull()));
+                cmd.Parameters.Add(_db.CreateParameter("@updateEndTime", liveUpdate.UpdateEndTime.MinValueToDBNull()));
+                cmd.Parameters.Add(_db.CreateParameter("@rollbackStatus", liveUpdate.RollbackStatus));
+                cmd.Parameters.Add(_db.CreateParameter("@updateStatus", liveUpdate.UpdateStatus));
+                cmd.Parameters.Add(_db.CreateParameter("@syncStatus", liveUpdate.SyncStatus));
+                cmd.Parameters.Add(_db.CreateParameter("@messageLog", liveUpdate.MessageLog));
+                cmd.Parameters.Add(_db.CreateParameter("@insertDate", DateTime.Now.ToISODateTime()));
+                cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToISODateTime()));
                 await _db.ExecuteNonQueryAsync(cmd);
             }
         }
@@ -84,7 +108,7 @@ namespace VerticalTec.POS.Share.LiveUpdate
                     " where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId";
                 cmd.Parameters.Add(_db.CreateParameter("@programVersion", info.ProgramVersion));
                 cmd.Parameters.Add(_db.CreateParameter("@versionStatus", info.VersionStatus));
-                cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+                cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToISODateTime()));
                 cmd.Parameters.Add(_db.CreateParameter("@syncStatus", info.SyncStatus));
                 await _db.ExecuteNonQueryAsync(cmd);
             }
@@ -95,8 +119,8 @@ namespace VerticalTec.POS.Share.LiveUpdate
                 cmd.Parameters.Add(_db.CreateParameter("@programName", info.ProgramName));
                 cmd.Parameters.Add(_db.CreateParameter("@programVersion", info.ProgramVersion));
                 cmd.Parameters.Add(_db.CreateParameter("@versionStatus", info.VersionStatus));
-                cmd.Parameters.Add(_db.CreateParameter("@insertDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
-                cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+                cmd.Parameters.Add(_db.CreateParameter("@insertDate", DateTime.Now.ToISODateTime()));
+                cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToISODateTime()));
                 cmd.Parameters.Add(_db.CreateParameter("@syncStatus", info.SyncStatus));
                 await _db.ExecuteNonQueryAsync(cmd);
             }
