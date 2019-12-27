@@ -13,8 +13,9 @@ namespace VerticalTec.POS.Share.LiveUpdate
         public int ProgramId { get; set; }
         public string ProgramName { get; set; }
         public string ProgramVersion { get; set; }
+        public string UpdateVersion { get; set; }
         public int BatchStatus { get; set; }
         public int VersionStatus { get; set; }
-        public DateTime ScheduleUpdate { get; set; }
+        public int SyncStatus { get; set; }
     }
 }
