@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Share.LiveUpdate;
-using VerticalTec.POS.Share.LiveUpdate.SignalRHubs;
 
 namespace VerticalTec.POS.Service.LiveUpdateHub
 {
@@ -27,5 +26,7 @@ namespace VerticalTec.POS.Service.LiveUpdateHub
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, info);
             }
         }
+
+
     }
 }

@@ -20,7 +20,10 @@ namespace VerticalTec.POS.Service.LiveUpdateHub
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            throw new NotImplementedException();
+            while (true)
+            {
+                _hubContext.Clients.All.ClientInfo()
+            }
         }
     }
 }
