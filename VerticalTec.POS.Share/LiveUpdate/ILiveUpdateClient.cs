@@ -9,9 +9,9 @@ namespace VerticalTec.POS.Share.LiveUpdate
     {
         Task SendVersionInfo();
 
-        Task StartLiveUpdate();
+        Task StartUpdate();
 
-        Task CancelLiveUpdate();
+        Task CancelUpdate();
 
         Task SendUpdateStatus();
 

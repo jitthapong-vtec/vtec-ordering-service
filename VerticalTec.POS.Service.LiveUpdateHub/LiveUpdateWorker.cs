@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using VerticalTec.POS.Share.LiveUpdate.SignalRHubs;
+using VerticalTec.POS.Share.LiveUpdate;
 
 namespace VerticalTec.POS.Service.LiveUpdateHub
 {
@@ -20,10 +20,7 @@ namespace VerticalTec.POS.Service.LiveUpdateHub
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (true)
-            {
-                _hubContext.Clients.All.ClientInfo()
-            }
+            return Task.FromResult(true);
         }
     }
 }

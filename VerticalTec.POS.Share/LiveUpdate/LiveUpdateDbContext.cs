@@ -80,14 +80,10 @@ namespace VerticalTec.POS.Share.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@programId", info.ProgramId));
             cmd.Parameters.Add(_db.CreateParameter("@programVersion", info.ProgramVersion));
             cmd.Parameters.Add(_db.CreateParameter("@versionStatus", info.VersionStatus));
-            cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToISODateTime()));
             cmd.Parameters.Add(_db.CreateParameter("@syncStatus", info.SyncStatus));
             cmd.Parameters.Add(_db.CreateParameter("@programName", info.ProgramName));
-            cmd.Parameters.Add(_db.CreateParameter("@programVersion", info.ProgramVersion));
-            cmd.Parameters.Add(_db.CreateParameter("@versionStatus", info.VersionStatus));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", DateTime.Now.ToISODateTime()));
             cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToISODateTime()));
-            cmd.Parameters.Add(_db.CreateParameter("@syncStatus", info.SyncStatus));
 
             var isHaveRecord = false;
             using (var reader = await _db.ExecuteReaderAsync(cmd))

@@ -5,7 +5,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using VerticalTec.POS.Share.LiveUpdate;
-using VerticalTec.POS.Share.LiveUpdate.SignalRHubs;
 
 namespace VerticalTec.POS.Service.LiveUpdateClient
 {
@@ -15,19 +14,34 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
         public LiveUpdateClient(IConfiguration configure)
         {
+            var hubUri = new Uri(configure.GetSection("AppSettings")["LiveUpdateHub"]);
             _hubConnection = new HubConnectionBuilder()
-                .WithUrl(configure.GetSection("AppSettings")["LiveUpdateHub"])
+                .WithUrl(hubUri)
+                .WithAutomaticReconnect()
                 .Build();
+
+            _hubConnection.On("SendVersionInfo", SendVersionInfo);
         }
 
-        public Task ClientInfo(VersionInfo versionInfo)
+        public Task CancelUpdate()
         {
             throw new NotImplementedException();
         }
 
-        public Task ReceiveUpdate(UpdateInfo updateInfo)
+        public Task ReceiveUpdateStatus(VersionLiveUpdate liveUpdate)
         {
             throw new NotImplementedException();
+        }
+
+        public Task SendUpdateStatus()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task SendVersionInfo()
+        {
+            var versionInfo = new VersionInfo();
+            await _hubConnection.InvokeAsync("UpdateVersionInfo", versionInfo);
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -39,11 +53,16 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                     await _hubConnection.StartAsync(cancellationToken);
                     break;
                 }
-                catch
+                catch(Exception e)
                 {
                     await Task.Delay(1000);
                 }
             }
+        }
+
+        public Task StartUpdate()
+        {
+            throw new NotImplementedException();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

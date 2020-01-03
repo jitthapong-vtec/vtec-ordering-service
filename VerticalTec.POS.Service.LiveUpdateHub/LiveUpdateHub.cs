@@ -19,14 +19,30 @@ namespace VerticalTec.POS.Service.LiveUpdateHub
             _liveUpdateCtx = liveUpdateCtx;
         }
 
-        public async Task UpdateVersionInfo(VersionInfo info)
+        public override async Task OnConnectedAsync()
         {
-            using(var conn = await _db.ConnectAsync())
-            {
-                await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, info);
-            }
+            await Clients.Client(Context.ConnectionId).SendVersionInfo();
+            await base.OnConnectedAsync();
         }
 
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            await base.OnDisconnectedAsync(exception);
+        }
 
+        public async Task UpdateVersionInfo(VersionInfo info)
+        {
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, info);
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
     }
 }
