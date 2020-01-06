@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using VerticalTec.POS.Share.LiveUpdate;
+using VerticalTec.POS.LiveUpdate;
 
 namespace VerticalTec.POS.Service.LiveUpdateHub
 {

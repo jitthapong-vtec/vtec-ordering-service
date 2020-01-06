@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VerticalTec.POS.Share.LiveUpdate
+namespace VerticalTec.POS.LiveUpdate
 {
     public interface ILiveUpdateClient
     {
@@ -14,6 +14,8 @@ namespace VerticalTec.POS.Share.LiveUpdate
         Task CancelUpdate();
 
         Task SendUpdateStatus();
+
+        Task ReceiveSyncVersionDeploy(VersionDeploy versionDeploy);
 
         Task ReceiveUpdateStatus(VersionLiveUpdate liveUpdate);
     }

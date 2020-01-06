@@ -4,16 +4,24 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using VerticalTec.POS.Share.LiveUpdate;
+using VerticalTec.POS.Database;
+using VerticalTec.POS.LiveUpdate;
 
 namespace VerticalTec.POS.Service.LiveUpdateClient
 {
     public class LiveUpdateClient : ILiveUpdateClient, IHostedService
     {
-        HubConnection _hubConnection;
+        static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("communication");
 
-        public LiveUpdateClient(IConfiguration configure)
+        HubConnection _hubConnection;
+        IDatabase _db;
+        LiveUpdateDbContext _liveUpdateCtx;
+
+        public LiveUpdateClient(IConfiguration configure, IDatabase db, LiveUpdateDbContext liveUpdateCtx)
         {
+            _db = db;
+            _liveUpdateCtx = liveUpdateCtx;
+
             var hubUri = new Uri(configure.GetSection("AppSettings")["LiveUpdateHub"]);
             _hubConnection = new HubConnectionBuilder()
                 .WithUrl(hubUri)
@@ -21,11 +29,28 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 .Build();
 
             _hubConnection.On("SendVersionInfo", SendVersionInfo);
+            _hubConnection.On<VersionDeploy>("ReceiveSyncVersionDeploy", ReceiveSyncVersionDeploy);
+
         }
 
         public Task CancelUpdate()
         {
             throw new NotImplementedException();
+        }
+
+        public async Task ReceiveSyncVersionDeploy(VersionDeploy versionDeploy)
+        {
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "ReceiveSyncVersionDeploy");
+            }
         }
 
         public Task ReceiveUpdateStatus(VersionLiveUpdate liveUpdate)
@@ -40,8 +65,18 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
         public async Task SendVersionInfo()
         {
-            var versionInfo = new VersionInfo();
-            await _hubConnection.InvokeAsync("UpdateVersionInfo", versionInfo);
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var versionInfo = _liveUpdateCtx.GetVersionInfo(conn, 0, 0, 0);
+                    await _hubConnection.InvokeAsync("UpdateVersionInfo", versionInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, $"SendVersionInfo => {ex.Message}");
+            }
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -53,7 +88,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                     await _hubConnection.StartAsync(cancellationToken);
                     break;
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     await Task.Delay(1000);
                 }

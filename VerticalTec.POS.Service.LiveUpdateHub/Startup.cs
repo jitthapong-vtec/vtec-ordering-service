@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using VerticalTec.POS.Database;
-using VerticalTec.POS.Share.LiveUpdate;
+using VerticalTec.POS.LiveUpdate;
 
 namespace VerticalTec.POS.Service.LiveUpdateHub
 {
@@ -25,8 +25,8 @@ namespace VerticalTec.POS.Service.LiveUpdateHub
         public void ConfigureServices(IServiceCollection services)
         {
             var connStr = Configuration.GetConnectionString("VtecPOS");
-            services.AddScoped<IDatabase>(db => new SqlServerDatabase(connStr));
-            services.AddScoped<LiveUpdateDbContext>();
+            services.AddSingleton<IDatabase>(db => new SqlServerDatabase(connStr));
+            services.AddSingleton<LiveUpdateDbContext>();
             services.AddSignalR();
             services.AddHostedService<LiveUpdateWorker>();
         }

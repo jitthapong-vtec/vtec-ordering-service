@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using VerticalTec.POS.Database;
+using VerticalTec.POS.LiveUpdate;
 
 namespace VerticalTec.POS.Service.LiveUpdateClient
 {
@@ -14,7 +16,21 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
     {
         public static void Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
+            var host = CreateHostBuilder(args).Build();
+            try
+            {
+                var db = host.Services.GetRequiredService<IDatabase>();
+                var dbCtx = host.Services.GetRequiredService<LiveUpdateDbContext>();
+                Task.Run(async () =>
+                {
+                    using (var conn = await db.ConnectAsync())
+                    {
+                        await dbCtx.UpdateStructure(conn);
+                    }
+                });
+            }
+            catch { }
+            host.Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -22,6 +38,9 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             .UseWindowsService()
             .ConfigureServices((context, services) =>
             {
+                var connStr = context.Configuration.GetConnectionString("VtecPOS");
+                services.AddSingleton<IDatabase>(db => new MySqlDatabase(connStr));
+                services.AddSingleton<LiveUpdateDbContext>();
                 services.AddHostedService<LiveUpdateClient>();
             });
     }

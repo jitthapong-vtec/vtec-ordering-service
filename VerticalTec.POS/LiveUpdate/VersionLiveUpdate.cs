@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace VerticalTec.POS.Share.LiveUpdate
+namespace VerticalTec.POS.LiveUpdate
 {
     public class VersionLiveUpdate
     {

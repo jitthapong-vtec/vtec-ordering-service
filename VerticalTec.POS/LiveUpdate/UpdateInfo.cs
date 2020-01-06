@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace VerticalTec.POS.Share.LiveUpdate
+namespace VerticalTec.POS.LiveUpdate
 {
     public class UpdateInfo
     {
