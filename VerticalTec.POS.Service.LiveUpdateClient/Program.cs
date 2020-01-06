@@ -16,21 +16,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
     {
         public static void Main(string[] args)
         {
-            var host = CreateHostBuilder(args).Build();
-            try
-            {
-                var db = host.Services.GetRequiredService<IDatabase>();
-                var dbCtx = host.Services.GetRequiredService<LiveUpdateDbContext>();
-                Task.Run(async () =>
-                {
-                    using (var conn = await db.ConnectAsync())
-                    {
-                        await dbCtx.UpdateStructure(conn);
-                    }
-                });
-            }
-            catch { }
-            host.Run();
+            CreateHostBuilder(args).Build().Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -41,6 +27,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 var connStr = context.Configuration.GetConnectionString("VtecPOS");
                 services.AddSingleton<IDatabase>(db => new MySqlDatabase(connStr));
                 services.AddSingleton<LiveUpdateDbContext>();
+                services.AddSingleton<FrontConfigManager>();
                 services.AddHostedService<LiveUpdateClient>();
             });
     }
