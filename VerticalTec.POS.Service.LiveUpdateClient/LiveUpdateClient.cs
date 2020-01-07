@@ -19,22 +19,11 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
         LiveUpdateDbContext _liveUpdateCtx;
         FrontConfigManager _frontConfigManager;
 
-        public LiveUpdateClient(IConfiguration configure, IDatabase db, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
+        public LiveUpdateClient(IDatabase db, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
         {
             _db = db;
             _liveUpdateCtx = liveUpdateCtx;
             _frontConfigManager = frontConfigManager;
-
-            var hubUri = new Uri(configure.GetSection("AppSettings")["LiveUpdateHub"]);
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl(hubUri)
-                .WithAutomaticReconnect()
-                .Build();
-
-            _hubConnection.On("SendVersionInfo", SendVersionInfo);
-            _hubConnection.On<VersionInfo>("ReceiveSyncVersionInfo", ReceiveSyncVersionInfo);
-            _hubConnection.On<VersionDeploy>("ReceiveSyncVersionDeploy", ReceiveSyncVersionDeploy);
-
         }
 
         public Task CancelUpdate()
@@ -53,7 +42,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
             catch (Exception ex)
             {
-                _commLogger.Error(ex, "ReceiveSyncVersionDeploy");
+                _commLogger.Error(ex, $"ReceiveSyncVersionDeploy => {ex.Message}");
             }
         }
 
@@ -111,6 +100,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            var isInitSuccess = false;
             try
             {
                 using (var conn = await _db.ConnectAsync())
@@ -127,28 +117,43 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                         try
                         {
                             await _frontConfigManager.LoadConfig(confPath);
+
+                            var liveUpdateConsoleUrl = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateConsole");
+                            if (!string.IsNullOrEmpty(liveUpdateConsoleUrl))
+                            {
+                                InitHubConnection(liveUpdateConsoleUrl);
+                                isInitSuccess = true;
+                            }
+                            else
+                            {
+                                _gbLogger.Error($"Not found parameter LiveUpdateConsole in property 1050");
+                            }
                         }
                         catch (Exception ex)
                         {
-                            _gbLogger.Error($"when try to load vTec-ResPOS.config => {ex.Message}");
+                            _gbLogger.Error(ex, $"when try to load vTec-ResPOS.config => {ex.Message}");
                         }
                     }
                     else
                     {
-                        _gbLogger.Error("Not found property 2004(VtecSoftwareRootPath)");
+                        _gbLogger.Error("Not found parameter VtecSoftwareRootPath in property 2004");
                     }
                 }
 
-                while (true)
+                if (isInitSuccess)
                 {
-                    try
+                    while (true)
                     {
-                        await _hubConnection.StartAsync(cancellationToken);
-                        break;
-                    }
-                    catch (Exception e)
-                    {
-                        await Task.Delay(1000);
+                        try
+                        {
+                            await _hubConnection.StartAsync(cancellationToken);
+                            break;
+                        }
+                        catch(Exception ex)
+                        {
+                            _gbLogger.Error(ex.Message);
+                            await Task.Delay(1000);
+                        }
                     }
                 }
             }
@@ -158,6 +163,18 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
         }
 
+        private void InitHubConnection(string liveUpdateConsoleUrl)
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(liveUpdateConsoleUrl)
+                .WithAutomaticReconnect()
+                .Build();
+
+            _hubConnection.On("SendVersionInfo", SendVersionInfo);
+            _hubConnection.On<VersionInfo>("ReceiveSyncVersionInfo", ReceiveSyncVersionInfo);
+            _hubConnection.On<VersionDeploy>("ReceiveSyncVersionDeploy", ReceiveSyncVersionDeploy);
+        }
+
         public Task StartUpdate()
         {
             throw new NotImplementedException();
@@ -165,7 +182,14 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            return _hubConnection.DisposeAsync();
+            try
+            {
+                return _hubConnection.DisposeAsync();
+            }
+            catch
+            {
+                return Task.FromResult(true);
+            }
         }
     }
 }
