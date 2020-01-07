@@ -32,6 +32,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 .Build();
 
             _hubConnection.On("SendVersionInfo", SendVersionInfo);
+            _hubConnection.On<VersionInfo>("ReceiveSyncVersionInfo", ReceiveSyncVersionInfo);
             _hubConnection.On<VersionDeploy>("ReceiveSyncVersionDeploy", ReceiveSyncVersionDeploy);
 
         }
@@ -56,6 +57,21 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
         }
 
+        public async Task ReceiveSyncVersionInfo(VersionInfo versionInfo)
+        {
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                _gbLogger.Error(ex, $"ReceiveSyncVersionInfo => {ex.Message}");
+            }
+        }
+
         public Task ReceiveUpdateStatus(VersionLiveUpdate liveUpdate)
         {
             throw new NotImplementedException();
@@ -73,7 +89,17 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 using (var conn = await _db.ConnectAsync())
                 {
                     var posSetting = _frontConfigManager.POSDataSetting;
-                    var versionInfo = _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID, 1);
+                    var programVersion = await _liveUpdateCtx.GetFileVersion(conn, posSetting.ShopID, posSetting.ComputerID, "vTec-ResPOS.exe");
+                    var versionInfo = new VersionInfo()
+                    {
+                        ShopId = posSetting.ShopID,
+                        ComputerId = posSetting.ComputerID,
+                        ProgramId = 1,
+                        ProgramName = "vTec-ResPOS",
+                        ProgramVersion = programVersion.FileVersion,
+                        InsertDate = DateTime.Now,
+                        UpdateDate = DateTime.Now
+                    };
                     await _hubConnection.InvokeAsync("UpdateVersionInfo", versionInfo);
                 }
             }
@@ -126,7 +152,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                     }
                 }
             }
-            catch(Exception ex) 
+            catch (Exception ex)
             {
                 _gbLogger.Error(ex, ex.Message);
             }
