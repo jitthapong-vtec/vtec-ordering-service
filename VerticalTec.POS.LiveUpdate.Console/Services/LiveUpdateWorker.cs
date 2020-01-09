@@ -6,8 +6,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using VerticalTec.POS.LiveUpdate;
+using VerticalTec.POS.LiveUpdate.Console.Hubs;
 
-namespace VerticalTec.POS.LiveUpdate.Console
+namespace VerticalTec.POS.LiveUpdate.Console.Services
 {
     public class LiveUpdateWorker : BackgroundService
     {

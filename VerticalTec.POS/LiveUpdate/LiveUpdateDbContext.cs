@@ -28,6 +28,7 @@ namespace VerticalTec.POS.LiveUpdate
                ProgramID SMALLINT NOT NULL,
                ProgramName VARCHAR(100) NOT NULL,
                ProgramVersion VARCHAR(20) NOT NULL,
+               FilePath VARCHAR(255),
                BatchStatus TINYINT NOT NULL,
                ScheduleUpdate DATETIME NULL,
                InsertDate DATETIME NOT NULL,
@@ -44,6 +45,7 @@ namespace VerticalTec.POS.LiveUpdate
                InsertDate DATETIME NOT NULL,
                UpdateDate DATETIME NOT NULL,
                SyncStatus TINYINT NOT NULL DEFAULT '0',
+               ConnectionId VARCHAR(50) NOT NULL,
                PRIMARY KEY (ShopID,ComputerID,ProgramID)
             );",
                 @"CREATE TABLE Version_LiveUpdate (
@@ -96,6 +98,90 @@ namespace VerticalTec.POS.LiveUpdate
             }
         }
 
+        public async Task<DataTable> GetVersionComputer(IDbConnection conn)
+        {
+            DataTable dt = new DataTable();
+            var cmd = _db.CreateCommand(@"SELECT a.*, b.ShopName, c.ComputerName
+                FROM versioninfo a
+                LEFT JOIN shop_data b
+                ON a.ShopID=b.ShopID
+                LEFT JOIN computername c
+                ON a.ComputerID=c.ComputerID AND a.ShopID=c.ShopID", conn);
+            using(var reader = await _db.ExecuteReaderAsync(cmd))
+            {
+                dt.Load(reader);
+            }
+            return dt;
+        }
+
+        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, int shopId, int computerId, int programId)
+        {
+            var cmd = _db.CreateCommand("select * from version_liveupdate where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
+            cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
+            cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
+            cmd.Parameters.Add(_db.CreateParameter("@programId", programId));
+
+            VersionLiveUpdate versionLiveUpdate = null;
+            using(var reader = await _db.ExecuteReaderAsync(cmd))
+            {
+                if (reader.Read())
+                {
+                    versionLiveUpdate = new VersionLiveUpdate()
+                    {
+                        BatchId = reader.GetValue<string>("BatchID"),
+                        ShopId = reader.GetValue<int>("ShopID"),
+                        ComputerId = reader.GetValue<int>("ComputerID"),
+                        ProgramId = reader.GetValue<int>("ProgramID"),
+                        ProgramName = reader.GetValue<string>("ProgramName"),
+                        UpdateVersion = reader.GetValue<string>("UpdateVersion"),
+                        RevFile = reader.GetValue<int>("RevFile"),
+                        RevStartTime = reader.GetValue<DateTime>("RevStartTime"),
+                        RevEndTime = reader.GetValue<DateTime>("RevEndTime"),
+                        BackupStatus = reader.GetValue<int>("BackupStatus"),
+                        BackupStartTime = reader.GetValue<DateTime>("BackupStartTime"),
+                        BackupEndTime = reader.GetValue<DateTime>("BackupEndTime"),
+                        ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
+                        SyncStatus = reader.GetValue<int>("SyncStatus"),
+                        MessageLog = reader.GetValue<string>("MessageLog"),
+                        InsertDate = reader.GetValue<DateTime>("InsertDate"),
+                        UpdateDate = reader.GetValue<DateTime>("UpdateDate")
+                    };
+                }
+            }
+            return versionLiveUpdate;
+        }
+
+        public async Task<VersionLiveUpdateLog> GetVersionLiveUpdateLog(IDbConnection conn, int shopId, int computerId, int programId)
+        {
+            var cmd = _db.CreateCommand("select * from Version_LiveUpdateLog where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
+            cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
+            cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
+            cmd.Parameters.Add(_db.CreateParameter("@programId", programId));
+
+            VersionLiveUpdateLog log = null;
+            using(var reader = await _db.ExecuteReaderAsync(cmd))
+            {
+                if (reader.Read())
+                {
+                    log = new VersionLiveUpdateLog()
+                    {
+                        LogUUID = reader.GetValue<string>("LogUUID"),
+                        SaleDate = reader.GetValue<DateTime>("SaleDate"),
+                        ShopId = reader.GetValue<int>("ShopID"),
+                        ComputerId = reader.GetValue<int>("ComputerID"),
+                        ProgramId = reader.GetValue<int>("ProgramID"),
+                        ActionId = reader.GetValue<int>("ActionID"),
+                        ProgramVersion = reader.GetValue<string>("ProgramVersion"),
+                        ActionStatus = reader.GetValue<int>("ActionStatus"),
+                        StartTime = reader.GetValue<DateTime>("StartTime"),
+                        EndTime = reader.GetValue<DateTime>("EndTime"),
+                        LogMessage = reader.GetValue<string>("LogMessage")
+                    };
+                }
+            }
+            return log;
+        }
+
         public async Task<VersionDeploy> GetVersionDeploy(IDbConnection conn, int shopId, int programId)
         {
             var cmd = _db.CreateCommand("select * from Version_Deploy where ShopID=@shopId and ProgramID=@programId", conn);
@@ -115,6 +201,7 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramId = reader.GetValue<int>("ProgramID"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
+                        FilePath = reader.GetValue<string>("FilePath"),
                         BatchStatus = reader.GetValue<int>("BatchStatus"),
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
@@ -142,6 +229,7 @@ namespace VerticalTec.POS.LiveUpdate
                         ShopId = shopId,
                         ComputerId = computerId,
                         ProgramId = programId,
+                        ConnectionId = reader.GetValue<string>("ConnectionId"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         VersionStatus = reader.GetValue<int>("VersionStatus"),
@@ -156,6 +244,9 @@ namespace VerticalTec.POS.LiveUpdate
 
         public async Task AddOrUpdateVersionDeploy(IDbConnection conn, VersionDeploy versionDeploy)
         {
+            if (versionDeploy == null)
+                return;
+
             var cmd = _db.CreateCommand("select count(BatchID) from Version_Deploy where ShopID=@shopId and ProgramID=@programId and ProgramVersion=@programVersion", conn);
             cmd.Parameters.Add(_db.CreateParameter("@batchId", versionDeploy.BatchId));
             cmd.Parameters.Add(_db.CreateParameter("@brandId", versionDeploy.BrandId));
@@ -163,6 +254,7 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@programId", versionDeploy.ProgramId));
             cmd.Parameters.Add(_db.CreateParameter("@programName", versionDeploy.ProgramName));
             cmd.Parameters.Add(_db.CreateParameter("@programVersion", versionDeploy.ProgramVersion));
+            cmd.Parameters.Add(_db.CreateParameter("@filePath", versionDeploy.FilePath));
             cmd.Parameters.Add(_db.CreateParameter("@batchStatus", versionDeploy.BatchStatus));
             cmd.Parameters.Add(_db.CreateParameter("@scheduleUpdate", versionDeploy.ScheduleUpdate.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", versionDeploy.InsertDate.MinValueToDBNull()));
@@ -177,20 +269,23 @@ namespace VerticalTec.POS.LiveUpdate
             if (isHaveRecord)
             {
                 cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ShopID=@shopId, ProgramID=@programId," +
-                    "ProgramName=@programName, ProgramVersion=@programVersion, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
+                    "ProgramName=@programName, ProgramVersion=@programVersion, FilePath=@filePath, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
                     "InsertDate=@insertDate, UpdateDate=@updateDate where ShopID=@shopId and ProgramID=@programId and ProgramVersion=@programVersion";
             }
             else
             {
-                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, BatchStatus," +
+                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, FilePath, BatchStatus," +
                     "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @shopId, @programId, @programName, @programVersion," +
-                    "@batchStatus, @scheduleUpate, @insertDate, @updateDate)";
+                    "@filePath, @batchStatus, @scheduleUpate, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }
 
         public async Task AddOrUpdateVersionLiveUpdate(IDbConnection conn, VersionLiveUpdate liveUpdate)
         {
+            if (liveUpdate == null)
+                return;
+
             var cmd = _db.CreateCommand("select count(BatchID) from Version_LiveUpdate where ShopID=@shopId and ComputerID=@computerId" +
                 " and ProgramID=@programId and UpdateVersion=@updateVersion", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", liveUpdate.ShopId));
@@ -245,6 +340,9 @@ namespace VerticalTec.POS.LiveUpdate
 
         public async Task AddOrUpdateVersionInfo(IDbConnection conn, VersionInfo info)
         {
+            if (info == null)
+                return;
+
             var cmd = _db.CreateCommand("select count(ProgramID) from VersionInfo where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", info.ShopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", info.ComputerId));
@@ -253,6 +351,7 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@versionStatus", info.VersionStatus));
             cmd.Parameters.Add(_db.CreateParameter("@syncStatus", info.SyncStatus));
             cmd.Parameters.Add(_db.CreateParameter("@programName", info.ProgramName));
+            cmd.Parameters.Add(_db.CreateParameter("@connectionId", info.ConnectionId));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", DateTime.Now.ToISODateTime()));
             cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToISODateTime()));
 
@@ -264,19 +363,22 @@ namespace VerticalTec.POS.LiveUpdate
 
             if (isHaveRecord)
             {
-                cmd.CommandText = "update VersionInfo set ProgramVersion=@programVersion, VersionStatus=@versionStatus, UpdateDate=@updateDate, SyncStatus=@syncStatus" +
-                    " where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId";
+                cmd.CommandText = "update VersionInfo set ProgramVersion=@programVersion, VersionStatus=@versionStatus, UpdateDate=@updateDate, SyncStatus=@syncStatus," +
+                    " ConnectionId=@connectionId where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId";
             }
             else
             {
-                cmd.CommandText = "insert into VersionInfo(ShopID, ComputerID, ProgramID, ProgramName, ProgramVersion, VersionStatus, InsertDate, UpdateDate, SyncStatus)" +
-                    " values (@shopId, @computerId, @programId, @programName, @programVersion, @versionStatus, @insertDate, @updateDate, @syncStatus);";
+                cmd.CommandText = "insert into VersionInfo(ShopID, ComputerID, ProgramID, ProgramName, ProgramVersion, VersionStatus, InsertDate, UpdateDate, SyncStatus, ConnectionId)" +
+                    " values (@shopId, @computerId, @programId, @programName, @programVersion, @versionStatus, @insertDate, @updateDate, @syncStatus, @connectionId);";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }
 
         public async Task AddOrUpdateVersionLiveUpdateLog(IDbConnection conn, VersionLiveUpdateLog log)
         {
+            if (log == null)
+                return;
+
             var cmd = _db.CreateCommand("select count(LogUUID) from Version_LiveUpdateLog where LogUUID = @uuid", conn);
             cmd.Parameters.Add(_db.CreateParameter("@uuid", log.LogUUID));
             cmd.Parameters.Add(_db.CreateParameter("@saleDate", log.SaleDate));

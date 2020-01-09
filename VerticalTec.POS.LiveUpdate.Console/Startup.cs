@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.LiveUpdate.Console.Hubs;
+using VerticalTec.POS.LiveUpdate.Console.Services;
 
 namespace VerticalTec.POS.LiveUpdate.Console
 {
@@ -52,7 +54,7 @@ namespace VerticalTec.POS.LiveUpdate.Console
             {
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
-                endpoints.MapHub<LiveUpdateHub>("/liveupdate");
+                endpoints.MapHub<LiveUpdateHub>("/hub");
             });
         }
     }

@@ -14,8 +14,8 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
         static readonly NLog.Logger _commLogger = NLog.LogManager.GetLogger("communication");
         static readonly NLog.Logger _gbLogger = NLog.LogManager.GetLogger("global");
 
-        HubConnection _hubConnection;
         IDatabase _db;
+        HubConnection _hubConnection;
         LiveUpdateDbContext _liveUpdateCtx;
         FrontConfigManager _frontConfigManager;
 
@@ -24,78 +24,6 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             _db = db;
             _liveUpdateCtx = liveUpdateCtx;
             _frontConfigManager = frontConfigManager;
-        }
-
-        public Task CancelUpdate()
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task ReceiveSyncVersionDeploy(VersionDeploy versionDeploy)
-        {
-            try
-            {
-                using (var conn = await _db.ConnectAsync())
-                {
-                    await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
-                }
-            }
-            catch (Exception ex)
-            {
-                _commLogger.Error(ex, $"ReceiveSyncVersionDeploy => {ex.Message}");
-            }
-        }
-
-        public async Task ReceiveSyncVersionInfo(VersionInfo versionInfo)
-        {
-            try
-            {
-                using (var conn = await _db.ConnectAsync())
-                {
-                    await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
-                }
-            }
-            catch (Exception ex)
-            {
-                _gbLogger.Error(ex, $"ReceiveSyncVersionInfo => {ex.Message}");
-            }
-        }
-
-        public Task ReceiveUpdateStatus(VersionLiveUpdate liveUpdate)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SendUpdateStatus()
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task SendVersionInfo()
-        {
-            try
-            {
-                using (var conn = await _db.ConnectAsync())
-                {
-                    var posSetting = _frontConfigManager.POSDataSetting;
-                    var programVersion = await _liveUpdateCtx.GetFileVersion(conn, posSetting.ShopID, posSetting.ComputerID, "vTec-ResPOS.exe");
-                    var versionInfo = new VersionInfo()
-                    {
-                        ShopId = posSetting.ShopID,
-                        ComputerId = posSetting.ComputerID,
-                        ProgramId = 1,
-                        ProgramName = "vTec-ResPOS",
-                        ProgramVersion = programVersion.FileVersion,
-                        InsertDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    };
-                    await _hubConnection.InvokeAsync("UpdateVersionInfo", versionInfo);
-                }
-            }
-            catch (Exception ex)
-            {
-                _commLogger.Error(ex, $"SendVersionInfo => {ex.Message}");
-            }
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -121,6 +49,9 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                             var liveUpdateConsoleUrl = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateConsole");
                             if (!string.IsNullOrEmpty(liveUpdateConsoleUrl))
                             {
+                                if (!liveUpdateConsoleUrl.EndsWith("/"))
+                                    liveUpdateConsoleUrl += "/";
+                                liveUpdateConsoleUrl += "hub";
                                 InitHubConnection(liveUpdateConsoleUrl);
                                 isInitSuccess = true;
                             }
@@ -147,9 +78,10 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                         try
                         {
                             await _hubConnection.StartAsync(cancellationToken);
+                            _commLogger.Info("Connected to server");
                             break;
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             _gbLogger.Error(ex.Message);
                             await Task.Delay(1000);
@@ -163,23 +95,6 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
         }
 
-        private void InitHubConnection(string liveUpdateConsoleUrl)
-        {
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl(liveUpdateConsoleUrl)
-                .WithAutomaticReconnect()
-                .Build();
-
-            _hubConnection.On("SendVersionInfo", SendVersionInfo);
-            _hubConnection.On<VersionInfo>("ReceiveSyncVersionInfo", ReceiveSyncVersionInfo);
-            _hubConnection.On<VersionDeploy>("ReceiveSyncVersionDeploy", ReceiveSyncVersionDeploy);
-        }
-
-        public Task StartUpdate()
-        {
-            throw new NotImplementedException();
-        }
-
         public Task StopAsync(CancellationToken cancellationToken)
         {
             try
@@ -190,6 +105,77 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             {
                 return Task.FromResult(true);
             }
+        }
+
+        private void InitHubConnection(string liveUpdateConsoleUrl)
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(liveUpdateConsoleUrl)
+                .WithAutomaticReconnect()
+                .Build();
+
+            _hubConnection.On("SyncVersion", SyncVersion);
+            _hubConnection.On<VersionInfo, VersionDeploy, VersionLiveUpdate, VersionLiveUpdateLog>("ReceiveSyncVersion", ReceiveSyncVersion);
+        }
+
+        public async Task SyncVersion()
+        {
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var posSetting = _frontConfigManager.POSDataSetting;
+                    var programVersion = await _liveUpdateCtx.GetFileVersion(conn, posSetting.ShopID, posSetting.ComputerID, "vTec-ResPOS.exe");
+
+                    var versionInfo = new VersionInfo()
+                    {
+                        ShopId = posSetting.ShopID,
+                        ComputerId = posSetting.ComputerID,
+                        ProgramId = 1,
+                        ProgramName = "vTec-ResPOS",
+                        ProgramVersion = programVersion.FileVersion,
+                        InsertDate = DateTime.Now,
+                        UpdateDate = DateTime.Now
+                    };
+                    var versionLiveUpdate = _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, 1);
+                    var versionLiveUpdateLog = _liveUpdateCtx.GetVersionLiveUpdateLog(conn, posSetting.ShopID, posSetting.ComputerID, 1);
+
+                    await _hubConnection.InvokeAsync("ReceiveSyncVersion", versionInfo, versionLiveUpdate, versionLiveUpdateLog);
+                }
+            }
+            catch (Exception ex)
+            {
+                _commLogger.Error(ex, $"SyncVersion => {ex.Message}");
+            }
+        }
+
+        public async Task ReceiveSyncVersion(VersionInfo versionInfo, VersionDeploy versionDeploy, VersionLiveUpdate versionLiveUpdate, VersionLiveUpdateLog liveUpdateLog)
+        {
+            try
+            {
+                _commLogger.Info("ReceiveSyncVersion");
+                using (var conn = await _db.ConnectAsync())
+                {
+                    await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
+                    await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, liveUpdateLog);
+                }
+            }
+            catch (Exception ex)
+            {
+                _gbLogger.Error(ex, "ReceiveSyncVersion");
+            }
+        }
+
+        public Task UpdateVersion()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ReceiveUpdateVersionState(VersionLiveUpdate versionLiveUpdate, VersionLiveUpdateLog liveUpdateLog)
+        {
+            throw new NotImplementedException();
         }
     }
 }

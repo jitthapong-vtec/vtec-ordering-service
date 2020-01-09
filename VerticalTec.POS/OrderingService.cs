@@ -584,5 +584,25 @@ namespace VerticalTec.POS
             _posModule.Table_UpdateStatus(ref respText, "front", transactionId, computerId, shopId,
                 saleDate, langId, conn as MySqlConnection);
         }
+
+        /// <summary>
+        /// For check buffet flow if processType = 0 then normal flow else 1 
+        /// this function will auto add buffet menu by config
+        /// and show bill for print check
+        /// </summary>
+        /// <param name="conn"></param>
+        /// <param name="tranData"></param>
+        /// <returns></returns>
+        public async Task OpenTransactionProcessAsync(IDbConnection conn, OrderTransaction tranData)
+        {
+            var responseText = "";
+            var processType = 0;
+            var saleDate = await _posRepo.GetSaleDateAsync(conn, tranData.ShopID, true);
+            var tranKey = $"{tranData.TransactionID}:{tranData.ComputerID}";
+            var success = _posModule.Tran_Open_Process(ref responseText, ref processType, tranData.TransactionID, tranData.ComputerID, tranKey, "front",
+                tranData.ShopID, saleDate, tranData.StaffID, tranData.TerminalID, conn as MySqlConnection);
+            if (!success)
+                throw new VtecPOSException(responseText);
+        }
     }
 }

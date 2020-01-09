@@ -14,6 +14,7 @@ namespace VerticalTec.POS
         public int MemberID { get; set; }
         public int StaffID { get; set; }
         public int LangID { get; set; } = 1;
+        public int ProcessType { get; set; }
         [JsonIgnore]
         public string ShopCode { get; set; }
         public SaleModes SaleMode { get; set; } = SaleModes.DineIn;
