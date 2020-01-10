@@ -31,7 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RandomPrivateKeyGen", "Rand
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.Service.LiveUpdateClient", "VerticalTec.POS.Service.LiveUpdateClient\VerticalTec.POS.Service.LiveUpdateClient.csproj", "{0ABB4FA1-6824-4846-846C-7F507E5CAFB7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.LiveUpdate.Console", "VerticalTec.POS.LiveUpdate.Console\VerticalTec.POS.LiveUpdate.Console.csproj", "{7E8497FA-F052-436E-B27C-365A9ED65A7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.SyncHub", "VerticalTec.POS.SyncHub\VerticalTec.POS.SyncHub.csproj", "{7E8497FA-F052-436E-B27C-365A9ED65A7C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace VerticalTec.POS.LiveUpdate.Console.Services
+namespace VerticalTec.POS.SyncHub.Services
 {
     public class LiveUpdateService
     {

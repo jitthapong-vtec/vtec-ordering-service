@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -126,19 +127,19 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 {
                     var posSetting = _frontConfigManager.POSDataSetting;
                     var programVersion = await _liveUpdateCtx.GetFileVersion(conn, posSetting.ShopID, posSetting.ComputerID, "vTec-ResPOS.exe");
-
+                    
                     var versionInfo = new VersionInfo()
                     {
                         ShopId = posSetting.ShopID,
                         ComputerId = posSetting.ComputerID,
                         ProgramId = 1,
                         ProgramName = "vTec-ResPOS",
-                        ProgramVersion = programVersion.FileVersion,
+                        ProgramVersion = programVersion?.FileVersion ?? "",
                         InsertDate = DateTime.Now,
                         UpdateDate = DateTime.Now
                     };
-                    var versionLiveUpdate = _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, 1);
-                    var versionLiveUpdateLog = _liveUpdateCtx.GetVersionLiveUpdateLog(conn, posSetting.ShopID, posSetting.ComputerID, 1);
+                    var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, 1);
+                    var versionLiveUpdateLog = await _liveUpdateCtx.GetVersionLiveUpdateLog(conn, posSetting.ShopID, posSetting.ComputerID, 1);
 
                     await _hubConnection.InvokeAsync("ReceiveSyncVersion", versionInfo, versionLiveUpdate, versionLiveUpdateLog);
                 }
@@ -153,7 +154,12 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
         {
             try
             {
-                _commLogger.Info("ReceiveSyncVersion");
+                try
+                {
+                    _commLogger.Info($"ReceiveSyncVersion => {JsonConvert.SerializeObject(versionInfo)}\n{JsonConvert.SerializeObject(versionDeploy)}\n{JsonConvert.SerializeObject(versionLiveUpdate)}\n{JsonConvert.SerializeObject(liveUpdateLog)}");
+                }
+                catch { }
+
                 using (var conn = await _db.ConnectAsync())
                 {
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);

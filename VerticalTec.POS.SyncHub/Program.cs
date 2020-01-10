@@ -10,8 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.LiveUpdate;
 
-namespace VerticalTec.POS.LiveUpdate.Console
+namespace VerticalTec.POS.SyncHub
 {
     public class Program
     {

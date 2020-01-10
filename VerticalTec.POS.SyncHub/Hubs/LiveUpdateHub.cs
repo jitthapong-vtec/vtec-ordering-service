@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 
-namespace VerticalTec.POS.LiveUpdate.Console.Hubs
+namespace VerticalTec.POS.SyncHub.Hubs
 {
     public class LiveUpdateHub : Hub<ILiveUpdateClient>
     {

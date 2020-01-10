@@ -9,10 +9,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using VerticalTec.POS.Database;
-using VerticalTec.POS.LiveUpdate.Console.Hubs;
-using VerticalTec.POS.LiveUpdate.Console.Services;
+using VerticalTec.POS.LiveUpdate;
+using VerticalTec.POS.SyncHub.Hubs;
+using VerticalTec.POS.SyncHub.Services;
 
-namespace VerticalTec.POS.LiveUpdate.Console
+namespace VerticalTec.POS.SyncHub
 {
     public class Startup
     {
