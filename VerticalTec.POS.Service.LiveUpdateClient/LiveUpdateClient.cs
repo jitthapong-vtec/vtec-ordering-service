@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System;
 using System.Data;
+using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Threading;
@@ -19,6 +20,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
         static readonly NLog.Logger _gbLogger = NLog.LogManager.GetLogger("global");
 
         IDatabase _db;
+        IConfiguration _config;
         HubConnection _hubConnection;
         LiveUpdateDbContext _liveUpdateCtx;
         FrontConfigManager _frontConfigManager;
@@ -28,11 +30,12 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
         string _patchDownloadPath;
         string _backupPath;
 
-        public LiveUpdateClient(IDatabase db, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
+        public LiveUpdateClient(IDatabase db, IConfiguration config, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
         {
             _db = db;
             _liveUpdateCtx = liveUpdateCtx;
             _frontConfigManager = frontConfigManager;
+            _config = config;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -54,23 +57,25 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                         _patchDownloadPath = $"{_vtSoftwareRootPath}PatchDownload\\";
                         _backupPath = $"{_vtSoftwareRootPath}Backup";
 
+                        if (!Directory.Exists(_patchDownloadPath))
+                            Directory.CreateDirectory(_patchDownloadPath);
+                        if (!Directory.Exists(_backupPath))
+                            Directory.CreateDirectory(_backupPath);
+
                         var confPath = $"{_frontCashierPath}vTec-ResPOS.config";
                         try
                         {
                             await _frontConfigManager.LoadConfig(confPath);
 
-                            var liveUpdateConsoleUrl = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateConsole");
-                            if (!string.IsNullOrEmpty(liveUpdateConsoleUrl))
+                            var liveUpdateHub = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateHub");
+                            if (!string.IsNullOrEmpty(liveUpdateHub))
                             {
-                                if (!liveUpdateConsoleUrl.EndsWith("/"))
-                                    liveUpdateConsoleUrl += "/";
-                                liveUpdateConsoleUrl += "hub";
-                                InitHubConnection(liveUpdateConsoleUrl);
+                                InitHubConnection(liveUpdateHub);
                                 isInitSuccess = true;
                             }
                             else
                             {
-                                _gbLogger.Error($"Not found parameter LiveUpdateConsole in property 1050");
+                                _gbLogger.Error($"Not found parameter LiveUpdateHub in property 1050");
                             }
                         }
                         catch (Exception ex)
@@ -150,8 +155,8 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                         InsertDate = DateTime.Now,
                         UpdateDate = DateTime.Now
                     };
-                    var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.FrontCashier);
-                    var versionLiveUpdateLog = await _liveUpdateCtx.GetVersionLiveUpdateLog(conn, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.FrontCashier);
+                    var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+                    var versionLiveUpdateLog = await _liveUpdateCtx.GetVersionLiveUpdateLog(conn, posSetting.ShopID, posSetting.ComputerID);
 
                     await _hubConnection.InvokeAsync("ReceiveSyncVersion", versionInfo, versionLiveUpdate, versionLiveUpdateLog);
                 }
@@ -189,25 +194,24 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             using (var conn = await _db.ConnectAsync())
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID, ProgramTypes.FrontCashier);
+                var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
                 if (versionDeploy == null)
                     return;
 
-                var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.FrontCashier);
+                var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID);
                 if (versionInfo == null)
                     return;
 
                 if (versionDeploy.ProgramVersion == versionInfo.ProgramVersion)
                     return;
 
-                var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.FrontCashier);
-                var updateStateLog = await _liveUpdateCtx.GetVersionLiveUpdateLog(conn, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.FrontCashier);
+                var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+                var updateStateLog = await _liveUpdateCtx.GetVersionLiveUpdateLog(conn, posSetting.ShopID, posSetting.ComputerID);
 
                 updateState ??= new VersionLiveUpdate()
                 {
                     ShopId = posSetting.ShopID,
                     ComputerId = posSetting.ComputerID,
-                    ProgramId = ProgramTypes.FrontCashier,
                     ProgramName = versionDeploy.ProgramName,
                     UpdateVersion = versionDeploy.ProgramVersion
                 };
@@ -215,36 +219,42 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 {
                     ShopId = posSetting.ShopID,
                     ComputerId = posSetting.ComputerID,
-                    ProgramVersion = versionDeploy.ProgramVersion,
-                    ProgramId = ProgramTypes.FrontCashier
+                    ProgramVersion = versionDeploy.ProgramVersion
                 };
 
                 var receivedFile = updateState.RevFile == 1;
                 if (!receivedFile)
                 {
-                    var downloadService = new DownloadService(async(args) =>
+                    var downloadService = new DownloadService(_config, async (status, message) =>
                     {
-                        updateState.RevFile = 1;
-                        updateState.RevEndTime = DateTime.Now;
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+                        if (status)
+                        {
+                            updateState.RevFile = 1;
+                            updateState.RevEndTime = DateTime.Now;
+                            await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 
-                        updateStateLog.LogMessage = $"Download {versionDeploy.FilePath} complete";
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
+                            updateStateLog.LogMessage = $"Download {versionDeploy.FileId} complete";
+                            await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
 
-                        await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
+                            await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
 
-                        await Backup(conn, updateState, updateStateLog);
+                            await Backup(updateState, updateStateLog);
+                        }
+                        else
+                        {
+                            _gbLogger.Error(message);
+                        }
                     });
 
                     try
                     {
-                        var remoteUri = new UriBuilder(versionDeploy.FilePath).Uri;
-                        downloadService.DownloadFile(remoteUri, _patchDownloadPath);
+                        var downloadFile = $"{_patchDownloadPath}patch.zip";
+                        downloadService.DownloadFile(versionDeploy.FileId, downloadFile);
 
                         updateState.RevStartTime = DateTime.Now;
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 
-                        updateStateLog.LogMessage = $"Start download {versionDeploy.FilePath}";
+                        updateStateLog.LogMessage = $"Start download {versionDeploy.FileId}";
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
 
                         await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
@@ -256,44 +266,47 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 }
                 else
                 {
-                    await Backup(conn, updateState, updateStateLog);
+                    await Backup(updateState, updateStateLog);
                 }
             }
         }
 
-        async Task Backup(IDbConnection conn, VersionLiveUpdate state, VersionLiveUpdateLog stateLog)
+        async Task Backup(VersionLiveUpdate state, VersionLiveUpdateLog stateLog)
         {
-            try
+            using (var conn = await _db.ConnectAsync())
             {
-                state.BackupStartTime = DateTime.Now;
-                state.BackupStatus = 1;
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
+                try
+                {
+                    state.BackupStartTime = DateTime.Now;
+                    state.BackupStatus = 1;
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
 
-                var backupFileName = $"{_backupPath}{DateTime.Now.ToString("yyyyMMdd")}.zip";
+                    var backupFileName = $"{_backupPath}{DateTime.Now.ToString("yyyyMMdd")}.zip";
 
-                stateLog.LogMessage = $"Start backup {backupFileName}";
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
-                await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
+                    stateLog.LogMessage = $"Start backup {backupFileName}";
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
+                    await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
 
-                ZipFile.CreateFromDirectory(_frontCashierPath, backupFileName);
+                    ZipFile.CreateFromDirectory(_frontCashierPath, backupFileName);
 
-                state.BackupEndTime = DateTime.Now;
-                state.BackupStatus = 2;
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
-                
-                stateLog.LogMessage = $"Backup {backupFileName} finish";
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
-                await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
-            }
-            catch(Exception ex)
-            {
-                _commLogger.Error(ex, "Backup");
-                state.MessageLog = ex.Message;
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
+                    state.BackupEndTime = DateTime.Now;
+                    state.BackupStatus = 2;
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
 
-                stateLog.LogMessage = $"Backup error {ex.Message}";
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
-                await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
+                    stateLog.LogMessage = $"Backup {backupFileName} finish";
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
+                    await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
+                }
+                catch (Exception ex)
+                {
+                    _commLogger.Error(ex, "Backup");
+                    state.MessageLog = ex.Message;
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
+
+                    stateLog.LogMessage = $"Backup error {ex.Message}";
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
+                    await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
+                }
             }
         }
 

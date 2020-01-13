@@ -9,7 +9,7 @@ namespace VerticalTec.POS.LiveUpdate
         public int ShopId { get; set; }
         public int ComputerId { get; set; }
         public string ConnectionId { get; set; } = "";
-        public ProgramTypes ProgramId { get; set; } = ProgramTypes.FrontCashier;
+        public int ProgramId { get; set; }
         public string ProgramName { get; set; } = "";
         public string ProgramVersion { get; set; } = "";
         public int VersionStatus { get; set; }

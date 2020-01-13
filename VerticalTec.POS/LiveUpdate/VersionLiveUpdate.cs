@@ -11,7 +11,7 @@ namespace VerticalTec.POS.LiveUpdate
         public int BranId { get; set; }
         public int ShopId { get; set; }
         public int ComputerId { get; set; }
-        public ProgramTypes ProgramId { get; set; } = ProgramTypes.FrontCashier;
+        public int ProgramId { get; set; }
         public string ProgramName { get; set; } = "";
         public string UpdateVersion { get; set; }
         public int RevFile { get; set; }
@@ -27,7 +27,7 @@ namespace VerticalTec.POS.LiveUpdate
         public int UpdateStatus { get; set; }
         public int SyncStatus { get; set; }
         [MaxLength(2000)]
-        public string MessageLog { get; set; }
+        public string MessageLog { get; set; } = "";
         public DateTime InsertDate { get; set; } = DateTime.MinValue;
         public DateTime UpdateDate { get; set; } = DateTime.MinValue;
     }
