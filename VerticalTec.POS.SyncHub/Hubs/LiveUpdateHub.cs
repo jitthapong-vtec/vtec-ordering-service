@@ -69,10 +69,8 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
                     var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, versionInfo.ShopId, versionInfo.ProgramId);
                     versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
-                    versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
-                    versionLiveUpdateLog = await _liveUpdateCtx.GetVersionLiveUpdateLog(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
 
-                    await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo, versionDeploy, versionLiveUpdate, versionLiveUpdateLog);
+                    await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo, versionDeploy);
                 }
             }
             catch (Exception ex)

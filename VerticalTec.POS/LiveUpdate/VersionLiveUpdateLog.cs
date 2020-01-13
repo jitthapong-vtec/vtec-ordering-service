@@ -7,7 +7,7 @@ namespace VerticalTec.POS.LiveUpdate
 {
     public class VersionLiveUpdateLog
     {
-        public string LogUUID { get; set; } = Guid.NewGuid().ToString().ToUpper();
+        public string LogUUID { get; set; } = Guid.NewGuid().ToString();
         public DateTime SaleDate { get; set; } = DateTime.Today;
         public int ShopId { get; set; }
         public int ComputerId { get; set; }

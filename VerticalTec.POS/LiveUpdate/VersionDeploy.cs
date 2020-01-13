@@ -6,7 +6,7 @@ namespace VerticalTec.POS.LiveUpdate
 {
     public class VersionDeploy
     {
-        public string BatchId { get; set; } = Guid.NewGuid().ToString().ToUpper();
+        public string BatchId { get; set; } = Guid.NewGuid().ToString();
         public int BrandId { get; set; }
         public int ShopId { get; set; }
         public int ProgramId { get; set; }
