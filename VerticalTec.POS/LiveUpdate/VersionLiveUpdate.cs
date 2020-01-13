@@ -11,7 +11,7 @@ namespace VerticalTec.POS.LiveUpdate
         public int BranId { get; set; }
         public int ShopId { get; set; }
         public int ComputerId { get; set; }
-        public int ProgramId { get; set; }
+        public ProgramTypes ProgramId { get; set; } = ProgramTypes.FrontCashier;
         public string ProgramName { get; set; } = "";
         public string UpdateVersion { get; set; }
         public int RevFile { get; set; }

@@ -33,6 +33,17 @@ namespace VerticalTec.POS.SyncHub.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
+        public async Task ReceiveUpdateState(VersionLiveUpdate state, VersionLiveUpdateLog stateLog)
+        {
+            using (var conn = await _db.ConnectAsync())
+            {
+                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
+                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
+
+                await Clients.Client(Context.ConnectionId).ReceiveUpdateVersionState(state, stateLog);
+            }
+        }
+
         public async Task ReceiveSyncVersion(VersionInfo versionInfo, VersionLiveUpdate versionLiveUpdate, VersionLiveUpdateLog versionLiveUpdateLog)
         {
             try
@@ -40,20 +51,26 @@ namespace VerticalTec.POS.SyncHub.Hubs
                 using (var conn = await _db.ConnectAsync())
                 {
                     _logger.Info($"ReceiveSyncVersion from client {versionInfo.ComputerId}");
-                    
+
                     versionInfo.SyncStatus = 1;
                     versionInfo.ConnectionId = Context.ConnectionId;
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
-                    
-                    var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, 1, 1);
+
+                    if (versionLiveUpdate != null)
+                    {
+                        versionLiveUpdate.SyncStatus = 1;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
+                    }
+
+                    if (versionLiveUpdateLog != null)
+                    {
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, versionLiveUpdateLog);
+                    }
+
+                    var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, versionInfo.ShopId, versionInfo.ProgramId);
                     versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
                     versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
                     versionLiveUpdateLog = await _liveUpdateCtx.GetVersionLiveUpdateLog(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
-
-                    if(versionInfo != null) 
-                        versionInfo.SyncStatus = 1;
-                    if(versionLiveUpdate != null) 
-                        versionLiveUpdate.SyncStatus = 1;
 
                     await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo, versionDeploy, versionLiveUpdate, versionLiveUpdateLog);
                 }
