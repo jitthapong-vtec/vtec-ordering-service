@@ -320,7 +320,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             var result = new HttpActionResult<object>(Request);
             using (var conn = await _database.ConnectAsync())
             {
-                var dtQuestion = await _posRepo.GetQuestionAsync(conn, shopId, transactionId, terminalId);
+                var ds = await _posRepo.GetQuestionAsync(conn, shopId, transactionId, terminalId);
+                var dtQuestion = ds.Tables["Question"];
+                var dtQuestionTransaction = ds.Tables["QuestionTransaction"];
+
                 var question = (from row in dtQuestion.AsEnumerable()
                                 group row by row["QDDGID"] into gj
                                 select new
@@ -330,12 +333,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     Questions = (from q in dtQuestion.AsEnumerable()
                                                  where q.GetValue<int>("QDDGID") == gj.FirstOrDefault().GetValue<int>("QDDGID")
                                                  group q by q["QDDID"] into qg
+                                                 let questionId = qg.FirstOrDefault().GetValue<int>("QDDID")
                                                  select new
                                                  {
-                                                     QuestionID = qg.FirstOrDefault().GetValue<int>("QDDID"),
+                                                     QuestionID = questionId,
                                                      QuestionName = qg.FirstOrDefault().GetValue<string>("QDDName"),
                                                      QuestionType = qg.FirstOrDefault().GetValue<int>("QDDTypeID"),
-                                                     QuestionValue = qg.FirstOrDefault().GetValue<double>("QDVValue"),
+                                                     QuestionValue = (from s in dtQuestionTransaction.AsEnumerable()
+                                                                      where s.GetValue<int>("QDDID") == questionId
+                                                                      select s).FirstOrDefault()?.GetValue<double>("QDVValue"),
                                                      IsRequired = qg.FirstOrDefault().GetValue<int>("IsRequired"),
                                                      Options = (from o in qg.ToList()
                                                                 where o.GetValue<int>("QDDID") == qg.FirstOrDefault().GetValue<int>("QDDID")
@@ -344,7 +350,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                                                     QuestionID = o.GetValue<int>("QDDID"),
                                                                     OptionID = o.GetValue<int>("OptionID"),
                                                                     OptionName = o.GetValue<string>("OptionName"),
-                                                                    Selected = o.GetValue<int>("Selected") == 1 ? true : false
+                                                                    Selected = (from s in dtQuestionTransaction.AsEnumerable()
+                                                                                where s.GetValue<int>("QDDID") == o.GetValue<int>("QDDID") && s.GetValue<int>("OptionID") == o.GetValue<int>("OptionID")
+                                                                                select s).FirstOrDefault()?.GetValue<int>("OptionID") > 0 ? true : false
                                                                 }).ToList()
                                                  })
 

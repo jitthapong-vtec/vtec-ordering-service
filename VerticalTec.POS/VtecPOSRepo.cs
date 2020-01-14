@@ -309,10 +309,9 @@ namespace VerticalTec.POS
             return false;
         }
 
-        public async Task<DataTable> GetQuestionAsync(IDbConnection conn, int shopId, int transactionId, int computerId)
+        public async Task<DataSet> GetQuestionAsync(IDbConnection conn, int shopId, int transactionId, int computerId)
         {
-            var cmd = _database.CreateCommand("select a.*, b.*, c.*, " +
-                " case when qd.QDDID is not null then 1 else 0 end as Selected, qd.QDVValue" +
+            var cmd = _database.CreateCommand("select a.*, b.*, c.* " +
                 " from questiondefinedata a" +
                 " left join questiondefinedatagroup b" +
                 " on a.QDDGID=b.QDDGID " +
@@ -320,12 +319,11 @@ namespace VerticalTec.POS
                 " on a.QDDID = c.QDDID " +
                 " join questionshoplink d" +
                 " on a.QDDID = d.QDDID " +
-                " left join (select QDDID, OptionID, QDVValue from questiondefinedetailfront where TransactionID=@tranId and ComputerID=@compId and SaleDate=@saleDate) qd" +
-                " on a.QDDID = qd.QDDID" +
                 " where a.Deleted = 0" +
                 " and a.Activated = 1" +
                 " and d.ShopID=@shopId" +
-                " order by b.QDDGOrder, a.QDDOrdering", conn);
+                " order by b.QDDGOrder, a.QDDOrdering;" +
+                " select QDDID, OptionID, QDVValue from questiondefinedetailfront where TransactionID=@tranId and ComputerID=@compId and SaleDate=@saleDate;", conn);
 
             var saleDate = await GetSaleDateAsync(conn, shopId, false);
             cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
@@ -333,12 +331,12 @@ namespace VerticalTec.POS
             cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
             cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
 
-            var dtResult = new DataTable();
-            using (var reader = await _database.ExecuteReaderAsync(cmd))
-            {
-                dtResult.Load(reader);
-            }
-            return dtResult;
+            var ds = new DataSet();
+            var adapter = _database.CreateDataAdapter(cmd);
+            adapter.TableMappings.Add("Table", "Question");
+            adapter.TableMappings.Add("Table1", "QuestionTransaction");
+            adapter.Fill(ds);
+            return ds;
         }
 
         public async Task AddQuestionAsync(IDbConnection conn, OrderTransaction tranData)

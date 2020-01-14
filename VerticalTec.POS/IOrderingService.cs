@@ -10,6 +10,7 @@ namespace VerticalTec.POS
     {
         Task OpenTransactionAsync(IDbConnection conn, OrderTransaction tranData);
         Task OpenTransactionProcessAsync(IDbConnection conn, OrderTransaction tranData);
+        Task UpdateSaleModeCharge(IDbConnection conn, int transactionId, int computerId, int shopId, SaleModes saleMode);
         Task ModifyOrderAsync(IDbConnection conn, OrderDetail orderDetail);
         Task<List<OrderDetail>> DeleteOrdersAsync(IDbConnection conn, List<OrderDetail> orders);
         Task DeleteChildComboAsync(IDbConnection conn, int transactionId, int computerId, int orderDetailId);
