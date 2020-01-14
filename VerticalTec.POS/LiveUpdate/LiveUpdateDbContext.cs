@@ -321,7 +321,7 @@ namespace VerticalTec.POS.LiveUpdate
 
             if (isHaveRecord)
             {
-                cmd.CommandText = "update Version_LiveUpdate set RevFile=@revFile, RevStartTime=@revStartTime," +
+                cmd.CommandText = "update Version_LiveUpdate set ProgramName=@programName, RevFile=@revFile, RevStartTime=@revStartTime," +
                     " RevEndTime=@revEndTime, BackupStatus=@backupStatus, BackupStartTime=@backupStartTime," +
                     " BackupEndTime=@backupEndtime, ScheduleUpdate=@scheduleUpdate," +
                     " UpdateEndTime=@updateEndTime, RollbackStatus=@rollbackStatus, UpdateStatus=@updateStatus," +

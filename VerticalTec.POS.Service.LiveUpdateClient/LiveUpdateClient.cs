@@ -238,9 +238,10 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                         {
                             updateState.RevFile = 1;
                             updateState.RevEndTime = DateTime.Now;
+                            updateState.MessageLog = "Download complete";
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 
-                            updateStateLog.LogMessage = $"Download {versionDeploy.GoogleDriveFileId} complete";
+                            updateStateLog.LogMessage = $"Download complete";
                             updateStateLog.EndTime = DateTime.Now;
                             updateStateLog.ActionStatus = 2;
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
