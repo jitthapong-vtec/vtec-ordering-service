@@ -40,7 +40,8 @@ namespace VerticalTec.POS.SyncHub.Hubs
                 await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
                 await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
 
-                await Clients.Client(Context.ConnectionId).ReceiveUpdateVersionState(state, stateLog);
+                state.SyncStatus = 1;
+                await Clients.Client(Context.ConnectionId).ReceiveUpdateState(state);
             }
         }
 

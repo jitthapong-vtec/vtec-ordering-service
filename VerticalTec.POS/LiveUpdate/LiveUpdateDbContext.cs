@@ -28,7 +28,8 @@ namespace VerticalTec.POS.LiveUpdate
                ProgramID SMALLINT NOT NULL,
                ProgramName VARCHAR(100) NOT NULL,
                ProgramVersion VARCHAR(20) NOT NULL,
-               FileID VARCHAR(50),
+               GoogleDriveFileID VARCHAR(50),
+               GoogleDriveApiKey VARCHAR(50),
                BatchStatus TINYINT NOT NULL,
                ScheduleUpdate DATETIME NULL,
                InsertDate DATETIME NOT NULL,
@@ -201,7 +202,8 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramId = reader.GetValue<int>("ProgramID"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
-                        FileId = reader.GetValue<string>("FileId"),
+                        GoogleDriveFileId = reader.GetValue<string>("GoogleDriveFileId"),
+                        GoogleDriveApiKey = reader.GetValue<string>("GoogleDriveApiKey"),
                         BatchStatus = reader.GetValue<int>("BatchStatus"),
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
@@ -254,7 +256,8 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@programId", versionDeploy.ProgramId));
             cmd.Parameters.Add(_db.CreateParameter("@programName", versionDeploy.ProgramName));
             cmd.Parameters.Add(_db.CreateParameter("@programVersion", versionDeploy.ProgramVersion));
-            cmd.Parameters.Add(_db.CreateParameter("@fileId", versionDeploy.FileId));
+            cmd.Parameters.Add(_db.CreateParameter("@fileId", versionDeploy.GoogleDriveFileId));
+            cmd.Parameters.Add(_db.CreateParameter("@apiKey", versionDeploy.GoogleDriveApiKey));
             cmd.Parameters.Add(_db.CreateParameter("@batchStatus", versionDeploy.BatchStatus));
             cmd.Parameters.Add(_db.CreateParameter("@scheduleUpdate", versionDeploy.ScheduleUpdate.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", versionDeploy.InsertDate.MinValueToDBNull()));
@@ -269,14 +272,14 @@ namespace VerticalTec.POS.LiveUpdate
             if (isHaveRecord)
             {
                 cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ShopID=@shopId, ProgramID=@programId," +
-                    "ProgramName=@programName, ProgramVersion=@programVersion, FileID=@fileId, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
+                    "ProgramName=@programName, ProgramVersion=@programVersion, GoogleDriveFileID=@fileId, GoogleDriveApiKey=@apiKey, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
                     "InsertDate=@insertDate, UpdateDate=@updateDate where ShopID=@shopId and ProgramID=@programId and ProgramVersion=@programVersion";
             }
             else
             {
-                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, FileID, BatchStatus," +
+                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, GoogleDriveFileID, GoogleDriveApiKey, BatchStatus," +
                     "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @shopId, @programId, @programName, @programVersion," +
-                    "@fileId, @batchStatus, @scheduleUpate, @insertDate, @updateDate)";
+                    "@fileId, @apikey, @batchStatus, @scheduleUpate, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }
