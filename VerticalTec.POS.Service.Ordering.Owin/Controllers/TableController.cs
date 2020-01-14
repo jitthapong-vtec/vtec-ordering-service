@@ -322,20 +322,32 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 var dtQuestion = await _posRepo.GetQuestionAsync(conn, shopId, transactionId, terminalId);
                 var question = (from row in dtQuestion.AsEnumerable()
-                                group row by row["QDDName"] into gj
+                                group row by row["QDDGID"] into gj
                                 select new
                                 {
-                                    QuestionName = gj.Key,
-                                    Options = (from g in gj.ToList()
-                                               select new
-                                               {
-                                                   QuestionID = g.GetValue<int>("QDDID"),
-                                                   QuestionType = g.GetValue<int>("QDDTypeID"),
-                                                   IsRequire = g.GetValue<int>("IsRequired"),
-                                                   OptionID = g.GetValue<int>("OptionID"),
-                                                   OptionName = g.GetValue<string>("OptionName"),
-                                                   Selected = g.GetValue<int>("Selected") == 1 ? true : false
-                                               }).ToList()
+                                    QuestionGroupID = gj.FirstOrDefault().GetValue<int>("QDDGID"),
+                                    QuestionGroupName = gj.FirstOrDefault().GetValue<string>("QDDGName"),
+                                    Questions = (from q in dtQuestion.AsEnumerable()
+                                                 where q.GetValue<int>("QDDGID") == gj.FirstOrDefault().GetValue<int>("QDDGID")
+                                                 group q by q["QDDID"] into qg
+                                                 select new
+                                                 {
+                                                     QuestionID = qg.FirstOrDefault().GetValue<int>("QDDID"),
+                                                     QuestionName = qg.FirstOrDefault().GetValue<string>("QDDName"),
+                                                     QuestionType = qg.FirstOrDefault().GetValue<int>("QDDTypeID"),
+                                                     QuestionValue = qg.FirstOrDefault().GetValue<double>("QDVValue"),
+                                                     IsRequired = qg.FirstOrDefault().GetValue<int>("IsRequired"),
+                                                     Options = (from o in qg.ToList()
+                                                                where o.GetValue<int>("QDDID") == qg.FirstOrDefault().GetValue<int>("QDDID")
+                                                                select new
+                                                                {
+                                                                    QuestionID = o.GetValue<int>("QDDID"),
+                                                                    OptionID = o.GetValue<int>("OptionID"),
+                                                                    OptionName = o.GetValue<string>("OptionName"),
+                                                                    Selected = o.GetValue<int>("Selected") == 1 ? true : false
+                                                                }).ToList()
+                                                 })
+
                                 }).ToList();
                 result.StatusCode = HttpStatusCode.OK;
                 result.Body = question;

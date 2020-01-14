@@ -585,14 +585,6 @@ namespace VerticalTec.POS
                 saleDate, langId, conn as MySqlConnection);
         }
 
-        /// <summary>
-        /// For check buffet flow if processType = 0 then normal flow else 1 
-        /// this function will auto add buffet menu by config
-        /// and show bill for print check
-        /// </summary>
-        /// <param name="conn"></param>
-        /// <param name="tranData"></param>
-        /// <returns></returns>
         public async Task OpenTransactionProcessAsync(IDbConnection conn, OrderTransaction tranData)
         {
             var responseText = "";
@@ -603,6 +595,7 @@ namespace VerticalTec.POS
                 tranData.ShopID, saleDate, tranData.StaffID, tranData.TerminalID, conn as MySqlConnection);
             if (!success)
                 throw new VtecPOSException(responseText);
+            tranData.ProcessType = processType;
         }
     }
 }

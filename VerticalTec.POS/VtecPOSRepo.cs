@@ -311,23 +311,27 @@ namespace VerticalTec.POS
 
         public async Task<DataTable> GetQuestionAsync(IDbConnection conn, int shopId, int transactionId, int computerId)
         {
-            var cmd = _database.CreateCommand("select a.*, b.*," +
-                " case when qd.QDDID is not null then 1 else 0 end as Selected" +
+            var cmd = _database.CreateCommand("select a.*, b.*, c.*, " +
+                " case when qd.QDDID is not null then 1 else 0 end as Selected, qd.QDVValue" +
                 " from questiondefinedata a" +
-                " left join questiondefineoption b" +
-                " on a.QDDID = b.QDDID" +
-                " left join (select QDDID, OptionID from questiondefinedetailfront where TransactionID=@tranId and ComputerID=@compId and SaleDate=@saleDate) qd" +
-                " on b.QDDID = qd.QDDID" +
-                " and b.OptionID = qd.OptionID" +
-                " where a.Deleted = @deleted" +
-                " and a.Activated = @activated", conn);
+                " left join questiondefinedatagroup b" +
+                " on a.QDDGID=b.QDDGID " +
+                " left join questiondefineoption c" +
+                " on a.QDDID = c.QDDID " +
+                " join questionshoplink d" +
+                " on a.QDDID = d.QDDID " +
+                " left join (select QDDID, OptionID, QDVValue from questiondefinedetailfront where TransactionID=@tranId and ComputerID=@compId and SaleDate=@saleDate) qd" +
+                " on a.QDDID = qd.QDDID" +
+                " where a.Deleted = 0" +
+                " and a.Activated = 1" +
+                " and d.ShopID=@shopId" +
+                " order by b.QDDGOrder, a.QDDOrdering", conn);
 
             var saleDate = await GetSaleDateAsync(conn, shopId, false);
-            cmd.Parameters.Add(_database.CreateParameter("@deleted", 0));
-            cmd.Parameters.Add(_database.CreateParameter("@activated", 1));
             cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
             cmd.Parameters.Add(_database.CreateParameter("@tranId", transactionId));
             cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
+            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
 
             var dtResult = new DataTable();
             using (var reader = await _database.ExecuteReaderAsync(cmd))
