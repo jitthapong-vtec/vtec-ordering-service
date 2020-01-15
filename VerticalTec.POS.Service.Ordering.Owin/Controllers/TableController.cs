@@ -299,7 +299,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                                    Status = table.GetValue<int>("Status"),
                                                    IsWarning = table.GetValue<bool>("IsWarning"),
                                                    IsCritical = table.GetValue<bool>("IsCritical"),
-                                                   BuffetColorHex = table.GetValue<string>("BuffefColorHex"),
+                                                   BuffetColorHex = table.GetValue<string>("BuffetColorHex"),
                                                    TableTimeMinute = table.GetValue<int>("TableTimeMinute"),
                                                    CurrentAccessComputer = table.GetValue<int>("CurrentAccessComputer"),
                                                    CustomerName = table.GetValue<string>("TransactionName"),
