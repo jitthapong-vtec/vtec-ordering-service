@@ -139,6 +139,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     await _orderingService.OpenTransactionAsync(conn, tranData);
                     await _orderingService.OpenTransactionProcessAsync(conn, tranData);
+                    await _orderingService.UpdateTableStatusAsync(conn, tranData.TransactionID, tranData.ComputerID, tranData.ShopID);
 
                     await _posRepo.SetComputerAccessAsync(conn, tranData.TableID, tranData.TerminalID);
                     _messenger.SendMessage();

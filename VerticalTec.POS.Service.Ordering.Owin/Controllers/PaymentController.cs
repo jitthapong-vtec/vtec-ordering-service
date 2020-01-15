@@ -117,6 +117,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         PayDetailID = row.GetValue<int>("PayDetailID"),
                         PayTypeID = row.GetValue<int>("PayTypeID"),
                         PayAmount = row.GetValue<decimal>("PayAmount"),
+                        CurrencyAmount = row.GetValue<decimal>("CurrencyAmount"),
                         PayTypeName = row.GetValue<string>("PayTypeName")
                     });
                 }

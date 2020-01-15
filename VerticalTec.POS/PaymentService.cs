@@ -33,8 +33,7 @@ namespace VerticalTec.POS
             if (isUpdate)
             {
                 cmd.CommandText = "update orderpaydetailfront " +
-                    " set PayAmount = @payAmount, " +
-                    " CurrencyAmount = @currencyAmount, " +
+                    " set CurrencyAmount = @currencyAmount, " +
                     " CashChange = @cashChange, " +
                     " CashChangeMainCurrency = @cashChangeCurrency, " +
                     " CashChangeCurrencyAmount = @cashChangeCurrency " +
@@ -44,10 +43,9 @@ namespace VerticalTec.POS
 
                 var pendingPaymentRow = dtPendingPayment.Rows[0];
                 paymentData.PayDetailID = pendingPaymentRow.GetValue<int>("PayDetailID");
-                var payAmount = paymentData.PayAmount + pendingPaymentRow.GetValue<decimal>("PayAmount");
+                paymentData.CurrencyAmount = paymentData.CurrencyAmount + pendingPaymentRow.GetValue<decimal>("CurrencyAmount");
 
                 cmd.Parameters.Clear();
-                cmd.Parameters.Add(_database.CreateParameter("@payAmount", payAmount));
                 cmd.Parameters.Add(_database.CreateParameter("@currencyAmount", paymentData.CurrencyAmount));
                 cmd.Parameters.Add(_database.CreateParameter("@cashChange", paymentData.CashChange));
                 cmd.Parameters.Add(_database.CreateParameter("@cashChangeCurrency", paymentData.CashChangeCurrencyAmount));

@@ -49,7 +49,7 @@ namespace VerticalTec.POS
         {
             get
             {
-                var change = PayAmount - CurrencyAmount;
+                var change = CurrencyAmount - PayAmount;
                 if (change > 0)
                     return change;
                 return 0;
