@@ -85,6 +85,29 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpPost]
+        [Route("v1/orders/smcharge")]
+        public async Task<IHttpActionResult> UpdateOrderSaleModeCharge(int shopId, int transactionId, int computerId, int saleMode)
+        {
+            var result = new HttpActionResult<object>(Request);
+            using (var conn = await _database.ConnectAsync())
+            {
+                var posModule = new POSModule();
+                var responseText = "";
+                var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
+                var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
+                var success = posModule.OrderDetail_SaleModeCharge(ref responseText, transactionId, computerId, saleDate,
+                    shopId, saleMode, decimalDigit, "front", conn as MySqlConnection);
+
+                if (!success)
+                {
+                    result.StatusCode = HttpStatusCode.InternalServerError;
+                    result.Message = responseText;
+                }
+            }
+            return result;
+        }
+
+        [HttpPost]
         [Route("v1/orders/chsm")]
         public async Task<IHttpActionResult> ChangeSaleMode(ChangeSaleModeOrder payload)
         {

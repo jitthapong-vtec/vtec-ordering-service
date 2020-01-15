@@ -597,16 +597,5 @@ namespace VerticalTec.POS
                 throw new VtecPOSException(responseText);
             tranData.ProcessType = processType;
         }
-
-        public async Task UpdateSaleModeCharge(IDbConnection conn, int transactionId, int computerId, int shopId, SaleModes saleMode)
-        {
-            var responseText = "";
-            var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
-            var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
-            var success = _posModule.OrderDetail_SaleModeCharge(ref responseText, transactionId, computerId, saleDate,
-                shopId, (int)saleMode, decimalDigit, "front", conn as MySqlConnection);
-            if (!success)
-                throw new VtecPOSException(responseText);
-        }
     }
 }

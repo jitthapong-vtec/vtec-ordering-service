@@ -341,7 +341,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                                      QuestionType = qg.FirstOrDefault().GetValue<int>("QDDTypeID"),
                                                      QuestionValue = (from s in dtQuestionTransaction.AsEnumerable()
                                                                       where s.GetValue<int>("QDDID") == questionId
-                                                                      select s).FirstOrDefault()?.GetValue<double>("QDVValue"),
+                                                                      select s).FirstOrDefault()?.GetValue<double>("QDVValue") ?? 0,
                                                      IsRequired = qg.FirstOrDefault().GetValue<int>("IsRequired"),
                                                      Options = (from o in qg.ToList()
                                                                 where o.GetValue<int>("QDDID") == qg.FirstOrDefault().GetValue<int>("QDDID")
