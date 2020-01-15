@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS
 {
@@ -44,9 +45,25 @@ namespace VerticalTec.POS
         public string ReferenceNo { get; set; }
         public string EncryptedCardInfo { get; set; }
         public decimal PayAmount { get; set; }
-        public decimal CashChange { get; set; }
+        public decimal CashChange
+        {
+            get
+            {
+                var change = PayAmount - CurrencyAmount;
+                if (change > 0)
+                    return change;
+                return 0;
+            }
+        }
+
         public decimal CurrencyAmount { get; set; }
         public decimal CashChangeMainCurrency { get; set; }
-        public decimal CashChangeCurrencyAmount { get; set; }
+        public decimal CashChangeCurrencyAmount
+        {
+            get
+            {
+                return CashChange.ToCurrencyAmount(ExchangeRate, CurrencyRatio);
+            }
+        }
     }
 }

@@ -323,7 +323,10 @@ namespace VerticalTec.POS
                 " and a.Activated = 1" +
                 " and d.ShopID=@shopId" +
                 " order by b.QDDGOrder, a.QDDOrdering;" +
-                " select QDDID, OptionID, QDVValue from questiondefinedetailfront where TransactionID=@tranId and ComputerID=@compId and SaleDate=@saleDate;", conn);
+                " select a.QDDID, a.OptionID, a.QDVValue from questiondefinedetailfront a" +
+                " inner join ordertransactionfront b" +
+                " on a.TransactionID=b.TransactionID and a.ComputerID=b.ComputerID" +
+                " where a.TransactionID=@tranId and a.ComputerID=@compId and a.SaleDate=@saleDate and b.TransactionStatusID=1;", conn);
 
             var saleDate = await GetSaleDateAsync(conn, shopId, false);
             cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));

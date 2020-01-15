@@ -32,18 +32,6 @@ namespace VerticalTec.POS
             IDbCommand cmd = _database.CreateCommand(conn);
             if (isUpdate)
             {
-                cmd.CommandText = "select ReceiptPayPrice from ordertransactionfront where " +
-                    "TransactionID=@tranId and ComputerID=@compId";
-                cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
-                cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.ComputerID));
-
-                decimal receiptPayPrice = 0;
-                using (var reader = await _database.ExecuteReaderAsync(cmd))
-                {
-                    if (reader.Read())
-                        receiptPayPrice = reader.GetValue<decimal>("ReceiptPayPrice");
-                }
-
                 cmd.CommandText = "update orderpaydetailfront " +
                     " set PayAmount = @payAmount, " +
                     " CurrencyAmount = @currencyAmount, " +
@@ -57,19 +45,12 @@ namespace VerticalTec.POS
                 var pendingPaymentRow = dtPendingPayment.Rows[0];
                 paymentData.PayDetailID = pendingPaymentRow.GetValue<int>("PayDetailID");
                 var payAmount = paymentData.PayAmount + pendingPaymentRow.GetValue<decimal>("PayAmount");
-                decimal cashChange = 0;
-                if (paymentData.PayTypeID == 1)
-                {
-                    cashChange = payAmount - receiptPayPrice;
-                    if (cashChange < 0)
-                        cashChange = 0;
-                }
 
                 cmd.Parameters.Clear();
                 cmd.Parameters.Add(_database.CreateParameter("@payAmount", payAmount));
-                cmd.Parameters.Add(_database.CreateParameter("@currencyAmount", payAmount.CurrencyAmount(paymentData.ExchangeRate, paymentData.CurrencyRatio)));
-                cmd.Parameters.Add(_database.CreateParameter("@cashChange", cashChange));
-                cmd.Parameters.Add(_database.CreateParameter("@cashChangeCurrency", cashChange.CurrencyAmount(paymentData.ExchangeRate, paymentData.CurrencyRatio)));
+                cmd.Parameters.Add(_database.CreateParameter("@currencyAmount", paymentData.CurrencyAmount));
+                cmd.Parameters.Add(_database.CreateParameter("@cashChange", paymentData.CashChange));
+                cmd.Parameters.Add(_database.CreateParameter("@cashChangeCurrency", paymentData.CashChangeCurrencyAmount));
                 cmd.Parameters.Add(_database.CreateParameter("@transactionId", paymentData.TransactionID));
                 cmd.Parameters.Add(_database.CreateParameter("@computerId", paymentData.ComputerID));
                 cmd.Parameters.Add(_database.CreateParameter("@payTypeId", paymentData.PayTypeID));
@@ -102,9 +83,9 @@ namespace VerticalTec.POS
                 cmd.Parameters.Add(_database.CreateParameter("@currencyName", paymentData.CurrencyName));
                 cmd.Parameters.Add(_database.CreateParameter("@currencyRatio", paymentData.CurrencyRatio));
                 cmd.Parameters.Add(_database.CreateParameter("@exchangeRate", paymentData.ExchangeRate));
-                cmd.Parameters.Add(_database.CreateParameter("@currencyAmount", paymentData.PayAmount.CurrencyAmount(paymentData.ExchangeRate, paymentData.CurrencyRatio)));
+                cmd.Parameters.Add(_database.CreateParameter("@currencyAmount", paymentData.CurrencyAmount));
                 cmd.Parameters.Add(_database.CreateParameter("@cashChange", paymentData.CashChange));
-                cmd.Parameters.Add(_database.CreateParameter("@cashChangeCurrencyAmount", paymentData.CashChange.CurrencyAmount(paymentData.ExchangeRate, paymentData.CurrencyRatio)));
+                cmd.Parameters.Add(_database.CreateParameter("@cashChangeCurrencyAmount", paymentData.CashChangeCurrencyAmount));
                 cmd.Parameters.Add(_database.CreateParameter("@cashChangeMainCurrency", paymentData.CashChange));
                 cmd.Parameters.Add(_database.CreateParameter("@cashChangeMainCurrencyCode", paymentData.CurrencyCode));
                 cmd.Parameters.Add(_database.CreateParameter("@cashChangeCurrencyCode", paymentData.CurrencyCode));

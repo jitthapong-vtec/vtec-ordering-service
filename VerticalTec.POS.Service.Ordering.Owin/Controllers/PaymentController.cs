@@ -174,6 +174,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
+                    await _paymentService.FinalizeBillAsync(conn, payload.TransactionID, payload.ComputerID, 
+                        payload.TerminalID, payload.ShopID, payload.StaffID);
                     await _paymentService.FinalizeOrderAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.TerminalID, payload.ShopID, payload.StaffID, payload.LangID, payload.PrinterIds, payload.PrinterNames);
 
@@ -187,7 +189,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         PrinterNames = payload.PrinterNames,
                         PaperSize = payload.PaperSize
                     };
-                    BackgroundJob.Enqueue<IPrintService>(p => p.PrintBill(printData));
+                    //BackgroundJob.Enqueue<IPrintService>(p => p.PrintBill(printData));
+                    await _printService.PrintBill(printData);
                     _messenger.SendMessage();
                 }
                 catch (VtecPOSException ex)
