@@ -1,7 +1,103 @@
 ﻿@page "/"
+@using VerticalTec.POS.LiveUpdate
+@using Microsoft.AspNetCore.SignalR.Client
 
-<h1>vTec Live Update Console</h1>
+@inject NavigationManager NavigationManager
+
+<h1>Clients</h1>
+
+@if (clients == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Client Name</th>
+                <th>Version</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var client in clients)
+            {
+                <tr>
+                    <td>@client.ComputerName</td>
+                    <td>@client.ProgramVersion</td>
+                    <td>@client.VersionStatus</td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Action
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client.ConnectionId))">Get version info</a>
+                                <a class="dropdown-item" href="#">Backup</a>
+                                <a class="dropdown-item" href="#">Update</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 @code{
 
+    HubConnection _connection;
+
+    List<VersionInfo> clients;
+
+    protected override Task OnInitializedAsync()
+    {
+        clients = new List<VersionInfo>();
+        return base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var url = NavigationManager.BaseUri + "console";
+            _connection = new HubConnectionBuilder().WithUrl(url).Build();
+
+            _connection.On<VersionInfo>("ClientUpdateInfo", ClientUpdateInfo);
+            _connection.On<string>("ClientDisconnect", ClientDisconnect);
+
+            StateHasChanged();
+            await _connection.StartAsync();
+        }
+    }
+
+    public Task ClientDisconnect(string connectionId)
+    {
+        try
+        {
+            var client = clients.Where(c => c.ConnectionId == connectionId).FirstOrDefault();
+            clients.Remove(client);
+            StateHasChanged();
+        }
+        catch { }
+        return Task.FromResult(true);
+    }
+
+    public async Task GetClientInfo(string connectionId)
+    {
+        await _connection.InvokeAsync("GetClientInfo", connectionId);
+    }
+
+    public Task ClientUpdateInfo(VersionInfo versionInfo)
+    {
+        var addedClient = clients?.Where(c => c.ConnectionId == versionInfo.ConnectionId).FirstOrDefault();
+        if (addedClient == null)
+            clients.Add(versionInfo);
+        else
+            clients[clients.IndexOf(addedClient)] = versionInfo;
+        this.StateHasChanged();
+        return Task.FromResult(true);
+    }
 }

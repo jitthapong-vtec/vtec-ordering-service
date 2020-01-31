@@ -11,6 +11,7 @@ namespace VerticalTec.POS.LiveUpdate
         public string ConnectionId { get; set; } = "";
         public int ProgramId { get; set; }
         public string ProgramName { get; set; } = "";
+        public string ComputerName { get; set; } = "";
         public string ProgramVersion { get; set; } = "";
         public int VersionStatus { get; set; }
         public DateTime InsertDate { get; set; } = DateTime.MinValue;

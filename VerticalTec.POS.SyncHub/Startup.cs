@@ -55,6 +55,7 @@ namespace VerticalTec.POS.SyncHub
             {
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
+                endpoints.MapHub<ConsoleHub>("/console");
                 endpoints.MapHub<LiveUpdateHub>("/liveupdate");
             });
         }

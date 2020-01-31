@@ -216,7 +216,11 @@ namespace VerticalTec.POS.LiveUpdate
 
         public async Task<VersionInfo> GetVersionInfo(IDbConnection conn, int shopId, int computerId, int programId = 0)
         {
-            var cmd = _db.CreateCommand("select * from VersionInfo where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
+            var cmd = _db.CreateCommand("select a.*, b.ComputerName" +
+                " from VersionInfo a" +
+                " left join computername b" +
+                " on a.ComputerID=b.ComputerID" +
+                " where a.ShopID=@shopId and a.ComputerID=@computerId and a.ProgramID=@programId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
             cmd.Parameters.Add(_db.CreateParameter("@programId", programId));
@@ -233,6 +237,7 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramId = reader.GetValue<int>("ProgramID"),
                         ConnectionId = reader.GetValue<string>("ConnectionId"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
+                        ComputerName = reader.GetValue<string>("ComputerName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         VersionStatus = reader.GetValue<int>("VersionStatus"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),

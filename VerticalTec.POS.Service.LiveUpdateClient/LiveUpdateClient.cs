@@ -144,12 +144,14 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                     var posSetting = _frontConfigManager.POSDataSetting;
                     var programVersion = await _liveUpdateCtx.GetFileVersion(conn, posSetting.ShopID, posSetting.ComputerID, "vTec-ResPOS.exe");
 
-                    var versionInfo = new VersionInfo()
+                    var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID, 1);
+                    versionInfo ??= new VersionInfo()
                     {
                         ShopId = posSetting.ShopID,
                         ComputerId = posSetting.ComputerID,
                         ProgramName = "vTec-ResPOS",
                         ProgramVersion = programVersion?.FileVersion ?? "",
+                        ProgramId = 1,
                         InsertDate = DateTime.Now,
                         UpdateDate = DateTime.Now
                     };
@@ -176,8 +178,6 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
                     await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
                 }
-
-                await CheckUpdate();
             }
             catch (Exception ex)
             {
@@ -185,7 +185,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
         }
 
-        public async Task CheckUpdate()
+        public async Task UpdateVersion()
         {
             using (var conn = await _db.ConnectAsync())
             {
@@ -248,7 +248,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
                             await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
 
-                            await Backup(updateState);
+                            await Backup();
                         }
                         else if (result.Status == Google.Apis.Download.DownloadStatus.Failed)
                         {
@@ -280,15 +280,18 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 }
                 else
                 {
-                    await Backup(updateState);
+                    await Backup();
                 }
             }
         }
 
-        async Task Backup(VersionLiveUpdate state)
+        public async Task Backup()
         {
             using (var conn = await _db.ConnectAsync())
             {
+                var posSetting = _frontConfigManager.POSDataSetting;
+                var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+
                 var stateLog = new VersionLiveUpdateLog()
                 {
                     ShopId = state.ShopId,

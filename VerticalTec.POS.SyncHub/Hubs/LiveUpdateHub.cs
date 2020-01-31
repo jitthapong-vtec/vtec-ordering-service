@@ -12,13 +12,16 @@ namespace VerticalTec.POS.SyncHub.Hubs
     {
         static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("communication");
 
+        IHubContext<ConsoleHub, IConsoleHub> _consoleHub;
+
         IDatabase _db;
         LiveUpdateDbContext _liveUpdateCtx;
 
-        public LiveUpdateHub(IDatabase db, LiveUpdateDbContext liveUpdateCtx)
+        public LiveUpdateHub(IDatabase db, LiveUpdateDbContext liveUpdateCtx, IHubContext<ConsoleHub, IConsoleHub> consoleHub)
         {
             _db = db;
             _liveUpdateCtx = liveUpdateCtx;
+            _consoleHub = consoleHub;
         }
 
         public override async Task OnConnectedAsync()
@@ -30,6 +33,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
+            await _consoleHub.Clients.All.ClientDisconnect(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception);
         }
 
@@ -53,8 +57,11 @@ namespace VerticalTec.POS.SyncHub.Hubs
                 {
                     _logger.Info($"ReceiveSyncVersion from client {versionInfo.ComputerId}");
 
+                    var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, versionInfo.ShopId, versionInfo.ProgramId);
+
                     versionInfo.SyncStatus = 1;
                     versionInfo.ConnectionId = Context.ConnectionId;
+                    versionInfo.ProgramVersion = versionDeploy.ProgramVersion;
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
                     if (versionLiveUpdate != null)
@@ -68,10 +75,10 @@ namespace VerticalTec.POS.SyncHub.Hubs
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, versionLiveUpdateLog);
                     }
 
-                    var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, versionInfo.ShopId, versionInfo.ProgramId);
                     versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
 
                     await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo, versionDeploy);
+                    await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);
                 }
             }
             catch (Exception ex)
