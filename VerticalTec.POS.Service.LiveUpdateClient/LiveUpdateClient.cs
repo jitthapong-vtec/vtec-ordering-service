@@ -154,7 +154,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 {
                     await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
                 }
-                await _hubConnection.InvokeAsync("AckVersionDeploy");
+                await _hubConnection.InvokeAsync("ClientReceivedVersionDeploy");
             }
         }
 

@@ -45,7 +45,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
             }
         }
 
-        public Task AckVersionDeploy()
+        public Task ClientReceivedVersionDeploy()
         {
             return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
         }
@@ -56,6 +56,8 @@ namespace VerticalTec.POS.SyncHub.Hubs
             {
                 versionInfo.SyncStatus = 1;
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
+
+                await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);
             }
         }
 

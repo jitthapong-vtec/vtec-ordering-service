@@ -18,17 +18,17 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public async Task GetClientInfo(string connectionId)
         {
-            await _hubContext.Clients.All
+            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
         }
 
         public async Task UpdateVersion(string connectionId)
         {
-            await _hubContext.Clients.Client(connectionId).UpdateVersion();
+            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.UpdateVersion);
         }
 
         public async Task Backup(string connectionId)
         {
-            await _hubContext.Clients.Client(connectionId).Backup();
+            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.BackupFile);
         }
     }
 }
