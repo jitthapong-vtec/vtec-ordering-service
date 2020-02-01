@@ -4,7 +4,7 @@
 
 @inject NavigationManager NavigationManager
 
-<h1>Clients</h1>
+<h1>Liveupdate Console</h1>
 
 @if (clients == null)
 {
@@ -15,8 +15,8 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Client Name</th>
-                <th>Version</th>
+                <th>Client computer name</th>
+                <th>Current Version</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>
@@ -25,7 +25,14 @@ else
             @foreach (var client in clients)
             {
                 <tr>
-                    <td>@client.ComputerName</td>
+                    <td>
+                        <h4>
+                            @client.ComputerName
+                        </h4>
+                        <h6>
+                            @client.ShopName
+                        </h6>
+                    </td>
                     <td>@client.ProgramVersion</td>
                     <td>@client.VersionStatus</td>
                     <td>
@@ -36,7 +43,7 @@ else
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client.ConnectionId))">Get version info</a>
                                 <a class="dropdown-item" href="#">Backup</a>
-                                <a class="dropdown-item" href="#">Update</a>
+                                <a class="dropdown-item" href="#" @onclick="@(async() => await UpdateVersion(client.ConnectionId))">Update</a>
                             </div>
                         </div>
                     </td>
@@ -90,14 +97,23 @@ else
         await _connection.InvokeAsync("GetClientInfo", connectionId);
     }
 
+    public async Task UpdateVersion(string connectionId)
+    {
+        await _connection.InvokeAsync("UpdateVersion", connectionId);
+    }
+
     public Task ClientUpdateInfo(VersionInfo versionInfo)
     {
-        var addedClient = clients?.Where(c => c.ConnectionId == versionInfo.ConnectionId).FirstOrDefault();
-        if (addedClient == null)
-            clients.Add(versionInfo);
-        else
-            clients[clients.IndexOf(addedClient)] = versionInfo;
-        this.StateHasChanged();
+        try
+        {
+            var addedClient = clients?.Where(c => c.ConnectionId == versionInfo.ConnectionId).FirstOrDefault();
+            if (addedClient == null)
+                clients.Add(versionInfo);
+            else
+                clients[clients.IndexOf(addedClient)] = versionInfo;
+            this.StateHasChanged();
+        }
+        catch { }
         return Task.FromResult(true);
     }
 }

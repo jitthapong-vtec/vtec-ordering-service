@@ -115,12 +115,12 @@ namespace VerticalTec.POS.LiveUpdate
             return dt;
         }
 
-        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, int shopId, int computerId, int programId = 0)
+        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, int shopId, int computerId, ProgramTypes types)
         {
             var cmd = _db.CreateCommand("select * from version_liveupdate where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
-            cmd.Parameters.Add(_db.CreateParameter("@programId", programId));
+            cmd.Parameters.Add(_db.CreateParameter("@programId", (int)types));
 
             VersionLiveUpdate versionLiveUpdate = null;
             using(var reader = await _db.ExecuteReaderAsync(cmd))
@@ -152,19 +152,18 @@ namespace VerticalTec.POS.LiveUpdate
             return versionLiveUpdate;
         }
 
-        public async Task<VersionLiveUpdateLog> GetVersionLiveUpdateLog(IDbConnection conn, int shopId, int computerId, int programId = 0)
+        public async Task<List<VersionLiveUpdateLog>> GetVersionLiveUpdateLog(IDbConnection conn, int shopId, int computerId)
         {
-            var cmd = _db.CreateCommand("select * from Version_LiveUpdateLog where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
+            var cmd = _db.CreateCommand("select * from Version_LiveUpdateLog where ShopID=@shopId and ComputerID=@computerId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
-            cmd.Parameters.Add(_db.CreateParameter("@programId", programId));
 
-            VersionLiveUpdateLog log = null;
+            List<VersionLiveUpdateLog> logs = new List<VersionLiveUpdateLog>();
             using(var reader = await _db.ExecuteReaderAsync(cmd))
             {
-                if (reader.Read())
+                while(reader.Read())
                 {
-                    log = new VersionLiveUpdateLog()
+                    logs.Add(new VersionLiveUpdateLog()
                     {
                         LogUUID = reader.GetValue<string>("LogUUID"),
                         SaleDate = reader.GetValue<DateTime>("SaleDate"),
@@ -177,29 +176,28 @@ namespace VerticalTec.POS.LiveUpdate
                         StartTime = reader.GetValue<DateTime>("StartTime"),
                         EndTime = reader.GetValue<DateTime>("EndTime"),
                         LogMessage = reader.GetValue<string>("LogMessage")
-                    };
+                    });
                 }
             }
-            return log;
+            return logs;
         }
 
-        public async Task<VersionDeploy> GetVersionDeploy(IDbConnection conn, int shopId, int programId = 0)
+        public async Task<List<VersionDeploy>> GetVersionDeploy(IDbConnection conn, int shopId)
         {
-            var cmd = _db.CreateCommand("select * from Version_Deploy where ShopID=@shopId and ProgramID=@programId", conn);
+            var cmd = _db.CreateCommand("select * from Version_Deploy where ShopID=@shopId and BatchStatus=1", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
-            cmd.Parameters.Add(_db.CreateParameter("@programId", programId));
 
-            VersionDeploy versionDeploy = null;
+            List<VersionDeploy> versionsDeploy = new List<VersionDeploy>();
             using(var reader = await _db.ExecuteReaderAsync(cmd))
             {
-                if (reader.Read())
+                while (reader.Read())
                 {
-                    versionDeploy = new VersionDeploy()
+                    versionsDeploy.Add(new VersionDeploy()
                     {
                         BatchId = reader.GetValue<string>("BatchID"),
                         BrandId = reader.GetValue<int>("BrandID"),
                         ShopId = reader.GetValue<int>("ShopID"),
-                        ProgramId = reader.GetValue<int>("ProgramID"),
+                        ProgramId = reader.GetValue<ProgramTypes>("ProgramID"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         GoogleDriveFileId = reader.GetValue<string>("GoogleDriveFileId"),
@@ -208,22 +206,24 @@ namespace VerticalTec.POS.LiveUpdate
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
                         UpdateDate = reader.GetValue<DateTime>("UpdateDate")
-                    };
+                    });
                 }
             }
-            return versionDeploy;
+            return versionsDeploy;
         }
 
-        public async Task<VersionInfo> GetVersionInfo(IDbConnection conn, int shopId, int computerId, int programId = 0)
+        public async Task<VersionInfo> GetVersionInfo(IDbConnection conn, int shopId, int computerId, ProgramTypes types)
         {
-            var cmd = _db.CreateCommand("select a.*, b.ComputerName" +
+            var cmd = _db.CreateCommand("select a.*, b.ComputerName, c.ShopName" +
                 " from VersionInfo a" +
                 " left join computername b" +
                 " on a.ComputerID=b.ComputerID" +
+                " left join shop_data c" +
+                " on b.ShopID=c.ShopID" +
                 " where a.ShopID=@shopId and a.ComputerID=@computerId and a.ProgramID=@programId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
-            cmd.Parameters.Add(_db.CreateParameter("@programId", programId));
+            cmd.Parameters.Add(_db.CreateParameter("@programId", (int)types));
 
             VersionInfo versionInfo = null;
             using (var reader = await _db.ExecuteReaderAsync(cmd))
@@ -234,10 +234,11 @@ namespace VerticalTec.POS.LiveUpdate
                     {
                         ShopId = shopId,
                         ComputerId = computerId,
-                        ProgramId = reader.GetValue<int>("ProgramID"),
+                        ProgramId = reader.GetValue<ProgramTypes>("ProgramID"),
                         ConnectionId = reader.GetValue<string>("ConnectionId"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ComputerName = reader.GetValue<string>("ComputerName"),
+                        ShopName = reader.GetValue<string>("ShopName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         VersionStatus = reader.GetValue<int>("VersionStatus"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
@@ -326,7 +327,7 @@ namespace VerticalTec.POS.LiveUpdate
 
             if (isHaveRecord)
             {
-                cmd.CommandText = "update Version_LiveUpdate set ProgramName=@programName, RevFile=@revFile, RevStartTime=@revStartTime," +
+                cmd.CommandText = "update Version_LiveUpdate set BatchID=@batchId, ProgramName=@programName, RevFile=@revFile, RevStartTime=@revStartTime," +
                     " RevEndTime=@revEndTime, BackupStatus=@backupStatus, BackupStartTime=@backupStartTime," +
                     " BackupEndTime=@backupEndtime, ScheduleUpdate=@scheduleUpdate," +
                     " UpdateEndTime=@updateEndTime, RollbackStatus=@rollbackStatus, UpdateStatus=@updateStatus," +

@@ -26,8 +26,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            _logger.Info($"Client {Context.ConnectionId} connected");
-            await Clients.Client(Context.ConnectionId).SyncVersion();
+            await Clients.Client(Context.ConnectionId).ReceiveConnectionEstablished();
             await base.OnConnectedAsync();
         }
 
@@ -37,53 +36,30 @@ namespace VerticalTec.POS.SyncHub.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task ReceiveUpdateState(VersionLiveUpdate state, VersionLiveUpdateLog stateLog)
+        public async Task ReceiveRequestVersionDeploy(POSDataSetting posSetting)
         {
             using (var conn = await _db.ConnectAsync())
             {
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
-
-                state.SyncStatus = 1;
-                await Clients.Client(Context.ConnectionId).ReceiveUpdateState(state);
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
+                await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionsDeploy);
             }
         }
 
-        public async Task ReceiveSyncVersion(VersionInfo versionInfo, VersionLiveUpdate versionLiveUpdate, VersionLiveUpdateLog versionLiveUpdateLog)
+        public async Task ReceiveVersionInfo(VersionInfo versionInfo)
         {
-            try
+            using(var conn = await _db.ConnectAsync())
             {
-                using (var conn = await _db.ConnectAsync())
-                {
-                    _logger.Info($"ReceiveSyncVersion from client {versionInfo.ComputerId}");
-
-                    var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, versionInfo.ShopId, versionInfo.ProgramId);
-
-                    versionInfo.SyncStatus = 1;
-                    versionInfo.ConnectionId = Context.ConnectionId;
-                    versionInfo.ProgramVersion = versionDeploy.ProgramVersion;
-                    await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
-
-                    if (versionLiveUpdate != null)
-                    {
-                        versionLiveUpdate.SyncStatus = 1;
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
-                    }
-
-                    if (versionLiveUpdateLog != null)
-                    {
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, versionLiveUpdateLog);
-                    }
-
-                    versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
-
-                    await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo, versionDeploy);
-                    await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);
-                }
+                versionInfo.SyncStatus = 1;
+                await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
             }
-            catch (Exception ex)
+        }
+
+        public async Task ReceiveUpdateState(VersionLiveUpdate updateState)
+        {
+            using (var conn = await _db.ConnectAsync())
             {
-                _logger.Error(ex, $"ReceiveSyncVersion => {ex.Message}");
+                updateState.SyncStatus = 1;
+                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
             }
         }
     }

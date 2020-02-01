@@ -3,9 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -130,129 +132,133 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 .WithAutomaticReconnect()
                 .Build();
 
-            _hubConnection.On("SyncVersion", SyncVersion);
-            _hubConnection.On<VersionInfo, VersionDeploy>("ReceiveSyncVersion", ReceiveSyncVersion);
-            _hubConnection.On<VersionLiveUpdate>("ReceiveUpdateVersionState", ReceiveUpdateState);
+            _hubConnection.On("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
+            _hubConnection.On<List<VersionDeploy>>("ReceiveVersionDeploy", ReceiveVersionDeploy);
+            _hubConnection.On<List<VersionDeploy>>("ReceiveVersionDeploy", ReceiveVersionDeploy);
         }
 
-        public async Task SyncVersion()
+        public Task ReceiveConnectionEstablished()
         {
-            try
-            {
-                using (var conn = await _db.ConnectAsync())
-                {
-                    var posSetting = _frontConfigManager.POSDataSetting;
-                    var programVersion = await _liveUpdateCtx.GetFileVersion(conn, posSetting.ShopID, posSetting.ComputerID, "vTec-ResPOS.exe");
+            var posSetting = _frontConfigManager.POSDataSetting;
+            return _hubConnection.InvokeAsync("ReceiveRequestVersionDeploy", posSetting);
+        }
 
-                    var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID, 1);
+        public async Task ReceiveVersionDeploy(List<VersionDeploy> versionsDeploy)
+        {
+            if (!versionsDeploy.Any())
+                return;
+
+            var posSetting = _frontConfigManager.POSDataSetting;
+
+            using (var conn = await _db.ConnectAsync())
+            {
+                foreach(var versionDeploy in versionsDeploy)
+                {
+                    await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+
+                    var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
                     versionInfo ??= new VersionInfo()
                     {
                         ShopId = posSetting.ShopID,
                         ComputerId = posSetting.ComputerID,
-                        ProgramName = "vTec-ResPOS",
-                        ProgramVersion = programVersion?.FileVersion ?? "",
-                        ProgramId = 1,
+                        ProgramName = versionDeploy.ProgramName,
+                        ProgramVersion = versionDeploy.ProgramVersion,
+                        ProgramId = versionDeploy.ProgramId,
                         InsertDate = DateTime.Now,
                         UpdateDate = DateTime.Now
                     };
-                    var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
-                    var versionLiveUpdateLog = await _liveUpdateCtx.GetVersionLiveUpdateLog(conn, posSetting.ShopID, posSetting.ComputerID);
+                    await _hubConnection.InvokeAsync("ReceiveVersionInfo", versionInfo);
 
-                    await _hubConnection.InvokeAsync("ReceiveSyncVersion", versionInfo, versionLiveUpdate, versionLiveUpdateLog);
+                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
+                    await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState);
                 }
-            }
-            catch (Exception ex)
-            {
-                _commLogger.Error(ex, $"SyncVersion => {ex.Message}");
             }
         }
 
-        public async Task ReceiveSyncVersion(VersionInfo versionInfo, VersionDeploy versionDeploy)
-        {
-            try
-            {
-                _commLogger.Info($"ReceiveSyncVersion");
-
-                using (var conn = await _db.ConnectAsync())
-                {
-                    await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
-                    await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
-                }
-            }
-            catch (Exception ex)
-            {
-                _gbLogger.Error(ex, "ReceiveSyncVersion");
-            }
-        }
-
-        public async Task UpdateVersion()
+        public async Task ReceiveCmdUpdateVersion()
         {
             using (var conn = await _db.ConnectAsync())
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var versionDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
-                if (versionDeploy == null)
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
+                if (!versionsDeploy.Any())
                     return;
 
-                var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID);
-                if (versionInfo == null)
-                    return;
-
-                if (versionDeploy.ProgramVersion == versionInfo.ProgramVersion)
-                    return;
-
-                var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
-
-                updateState ??= new VersionLiveUpdate()
+                foreach (var versionDeploy in versionsDeploy)
                 {
-                    ShopId = posSetting.ShopID,
-                    ComputerId = posSetting.ComputerID,
-                    ProgramName = versionDeploy.ProgramName,
-                    UpdateVersion = versionDeploy.ProgramVersion
-                };
+                    var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
+                    if (versionInfo == null)
+                        return;
 
-                var receivedFile = updateState.RevFile == 1;
-                if (!receivedFile)
-                {
-                    var downloadService = new DownloadService(versionDeploy.GoogleDriveApiKey);
-                    var updateStateLog = new VersionLiveUpdateLog()
+                    if (versionDeploy.ProgramVersion == versionInfo.ProgramVersion)
+                        return;
+
+                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+
+                    updateState ??= new VersionLiveUpdate()
                     {
+                        BatchId = versionDeploy.BatchId,
                         ShopId = posSetting.ShopID,
                         ComputerId = posSetting.ComputerID,
-                        ProgramVersion = versionDeploy.ProgramVersion
+                        ProgramName = versionDeploy.ProgramName,
+                        UpdateVersion = versionDeploy.ProgramVersion
                     };
-                    try
+
+                    var receivedFile = updateState.RevFile == 1;
+                    if (!receivedFile)
                     {
-                        updateState.RevStartTime = DateTime.Now;
-                        updateState.MessageLog = "Start download";
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
-
-                        updateStateLog.LogMessage = $"Start download";
-                        updateStateLog.ActionStatus = 1;
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
-                        await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
-
-                        var downloadFile = $"{_patchDownloadPath}";
-                        var result = await downloadService.DownloadFile(versionDeploy.GoogleDriveFileId, downloadFile);
-                        if (result.Status == Google.Apis.Download.DownloadStatus.Completed)
+                        var downloadService = new DownloadService(versionDeploy.GoogleDriveApiKey);
+                        var updateStateLog = new VersionLiveUpdateLog()
                         {
-                            updateState.RevFile = 1;
-                            updateState.RevEndTime = DateTime.Now;
-                            updateState.MessageLog = "Download complete";
+                            ShopId = posSetting.ShopID,
+                            ComputerId = posSetting.ComputerID,
+                            ProgramVersion = versionDeploy.ProgramVersion
+                        };
+                        try
+                        {
+                            updateState.RevStartTime = DateTime.Now;
+                            updateState.MessageLog = "Start download";
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 
-                            updateStateLog.LogMessage = $"Download complete";
-                            updateStateLog.EndTime = DateTime.Now;
-                            updateStateLog.ActionStatus = 2;
+                            updateStateLog.LogMessage = $"Start download";
+                            updateStateLog.ActionStatus = 1;
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
-
                             await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
 
-                            await Backup();
+                            var downloadFile = $"{_patchDownloadPath}";
+                            var result = await downloadService.DownloadFile(versionDeploy.GoogleDriveFileId, downloadFile);
+                            if (result.Status == Google.Apis.Download.DownloadStatus.Completed)
+                            {
+                                updateState.RevFile = 1;
+                                updateState.RevEndTime = DateTime.Now;
+                                updateState.MessageLog = "Download complete";
+                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+
+                                updateStateLog.LogMessage = $"Download complete";
+                                updateStateLog.EndTime = DateTime.Now;
+                                updateStateLog.ActionStatus = 2;
+                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
+
+                                await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
+
+                                await Backup();
+                            }
+                            else if (result.Status == Google.Apis.Download.DownloadStatus.Failed)
+                            {
+                                updateState.MessageLog = "Download failed";
+                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+
+                                updateStateLog.LogMessage = updateState.MessageLog;
+                                updateStateLog.EndTime = DateTime.Now;
+                                updateStateLog.ActionStatus = 99;
+                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
+
+                                await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
+                            }
                         }
-                        else if (result.Status == Google.Apis.Download.DownloadStatus.Failed)
+                        catch (Exception ex)
                         {
-                            updateState.MessageLog = "Download failed";
+                            updateState.MessageLog = $"Download failed {ex.Message}";
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 
                             updateStateLog.LogMessage = updateState.MessageLog;
@@ -261,28 +267,21 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
 
                             await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
+
+                            _gbLogger.Error(ex, "Download file");
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        updateState.MessageLog = $"Download failed {ex.Message}";
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
-
-                        updateStateLog.LogMessage = updateState.MessageLog;
-                        updateStateLog.EndTime = DateTime.Now;
-                        updateStateLog.ActionStatus = 99;
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
-
-                        await _hubConnection.InvokeAsync("ReceiveUpdateState", updateState, updateStateLog);
-
-                        _gbLogger.Error(ex, "Download file");
+                        await Backup();
                     }
                 }
-                else
-                {
-                    await Backup();
-                }
             }
+        }
+
+        public Task ReceiveCmdBackup()
+        {
+            return Backup();
         }
 
         public async Task Backup()
@@ -290,63 +289,60 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             using (var conn = await _db.ConnectAsync())
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
 
-                var stateLog = new VersionLiveUpdateLog()
+                foreach(var versionDeploy in versionsDeploy)
                 {
-                    ShopId = state.ShopId,
-                    ComputerId = state.ComputerId,
-                    ProgramVersion = state.UpdateVersion
-                };
+                    var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
 
-                try
-                {
-                    state.BackupStartTime = DateTime.Now;
-                    state.BackupStatus = 1;
-                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
+                    var stateLog = new VersionLiveUpdateLog()
+                    {
+                        ShopId = state.ShopId,
+                        ComputerId = state.ComputerId,
+                        ProgramVersion = state.UpdateVersion
+                    };
 
-                    var backupFileName = $"{_backupPath}{state.ProgramName}{DateTime.Now.ToString("yyyyMMdd")}.zip";
-                    stateLog.LogMessage = $"Start backup {backupFileName}";
-                    stateLog.ActionStatus = 1;
-                    stateLog.StartTime = DateTime.Now;
-                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
+                    try
+                    {
+                        state.BackupStartTime = DateTime.Now;
+                        state.BackupStatus = 1;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
 
-                    if (File.Exists(backupFileName))
-                        File.Delete(backupFileName);
+                        var backupFileName = $"{_backupPath}{state.ProgramName}{DateTime.Now.ToString("yyyyMMdd")}.zip";
+                        stateLog.LogMessage = $"Start backup {backupFileName}";
+                        stateLog.ActionStatus = 1;
+                        stateLog.StartTime = DateTime.Now;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
 
-                    ZipFile.CreateFromDirectory(_frontCashierPath, backupFileName);
+                        if (File.Exists(backupFileName))
+                            File.Delete(backupFileName);
 
-                    state.BackupEndTime = DateTime.Now;
-                    state.BackupStatus = 2;
-                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
+                        ZipFile.CreateFromDirectory(_frontCashierPath, backupFileName);
 
-                    stateLog.LogMessage = $"Backup {backupFileName} finish";
-                    stateLog.EndTime = DateTime.Now;
-                    stateLog.ActionStatus = 2;
-                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
+                        state.BackupEndTime = DateTime.Now;
+                        state.BackupStatus = 2;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
 
-                    await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
+                        stateLog.LogMessage = $"Backup {backupFileName} finish";
+                        stateLog.EndTime = DateTime.Now;
+                        stateLog.ActionStatus = 2;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
+
+                        await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
+                    }
+                    catch (Exception ex)
+                    {
+                        _commLogger.Error(ex, "Backup");
+                        state.MessageLog = ex.Message;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
+
+                        stateLog.ActionStatus = 99;
+                        stateLog.LogMessage = $"Backup error {ex.Message}";
+                        stateLog.EndTime = DateTime.Now;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
+                        await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _commLogger.Error(ex, "Backup");
-                    state.MessageLog = ex.Message;
-                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
-
-                    stateLog.ActionStatus = 99;
-                    stateLog.LogMessage = $"Backup error {ex.Message}";
-                    stateLog.EndTime = DateTime.Now;
-                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
-                    await _hubConnection.InvokeAsync("ReceiveUpdateState", state, stateLog);
-                }
-            }
-        }
-
-        public async Task ReceiveUpdateState(VersionLiveUpdate versionLiveUpdate)
-        {
-            using (var conn = await _db.ConnectAsync())
-            {
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
             }
         }
     }

@@ -9,7 +9,7 @@ namespace VerticalTec.POS.LiveUpdate
         public string BatchId { get; set; } = Guid.NewGuid().ToString();
         public int BrandId { get; set; }
         public int ShopId { get; set; }
-        public int ProgramId { get; set; }
+        public ProgramTypes ProgramId { get; set; }
         public string ProgramName { get; set; } = "";
         public string ProgramVersion { get; set; } = "";
         public string GoogleDriveFileId { get; set; } = "";
