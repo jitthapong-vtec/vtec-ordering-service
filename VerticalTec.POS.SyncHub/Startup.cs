@@ -11,7 +11,6 @@ using Microsoft.Extensions.Hosting;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 using VerticalTec.POS.SyncHub.Hubs;
-using VerticalTec.POS.SyncHub.Services;
 
 namespace VerticalTec.POS.SyncHub
 {
@@ -33,7 +32,6 @@ namespace VerticalTec.POS.SyncHub
             services.AddServerSideBlazor();
             services.AddSingleton<IDatabase>(db => new SqlServerDatabase(connStr));
             services.AddSingleton<LiveUpdateDbContext>();
-            services.AddHostedService<LiveUpdateWorker>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

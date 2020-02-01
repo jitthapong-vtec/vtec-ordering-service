@@ -1,12 +1,15 @@
 ﻿@page "/"
 @using VerticalTec.POS.LiveUpdate
 @using Microsoft.AspNetCore.SignalR.Client
+@using VerticalTec.POS.Database
 
+@inject IDatabase DbContext
+@inject LiveUpdateDbContext LiveupdateContext
 @inject NavigationManager NavigationManager
 
 <h1>Liveupdate Console</h1>
 
-@if (clients == null)
+@if (_clients == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -15,6 +18,7 @@ else
     <table class="table">
         <thead>
             <tr>
+                <th>Online</th>
                 <th>Client computer name</th>
                 <th>Current Version</th>
                 <th>Status</th>
@@ -22,9 +26,10 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var client in clients)
+            @foreach (var client in _clients)
             {
                 <tr>
+                    <td>@client.IsOnline</td>
                     <td>
                         <h4>
                             @client.ComputerName
@@ -57,12 +62,11 @@ else
 
     HubConnection _connection;
 
-    List<VersionInfo> clients;
+    List<VersionInfo> _clients;
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        clients = new List<VersionInfo>();
-        return base.OnInitializedAsync();
+        await LoadClient();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -80,12 +84,21 @@ else
         }
     }
 
+    async Task LoadClient()
+    {
+        using (var conn = await DbContext.ConnectAsync())
+        {
+            _clients = await LiveupdateContext.GetVersionInfo(conn);
+        }
+    }
+
     public Task ClientDisconnect(string connectionId)
     {
         try
         {
-            var client = clients.Where(c => c.ConnectionId == connectionId).FirstOrDefault();
-            clients.Remove(client);
+            var client = _clients.Where(c => c.ConnectionId == connectionId).FirstOrDefault();
+            client.IsOnline = false;
+            _clients[_clients.IndexOf(client)] = client;
             StateHasChanged();
         }
         catch { }
@@ -102,18 +115,17 @@ else
         await _connection.InvokeAsync("UpdateVersion", connectionId);
     }
 
-    public Task ClientUpdateInfo(VersionInfo versionInfo)
+    public async Task ClientUpdateInfo(VersionInfo versionInfo)
     {
         try
         {
-            var addedClient = clients?.Where(c => c.ConnectionId == versionInfo.ConnectionId).FirstOrDefault();
-            if (addedClient == null)
-                clients.Add(versionInfo);
-            else
-                clients[clients.IndexOf(addedClient)] = versionInfo;
-            this.StateHasChanged();
+            var client = _clients.Where(c => c.ConnectionId == versionInfo.ConnectionId).FirstOrDefault();
+            _clients[_clients.IndexOf(client)] = versionInfo;
+            StateHasChanged();
         }
-        catch { }
-        return Task.FromResult(true);
+        catch
+        {
+            await LoadClient();
+        }
     }
 }

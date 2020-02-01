@@ -32,6 +32,12 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
+            using (var conn = await _db.ConnectAsync())
+            {
+                var cmd = _db.CreateCommand("update versioninfo set IsOnline=0 where ConnectionId=@connectionId", conn);
+                cmd.Parameters.Add(_db.CreateParameter("@connectionId", Context.ConnectionId));
+                await _db.ExecuteNonQueryAsync(cmd);
+            }
             await _consoleHub.Clients.All.ClientDisconnect(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception);
         }
@@ -47,14 +53,16 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public Task ClientReceivedVersionDeploy()
         {
-            return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
+            return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo, Context.ConnectionId);
         }
 
         public async Task ReceiveVersionInfo(VersionInfo versionInfo)
         {
-            using(var conn = await _db.ConnectAsync())
+            using (var conn = await _db.ConnectAsync())
             {
+                versionInfo.ConnectionId = Context.ConnectionId;
                 versionInfo.SyncStatus = 1;
+                versionInfo.IsOnline = true;
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
                 await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);

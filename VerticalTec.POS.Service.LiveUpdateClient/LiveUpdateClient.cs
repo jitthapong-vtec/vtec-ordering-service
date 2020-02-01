@@ -158,7 +158,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
         }
 
-        async Task SendVersionInfo()
+        async Task SendVersionInfo(string connectionId)
         {
             using(var conn = await _db.ConnectAsync())
             {
@@ -166,7 +166,8 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
                 foreach(var versionDeploy in versionsDeploy)
                 {
-                    var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
+                    var versionsInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
+                    var versionInfo = versionsInfo.FirstOrDefault();
                     versionInfo ??= new VersionInfo()
                     {
                         ShopId = posSetting.ShopID,
@@ -177,6 +178,9 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                         InsertDate = DateTime.Now,
                         UpdateDate = DateTime.Now
                     };
+                    versionInfo.ConnectionId = connectionId;
+                    versionInfo.IsOnline = true;
+
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
                     await _hubConnection.InvokeAsync("ReceiveVersionInfo", versionInfo);
 
@@ -191,7 +195,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             switch (cmd)
             {
                 case LiveUpdateCommands.SendVersionInfo:
-                    await SendVersionInfo();
+                    await SendVersionInfo(param.ToString());
                     break;
                 case LiveUpdateCommands.UpdateVersion:
                     await UpdateVersion();
@@ -214,10 +218,10 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 foreach (var versionDeploy in versionsDeploy)
                 {
                     var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
-                    if (versionInfo == null)
+                    if (!versionInfo.Any())
                         return;
 
-                    if (versionDeploy.ProgramVersion == versionInfo.ProgramVersion)
+                    if (versionDeploy.ProgramVersion == versionInfo.FirstOrDefault().ProgramVersion)
                         return;
 
                     var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
