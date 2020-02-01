@@ -18,7 +18,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public async Task GetClientInfo(string connectionId)
         {
-            await _hubContext.Clients.Client(connectionId).SyncVersion();
+            await _hubContext.Clients.All
         }
 
         public async Task UpdateVersion(string connectionId)

@@ -18,6 +18,7 @@ namespace VerticalTec.POS.LiveUpdate
         public DateTime InsertDate { get; set; } = DateTime.MinValue;
         public DateTime UpdateDate { get; set; } = DateTime.MinValue;
         public int SyncStatus { get; set; }
+        public bool IsOnline { get; set; }
         public string ProcessMessage { get; set; }
     }
 }

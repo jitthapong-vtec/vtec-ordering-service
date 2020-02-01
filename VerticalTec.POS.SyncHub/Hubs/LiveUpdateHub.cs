@@ -36,13 +36,18 @@ namespace VerticalTec.POS.SyncHub.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task ReceiveRequestVersionDeploy(POSDataSetting posSetting)
+        public async Task SendVersionDeploy(POSDataSetting posSetting)
         {
             using (var conn = await _db.ConnectAsync())
             {
                 var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
                 await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionsDeploy);
             }
+        }
+
+        public Task AckVersionDeploy()
+        {
+            return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
         }
 
         public async Task ReceiveVersionInfo(VersionInfo versionInfo)

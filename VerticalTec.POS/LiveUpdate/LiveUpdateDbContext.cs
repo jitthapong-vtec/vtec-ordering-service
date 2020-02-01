@@ -47,6 +47,7 @@ namespace VerticalTec.POS.LiveUpdate
                UpdateDate DATETIME NOT NULL,
                SyncStatus TINYINT NOT NULL DEFAULT '0',
                ConnectionId VARCHAR(50) NOT NULL,
+               IsOnline TINYINT NOT NULL DEFAULT '0',
                PRIMARY KEY (ShopID,ComputerID,ProgramID)
             );",
                 @"CREATE TABLE Version_LiveUpdate (

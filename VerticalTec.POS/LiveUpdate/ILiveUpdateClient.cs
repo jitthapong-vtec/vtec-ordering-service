@@ -11,8 +11,6 @@ namespace VerticalTec.POS.LiveUpdate
 
         Task ReceiveVersionDeploy(List<VersionDeploy> versionsDeploy);
 
-        Task ReceiveCmdUpdateVersion();
-
-        Task ReceiveCmdBackup();
+        Task ReceiveCmd(LiveUpdateCommands cmd, object param = default);
     }
 }

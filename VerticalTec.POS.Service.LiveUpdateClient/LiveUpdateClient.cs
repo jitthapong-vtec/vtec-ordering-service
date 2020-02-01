@@ -134,13 +134,13 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
             _hubConnection.On("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
             _hubConnection.On<List<VersionDeploy>>("ReceiveVersionDeploy", ReceiveVersionDeploy);
-            _hubConnection.On<List<VersionDeploy>>("ReceiveVersionDeploy", ReceiveVersionDeploy);
+            _hubConnection.On<LiveUpdateCommands, object>("ReceiveCmd", ReceiveCmd);
         }
 
         public Task ReceiveConnectionEstablished()
         {
             var posSetting = _frontConfigManager.POSDataSetting;
-            return _hubConnection.InvokeAsync("ReceiveRequestVersionDeploy", posSetting);
+            return _hubConnection.InvokeAsync("SendVersionDeploy", posSetting);
         }
 
         public async Task ReceiveVersionDeploy(List<VersionDeploy> versionsDeploy)
@@ -148,14 +148,24 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             if (!versionsDeploy.Any())
                 return;
 
-            var posSetting = _frontConfigManager.POSDataSetting;
-
             using (var conn = await _db.ConnectAsync())
             {
-                foreach(var versionDeploy in versionsDeploy)
+                foreach (var versionDeploy in versionsDeploy)
                 {
                     await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+                }
+                await _hubConnection.InvokeAsync("AckVersionDeploy");
+            }
+        }
 
+        async Task SendVersionInfo()
+        {
+            using(var conn = await _db.ConnectAsync())
+            {
+                var posSetting = _frontConfigManager.POSDataSetting;
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
+                foreach(var versionDeploy in versionsDeploy)
+                {
                     var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
                     versionInfo ??= new VersionInfo()
                     {
@@ -167,6 +177,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                         InsertDate = DateTime.Now,
                         UpdateDate = DateTime.Now
                     };
+                    await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
                     await _hubConnection.InvokeAsync("ReceiveVersionInfo", versionInfo);
 
                     var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
@@ -175,7 +186,23 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
         }
 
-        public async Task ReceiveCmdUpdateVersion()
+        public async Task ReceiveCmd(LiveUpdateCommands cmd, object param)
+        {
+            switch (cmd)
+            {
+                case LiveUpdateCommands.SendVersionInfo:
+                    await SendVersionInfo();
+                    break;
+                case LiveUpdateCommands.UpdateVersion:
+                    await UpdateVersion();
+                    break;
+                case LiveUpdateCommands.BackupFile:
+                    await Backup();
+                    break;
+            }
+        }
+
+        async Task UpdateVersion()
         {
             using (var conn = await _db.ConnectAsync())
             {
@@ -193,7 +220,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                     if (versionDeploy.ProgramVersion == versionInfo.ProgramVersion)
                         return;
 
-                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
 
                     updateState ??= new VersionLiveUpdate()
                     {
@@ -279,19 +306,14 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
         }
 
-        public Task ReceiveCmdBackup()
-        {
-            return Backup();
-        }
-
-        public async Task Backup()
+        async Task Backup()
         {
             using (var conn = await _db.ConnectAsync())
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
                 var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
 
-                foreach(var versionDeploy in versionsDeploy)
+                foreach (var versionDeploy in versionsDeploy)
                 {
                     var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
 
