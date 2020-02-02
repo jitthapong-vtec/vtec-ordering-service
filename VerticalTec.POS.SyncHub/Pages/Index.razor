@@ -19,9 +19,9 @@ else
         <thead>
             <tr>
                 <th>Online</th>
-                <th>Client computer name</th>
+                <th>Computer name</th>
                 <th>Current Version</th>
-                <th>Status</th>
+                <th>Last Status</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -46,9 +46,9 @@ else
                                 Action
                             </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client.ConnectionId))">Get version info</a>
+                                <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client))">Get version info</a>
                                 <a class="dropdown-item" href="#" @onclick="@(async() => await SendBackupCommand(client))">Backup</a>
-                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendUpdateVersionCommand(client.ConnectionId))">Update</a>
+                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendUpdateVersionCommand(client))">Update</a>
                             </div>
                         </div>
                     </td>
@@ -87,6 +87,7 @@ else
                 try
                 {
                     await _connection.StartAsync();
+                    await _connection.InvokeAsync("GetClientInfo", "");
                     break;
                 }
                 catch
@@ -118,20 +119,20 @@ else
         return Task.FromResult(true);
     }
 
-    public async Task GetClientInfo(string connectionId)
+    public async Task GetClientInfo(VersionInfo client)
     {
-        await _connection.InvokeAsync("GetClientInfo", connectionId);
+        await _connection.InvokeAsync("GetClientInfo", client.ConnectionId);
     }
 
-    public async Task SendUpdateVersionCommand(string connectionId)
+    public async Task SendUpdateVersionCommand(VersionInfo client)
     {
-        await _connection.InvokeAsync("SendUpdateVersionCommand", connectionId);
+        await _connection.InvokeAsync("SendUpdateVersionCommand", client.ConnectionId);
     }
 
     public async Task SendBackupCommand(VersionInfo client)
     {
-        client.CanExecute = false;
         await _connection.InvokeAsync("SendBackupCommand", client.ConnectionId);
+        client.CanExecute = false;
         StateHasChanged();
     }
 
@@ -155,6 +156,8 @@ else
         {
             var client = _clients.Where(c => c.ShopId == state.ShopId && c.ComputerId == state.ComputerId).FirstOrDefault();
             client.ProcessMessage = state.MessageLog;
+            if (state.CommandStatus == CommandStatus.Finish)
+                client.CanExecute = true;
             _clients[_clients.IndexOf(client)] = client;
             StateHasChanged();
         }

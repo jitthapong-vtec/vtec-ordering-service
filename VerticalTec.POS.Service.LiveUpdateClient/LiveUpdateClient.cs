@@ -131,12 +131,33 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 .WithUrl(liveUpdateConsoleUrl)
                 .WithAutomaticReconnect()
                 .Build();
+            _hubConnection.Reconnecting += Reconnecting;
+            _hubConnection.Reconnected += Reconnected;
+            _hubConnection.Closed += Closed;
 
             _hubConnection.On("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
             _hubConnection.On<List<VersionDeploy>>("ReceiveVersionDeploy", ReceiveVersionDeploy);
             _hubConnection.On<VersionInfo>("ReceiveSyncVersion", ReceiveSyncVersion);
             _hubConnection.On<VersionLiveUpdate>("ReceiveSyncUpdateVersionState", ReceiveSyncUpdateVersionState);
             _hubConnection.On<LiveUpdateCommands, object>("ReceiveCmd", ReceiveCmd);
+        }
+
+        private Task Closed(Exception arg)
+        {
+            _commLogger.Info($"Connecting closed {arg}");
+            return Task.FromResult(true);
+        }
+
+        private Task Reconnected(string arg)
+        {
+            _commLogger.Info($"Reconnected {arg}");
+            return Task.FromResult(true);
+        }
+
+        private Task Reconnecting(Exception arg)
+        {
+            _commLogger.Info($"Reconnecting...{arg}");
+            return Task.FromResult(true);
         }
 
         public Task ReceiveConnectionEstablished()
@@ -368,6 +389,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
                         state.BackupStartTime = DateTime.Now;
                         state.BackupStatus = 1;
+                        state.CommandStatus = CommandStatus.Start;
                         state.MessageLog = stepLog;
 
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
@@ -383,6 +405,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
                         state.BackupEndTime = DateTime.Now;
                         state.BackupStatus = 2;
+                        state.CommandStatus = CommandStatus.Finish;
                         state.MessageLog = stepLog;
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
 
@@ -396,6 +419,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                     catch (Exception ex)
                     {
                         state.MessageLog = ex.Message;
+                        state.CommandStatus = CommandStatus.Finish;
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
 
                         stateLog.ActionStatus = 99;

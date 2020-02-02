@@ -18,7 +18,10 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public async Task GetClientInfo(string connectionId)
         {
-            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo, connectionId);
+            if (string.IsNullOrEmpty(connectionId))
+                await _hubContext.Clients.All.ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
+            else
+                await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo, connectionId);
         }
 
         public async Task SendUpdateVersionCommand(string connectionId)
