@@ -47,7 +47,6 @@ namespace VerticalTec.POS.LiveUpdate
                UpdateDate DATETIME NOT NULL,
                SyncStatus TINYINT NOT NULL DEFAULT '0',
                ConnectionId VARCHAR(50) NOT NULL,
-               IsOnline TINYINT NOT NULL DEFAULT '0',
                PRIMARY KEY (ShopID,ComputerID,ProgramID)
             );",
                 @"CREATE TABLE Version_LiveUpdate (
@@ -117,7 +116,7 @@ namespace VerticalTec.POS.LiveUpdate
                         BatchId = reader.GetValue<string>("BatchID"),
                         ShopId = reader.GetValue<int>("ShopID"),
                         ComputerId = reader.GetValue<int>("ComputerID"),
-                        ProgramId = reader.GetValue<int>("ProgramID"),
+                        ProgramId = (ProgramTypes)reader.GetValue<int>("ProgramID"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         UpdateVersion = reader.GetValue<string>("UpdateVersion"),
                         RevFile = reader.GetValue<int>("RevFile"),
@@ -154,7 +153,7 @@ namespace VerticalTec.POS.LiveUpdate
                         SaleDate = reader.GetValue<DateTime>("SaleDate"),
                         ShopId = reader.GetValue<int>("ShopID"),
                         ComputerId = reader.GetValue<int>("ComputerID"),
-                        ProgramId = reader.GetValue<int>("ProgramID"),
+                        ProgramId = (ProgramTypes)reader.GetValue<int>("ProgramID"),
                         ActionId = reader.GetValue<int>("ActionID"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         ActionStatus = reader.GetValue<int>("ActionStatus"),
@@ -230,11 +229,10 @@ namespace VerticalTec.POS.LiveUpdate
                 {
                     versionsInfo.Add(new VersionInfo()
                     {
-                        ShopId = shopId,
-                        ComputerId = computerId,
+                        ShopId = reader.GetValue<int>("ShopID"),
+                        ComputerId = reader.GetValue<int>("ComputerID"),
                         ProgramId = (ProgramTypes)reader.GetValue<int>("ProgramID"),
                         ConnectionId = reader.GetValue<string>("ConnectionId"),
-                        IsOnline = reader.GetValue<bool>("IsOnline"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ComputerName = reader.GetValue<string>("ComputerName"),
                         ShopName = reader.GetValue<string>("ShopName"),
@@ -359,7 +357,6 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@syncStatus", info.SyncStatus));
             cmd.Parameters.Add(_db.CreateParameter("@programName", info.ProgramName));
             cmd.Parameters.Add(_db.CreateParameter("@connectionId", info.ConnectionId));
-            cmd.Parameters.Add(_db.CreateParameter("@isOnline", info.IsOnline));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", DateTime.Now.ToISODateTime()));
             cmd.Parameters.Add(_db.CreateParameter("@updateDate", DateTime.Now.ToISODateTime()));
 
@@ -372,12 +369,12 @@ namespace VerticalTec.POS.LiveUpdate
             if (isHaveRecord)
             {
                 cmd.CommandText = "update VersionInfo set ProgramVersion=@programVersion, VersionStatus=@versionStatus, UpdateDate=@updateDate, SyncStatus=@syncStatus," +
-                    " ConnectionId=@connectionId, IsOnline=@isOnline where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId";
+                    " ConnectionId=@connectionId where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId";
             }
             else
             {
-                cmd.CommandText = "insert into VersionInfo(ShopID, ComputerID, ProgramID, ProgramName, ProgramVersion, VersionStatus, InsertDate, UpdateDate, SyncStatus, ConnectionId, IsOnline)" +
-                    " values (@shopId, @computerId, @programId, @programName, @programVersion, @versionStatus, @insertDate, @updateDate, @syncStatus, @connectionId, @isOnline);";
+                cmd.CommandText = "insert into VersionInfo(ShopID, ComputerID, ProgramID, ProgramName, ProgramVersion, VersionStatus, InsertDate, UpdateDate, SyncStatus, ConnectionId)" +
+                    " values (@shopId, @computerId, @programId, @programName, @programVersion, @versionStatus, @insertDate, @updateDate, @syncStatus, @connectionId);";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }

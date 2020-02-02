@@ -10,6 +10,8 @@ namespace VerticalTec.POS.SyncHub.Hubs
     {
         Task ClientUpdateInfo(VersionInfo info);
 
+        Task ClientUpdateVersionState(VersionLiveUpdate state);
+
         Task ClientDisconnect(string connectionId);
     }
 }

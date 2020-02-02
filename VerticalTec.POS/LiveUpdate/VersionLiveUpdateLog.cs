@@ -11,7 +11,7 @@ namespace VerticalTec.POS.LiveUpdate
         public DateTime SaleDate { get; set; } = DateTime.Today;
         public int ShopId { get; set; }
         public int ComputerId { get; set; }
-        public int ProgramId { get; set; }
+        public ProgramTypes ProgramId { get; set; }
         public int ActionId { get; set; }
         public string ProgramVersion { get; set; }
         public int ActionStatus { get; set; }

@@ -39,7 +39,7 @@ else
                         </h6>
                     </td>
                     <td>@client.ProgramVersion</td>
-                    <td>@client.VersionStatus</td>
+                    <td>@client.ProcessMessage</td>
                     <td>
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -47,8 +47,8 @@ else
                             </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client.ConnectionId))">Get version info</a>
-                                <a class="dropdown-item" href="#">Backup</a>
-                                <a class="dropdown-item" href="#" @onclick="@(async() => await UpdateVersion(client.ConnectionId))">Update</a>
+                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendBackupCommand(client.ConnectionId))">Backup</a>
+                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendUpdateVersionCommand(client.ConnectionId))">Update</a>
                             </div>
                         </div>
                     </td>
@@ -74,13 +74,26 @@ else
         if (firstRender)
         {
             var url = NavigationManager.BaseUri + "console";
-            _connection = new HubConnectionBuilder().WithUrl(url).Build();
+            _connection = new HubConnectionBuilder().WithUrl(url)
+                .WithAutomaticReconnect()
+                .Build();
 
             _connection.On<VersionInfo>("ClientUpdateInfo", ClientUpdateInfo);
             _connection.On<string>("ClientDisconnect", ClientDisconnect);
+            _connection.On<VersionLiveUpdate>("ClientUpdateVersionState", ClientUpdateVersionState);
 
-            StateHasChanged();
-            await _connection.StartAsync();
+            while (true)
+            {
+                try
+                {
+                    await _connection.StartAsync();
+                    break;
+                }
+                catch
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(3));
+                }
+            }
         }
     }
 
@@ -110,17 +123,37 @@ else
         await _connection.InvokeAsync("GetClientInfo", connectionId);
     }
 
-    public async Task UpdateVersion(string connectionId)
+    public async Task SendUpdateVersionCommand(string connectionId)
     {
-        await _connection.InvokeAsync("UpdateVersion", connectionId);
+        await _connection.InvokeAsync("SendUpdateVersionCommand", connectionId);
+    }
+
+    public async Task SendBackupCommand(string connectionId)
+    {
+        await _connection.InvokeAsync("SendBackupCommand", connectionId);
     }
 
     public async Task ClientUpdateInfo(VersionInfo versionInfo)
     {
         try
         {
-            var client = _clients.Where(c => c.ConnectionId == versionInfo.ConnectionId).FirstOrDefault();
+            var client = _clients.Where(c => c.ShopId == versionInfo.ShopId && c.ComputerId == versionInfo.ComputerId).FirstOrDefault();
             _clients[_clients.IndexOf(client)] = versionInfo;
+            StateHasChanged();
+        }
+        catch
+        {
+            await LoadClient();
+        }
+    }
+
+    public async Task ClientUpdateVersionState(VersionLiveUpdate state)
+    {
+        try
+        {
+            var client = _clients.Where(c => c.ShopId == state.ShopId && c.ComputerId == state.ComputerId).FirstOrDefault();
+            client.ProcessMessage = state.MessageLog;
+            _clients[_clients.IndexOf(client)] = client;
             StateHasChanged();
         }
         catch

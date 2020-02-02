@@ -53,7 +53,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public Task ClientReceivedVersionDeploy()
         {
-            return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo, Context.ConnectionId);
+            return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
         }
 
         public async Task ReceiveVersionInfo(VersionInfo versionInfo)
@@ -63,18 +63,26 @@ namespace VerticalTec.POS.SyncHub.Hubs
                 versionInfo.ConnectionId = Context.ConnectionId;
                 versionInfo.SyncStatus = 1;
                 versionInfo.IsOnline = true;
+                versionInfo.UpdateDate = DateTime.Now;
+
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
+                await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo);
                 await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);
             }
         }
 
-        public async Task ReceiveUpdateState(VersionLiveUpdate updateState)
+        public async Task ReceiveUpdateVersionState(VersionLiveUpdate updateState)
         {
             using (var conn = await _db.ConnectAsync())
             {
                 updateState.SyncStatus = 1;
+                updateState.UpdateDate = DateTime.Now;
+
                 await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+
+                await Clients.Client(Context.ConnectionId).ReceiveSyncUpdateVersionState(updateState);
+                await _consoleHub.Clients.All.ClientUpdateVersionState(updateState);
             }
         }
     }

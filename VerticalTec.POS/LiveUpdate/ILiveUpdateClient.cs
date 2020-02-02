@@ -11,6 +11,10 @@ namespace VerticalTec.POS.LiveUpdate
 
         Task ReceiveVersionDeploy(List<VersionDeploy> versionsDeploy);
 
+        Task ReceiveSyncVersion(VersionInfo versionInfo);
+
+        Task ReceiveSyncUpdateVersionState(VersionLiveUpdate state);
+
         Task ReceiveCmd(LiveUpdateCommands cmd, object param = default);
     }
 }
