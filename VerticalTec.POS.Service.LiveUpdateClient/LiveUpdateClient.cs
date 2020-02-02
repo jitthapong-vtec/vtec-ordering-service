@@ -91,25 +91,30 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
                 if (isInitSuccess)
                 {
-                    while (true)
-                    {
-                        try
-                        {
-                            await _hubConnection.StartAsync(cancellationToken);
-                            _commLogger.Info("Connected to server");
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            _gbLogger.Error(ex.Message);
-                            await Task.Delay(1000);
-                        }
-                    }
+                    await StartHubConnection(cancellationToken);
                 }
             }
             catch (Exception ex)
             {
                 _gbLogger.Error(ex, ex.Message);
+            }
+        }
+
+        async Task StartHubConnection(CancellationToken cancellationToken = default)
+        {
+            while (true)
+            {
+                try
+                {
+                    await _hubConnection.StartAsync(cancellationToken);
+                    _commLogger.Info("Connected to server");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _gbLogger.Error(ex.Message);
+                    await Task.Delay(1000);
+                }
             }
         }
 
@@ -142,10 +147,10 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             _hubConnection.On<LiveUpdateCommands, object>("ReceiveCmd", ReceiveCmd);
         }
 
-        private Task Closed(Exception arg)
+        private async Task Closed(Exception arg)
         {
             _commLogger.Info($"Connecting closed {arg}");
-            return Task.FromResult(true);
+            await StartHubConnection();
         }
 
         private Task Reconnected(string arg)
