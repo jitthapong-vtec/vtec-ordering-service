@@ -29,7 +29,9 @@ else
             @foreach (var client in _clients)
             {
                 <tr>
-                    <td>@client.IsOnline</td>
+                    <td>
+                        <span style="width:24px;height:24px;border-radius:50%;display:inline-block;" class="@(client.IsOnline ? "bg-success" : "bg-danger")"></span>
+                    </td>
                     <td>
                         <h4>
                             @client.ComputerName
