@@ -42,12 +42,12 @@ else
                     <td>@client.ProcessMessage</td>
                     <td>
                         <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button class="btn btn-secondary dropdown-toggle" disabled="@(client.CanExecute == false)" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Action
                             </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client.ConnectionId))">Get version info</a>
-                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendBackupCommand(client.ConnectionId))">Backup</a>
+                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendBackupCommand(client))">Backup</a>
                                 <a class="dropdown-item" href="#" @onclick="@(async() => await SendUpdateVersionCommand(client.ConnectionId))">Update</a>
                             </div>
                         </div>
@@ -128,9 +128,11 @@ else
         await _connection.InvokeAsync("SendUpdateVersionCommand", connectionId);
     }
 
-    public async Task SendBackupCommand(string connectionId)
+    public async Task SendBackupCommand(VersionInfo client)
     {
-        await _connection.InvokeAsync("SendBackupCommand", connectionId);
+        client.CanExecute = false;
+        await _connection.InvokeAsync("SendBackupCommand", client.ConnectionId);
+        StateHasChanged();
     }
 
     public async Task ClientUpdateInfo(VersionInfo versionInfo)

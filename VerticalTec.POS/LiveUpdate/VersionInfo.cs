@@ -6,6 +6,7 @@ namespace VerticalTec.POS.LiveUpdate
 {
     public class VersionInfo
     {
+        bool _isOnline;
         public int ShopId { get; set; }
         public int ComputerId { get; set; }
         public string ConnectionId { get; set; } = "";
@@ -18,7 +19,15 @@ namespace VerticalTec.POS.LiveUpdate
         public DateTime InsertDate { get; set; } = DateTime.MinValue;
         public DateTime UpdateDate { get; set; } = DateTime.MinValue;
         public int SyncStatus { get; set; }
-        public bool IsOnline { get; set; }
         public string ProcessMessage { get; set; }
+        public bool CanExecute { get; set; }
+        public bool IsOnline {
+            get => _isOnline;
+            set
+            {
+                _isOnline = value;
+                CanExecute = _isOnline;
+            }
+        }
     }
 }
