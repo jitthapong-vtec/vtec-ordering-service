@@ -226,7 +226,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
 
         public async Task ReceiveSyncUpdateVersionState(VersionLiveUpdate state)
         {
-            using(var conn = await _db.ConnectAsync())
+            using (var conn = await _db.ConnectAsync())
             {
                 await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
             }
@@ -239,8 +239,8 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 case LiveUpdateCommands.SendVersionInfo:
                     await SendVersionInfo();
                     break;
-                case LiveUpdateCommands.UpdateVersion:
-                    await UpdateVersion();
+                case LiveUpdateCommands.DownloadFile:
+                    await DownloadFile();
                     break;
                 case LiveUpdateCommands.BackupFile:
                     await BackupFile();
@@ -248,7 +248,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
             }
         }
 
-        async Task UpdateVersion()
+        async Task DownloadFile()
         {
             using (var conn = await _db.ConnectAsync())
             {
@@ -263,9 +263,6 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                     if (!versionInfo.Any())
                         return;
 
-                    if (versionDeploy.ProgramVersion == versionInfo.FirstOrDefault().ProgramVersion)
-                        return;
-
                     var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
 
                     updateState ??= new VersionLiveUpdate()
@@ -278,77 +275,78 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                         UpdateVersion = versionDeploy.ProgramVersion
                     };
 
-                    var receivedFile = updateState.RevFile == 1;
-                    if (!receivedFile)
+                    //var receivedFile = updateState.RevFile == 1;
+                    //if (!receivedFile)
+                    //{
+                    var downloadService = new DownloadService(versionDeploy.GoogleDriveApiKey);
+                    var updateStateLog = new VersionLiveUpdateLog()
                     {
-                        var downloadService = new DownloadService(versionDeploy.GoogleDriveApiKey);
-                        var updateStateLog = new VersionLiveUpdateLog()
+                        ShopId = posSetting.ShopID,
+                        ComputerId = posSetting.ComputerID,
+                        ProgramVersion = versionDeploy.ProgramVersion
+                    };
+
+                    var stepLog = "Start download";
+                    try
+                    {
+                        updateState.RevStartTime = DateTime.Now;
+                        updateState.MessageLog = stepLog;
+                        updateState.CommandStatus = CommandStatus.Start;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+
+                        updateStateLog.LogMessage = stepLog;
+                        updateStateLog.ActionStatus = 1;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
+                        await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
+
+                        var result = await downloadService.DownloadFile(versionDeploy.GoogleDriveFileId, _patchDownloadPath);
+                        if (result.Status == Google.Apis.Download.DownloadStatus.Completed)
                         {
-                            ShopId = posSetting.ShopID,
-                            ComputerId = posSetting.ComputerID,
-                            ProgramVersion = versionDeploy.ProgramVersion
-                        };
-                        try
-                        {
-                            updateState.RevStartTime = DateTime.Now;
-                            updateState.MessageLog = "Start download";
+                            stepLog = "Download complete";
+                            updateState.RevFile = 1;
+                            updateState.RevEndTime = DateTime.Now;
+                            updateState.MessageLog = stepLog;
+                            updateState.CommandStatus = CommandStatus.Finish;
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 
-                            updateStateLog.LogMessage = $"Start download";
-                            updateStateLog.ActionStatus = 1;
+                            updateStateLog.LogMessage = stepLog;
+                            updateStateLog.EndTime = DateTime.Now;
+                            updateStateLog.ActionStatus = 2;
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
                             await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
-
-                            var downloadFile = $"{_patchDownloadPath}";
-                            var result = await downloadService.DownloadFile(versionDeploy.GoogleDriveFileId, downloadFile);
-                            if (result.Status == Google.Apis.Download.DownloadStatus.Completed)
-                            {
-                                updateState.RevFile = 1;
-                                updateState.RevEndTime = DateTime.Now;
-                                updateState.MessageLog = "Download complete";
-                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
-
-                                updateStateLog.LogMessage = $"Download complete";
-                                updateStateLog.EndTime = DateTime.Now;
-                                updateStateLog.ActionStatus = 2;
-                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
-
-                                await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
-
-                                await BackupFile();
-                            }
-                            else if (result.Status == Google.Apis.Download.DownloadStatus.Failed)
-                            {
-                                updateState.MessageLog = "Download failed";
-                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
-
-                                updateStateLog.LogMessage = updateState.MessageLog;
-                                updateStateLog.EndTime = DateTime.Now;
-                                updateStateLog.ActionStatus = 99;
-                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
-
-                                await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
-                            }
                         }
-                        catch (Exception ex)
+                        else if (result.Status == Google.Apis.Download.DownloadStatus.Failed)
                         {
-                            updateState.MessageLog = $"Download failed {ex.Message}";
+                            stepLog = "Download failed";
+                            updateState.MessageLog = stepLog;
+                            updateState.CommandStatus = CommandStatus.Finish;
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 
-                            updateStateLog.LogMessage = updateState.MessageLog;
+                            updateStateLog.LogMessage = stepLog;
                             updateStateLog.EndTime = DateTime.Now;
                             updateStateLog.ActionStatus = 99;
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
 
                             await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
-
-                            _gbLogger.Error(ex, "Download file");
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        await BackupFile();
+                        stepLog = $"Download failed {ex.Message}";
+                        updateState.MessageLog = stepLog;
+                        updateState.CommandStatus = CommandStatus.Finish;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+
+                        updateStateLog.LogMessage = stepLog;
+                        updateStateLog.EndTime = DateTime.Now;
+                        updateStateLog.ActionStatus = 99;
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
+
+                        await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
+
+                        _gbLogger.Error(ex, "Download file");
                     }
+                    //}
                 }
             }
         }

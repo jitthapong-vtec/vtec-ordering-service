@@ -24,9 +24,9 @@ namespace VerticalTec.POS.SyncHub.Hubs
                 await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo, connectionId);
         }
 
-        public async Task SendUpdateVersionCommand(string connectionId)
+        public async Task SendDownloadFileCommand(string connectionId)
         {
-            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.UpdateVersion);
+            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.DownloadFile);
         }
 
         public async Task SendBackupCommand(string connectionId)

@@ -8,7 +8,7 @@ namespace VerticalTec.POS.LiveUpdate
     public enum LiveUpdateCommands
     {
         SendVersionInfo,
-        UpdateVersion,
+        DownloadFile,
         BackupFile
     }
 }

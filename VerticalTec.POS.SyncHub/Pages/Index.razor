@@ -50,7 +50,7 @@ else
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client))">Get version info</a>
                                 <a class="dropdown-item" href="#" @onclick="@(async() => await SendBackupCommand(client))">Backup</a>
-                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendUpdateVersionCommand(client))">Update</a>
+                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendDownloadFileCommand(client))">Download file</a>
                             </div>
                         </div>
                     </td>
@@ -126,9 +126,11 @@ else
         await _connection.InvokeAsync("GetClientInfo", client.ConnectionId);
     }
 
-    public async Task SendUpdateVersionCommand(VersionInfo client)
+    public async Task SendDownloadFileCommand(VersionInfo client)
     {
-        await _connection.InvokeAsync("SendUpdateVersionCommand", client.ConnectionId);
+        await _connection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId);
+        client.CanExecute = false;
+        StateHasChanged();
     }
 
     public async Task SendBackupCommand(VersionInfo client)
