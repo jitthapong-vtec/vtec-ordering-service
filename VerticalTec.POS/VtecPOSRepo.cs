@@ -891,15 +891,15 @@ namespace VerticalTec.POS
                     {
                         DateTime currentDate = DateTime.Now;
                         DateTime lastSaleDate = reader.GetDateTime(0);
-                        //var lastSaleDateEarlyNow = DateTime.Compare(lastSaleDate.Date, currentDate.Date) < 0;
-                        //if (ignoreOpenDayCheck == false && lastSaleDateEarlyNow)
-                        //    throw new VtecPOSException("The front program did not open sale day!");
+                        var lastSaleDateEarlyNow = DateTime.Compare(lastSaleDate.Date, currentDate.Date) < 0;
+                        if (ignoreOpenDayCheck == false && lastSaleDateEarlyNow)
+                            throw new VtecPOSException("The front program did not open sale day!");
 
-                        //// incase bypass check open day must use last date
-                        //if(lastSaleDateEarlyNow)
-                        //    saleDate = currentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                        //else
-                        saleDate = lastSaleDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        // incase bypass check open day must use last date
+                        if (lastSaleDateEarlyNow)
+                            saleDate = currentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        else
+                            saleDate = lastSaleDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     }
                 }
             }
