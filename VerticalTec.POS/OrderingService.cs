@@ -227,8 +227,13 @@ namespace VerticalTec.POS
             string responseText = "";
             var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
 
-            _posModule.OrderDetail_RefreshPromo(ref responseText, "front", transactionId, computerId, decimalDigit, myConn);
-            _posModule.OrderDetail_CalBill(ref responseText, transactionId, computerId, shopId, decimalDigit, "front", myConn);
+            var success = _posModule.OrderDetail_RefreshPromo(ref responseText, "front", transactionId, computerId, decimalDigit, myConn);
+            if (!success)
+                throw new VtecPOSException(responseText);
+
+            var result = _posModule.OrderDetail_CalBill(ref responseText, transactionId, computerId, shopId, decimalDigit, "front", myConn);
+            if (!string.IsNullOrEmpty(result))
+                throw new VtecPOSException(responseText);
 
             var ds = await _posRepo.GetOrderDataAsync(conn, transactionId, computerId, langId);
 

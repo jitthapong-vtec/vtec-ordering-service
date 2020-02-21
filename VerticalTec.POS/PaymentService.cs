@@ -116,7 +116,9 @@ namespace VerticalTec.POS
             string responseText = "";
             int defaultDecimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
             _posModule.OrderDetail_RefreshPromo(ref responseText, "front", transactionId, computerId, defaultDecimalDigit, myConn);
-            _posModule.OrderDetail_CalBill(transactionId, computerId, shopId, defaultDecimalDigit, "front", myConn);
+            var result = _posModule.OrderDetail_CalBill(ref responseText, transactionId, computerId, shopId, defaultDecimalDigit, "front", myConn);
+            if(!string.IsNullOrEmpty(result))
+                throw new VtecPOSException($"OrderDetail_CalBill {responseText}");
             var isSuccess = _posModule.OrderDetail_FinalizeBill(ref responseText, "front", transactionId, computerId, defaultDecimalDigit, staffId, terminalId, myConn);
             if (!isSuccess)
                 throw new VtecPOSException($"Finalize bill {responseText}");
