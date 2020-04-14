@@ -9,7 +9,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VerticalTec.POS.Service.LiveUpdateClient
+namespace VerticalTec.POS.Service.LiveUpdate
 {
     public class DownloadService
     {

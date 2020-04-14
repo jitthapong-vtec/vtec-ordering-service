@@ -83,6 +83,11 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
                 await Clients.Client(Context.ConnectionId).ReceiveSyncUpdateVersionState(updateState);
                 await _consoleHub.Clients.All.ClientUpdateVersionState(updateState);
+
+                if(updateState.RevFile == 0)
+                    await Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.DownloadFile);
+                if (updateState.RevFile == 1 && updateState.BackupStatus == 0)
+                    await Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.BackupFile);
             }
         }
     }

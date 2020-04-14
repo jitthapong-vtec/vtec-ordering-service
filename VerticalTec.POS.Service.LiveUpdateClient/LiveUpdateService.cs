@@ -14,9 +14,9 @@ using System.Threading.Tasks;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 
-namespace VerticalTec.POS.Service.LiveUpdateClient
+namespace VerticalTec.POS.Service.LiveUpdate
 {
-    public class LiveUpdateClient : ILiveUpdateClient, IHostedService
+    public class LiveUpdateService : ILiveUpdateClient, IHostedService
     {
         static readonly NLog.Logger _commLogger = NLog.LogManager.GetLogger("communication");
         static readonly NLog.Logger _gbLogger = NLog.LogManager.GetLogger("global");
@@ -31,7 +31,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
         string _patchDownloadPath;
         string _backupPath;
 
-        public LiveUpdateClient(IDatabase db, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
+        public LiveUpdateService(IDatabase db, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
         {
             _db = db;
             _liveUpdateCtx = liveUpdateCtx;
@@ -47,12 +47,11 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 {
                     await _liveUpdateCtx.UpdateStructure(conn);
 
+                    var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
+                    _vtSoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}\\";
                     var posRepo = new VtecPOSRepo(_db);
-                    _vtSoftwareRootPath = await posRepo.GetPropertyValueAsync(conn, 2004, "VtecSoftwareRootPath");
                     if (!string.IsNullOrEmpty(_vtSoftwareRootPath))
                     {
-                        if (!_vtSoftwareRootPath.EndsWith("\\"))
-                            _vtSoftwareRootPath += "\\";
                         _frontCashierPath = $"{_vtSoftwareRootPath}vTec-ResPOS\\";
                         _patchDownloadPath = $"{_vtSoftwareRootPath}Downloads\\";
                         _backupPath = $"{_vtSoftwareRootPath}Backup\\";

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>VtecLiveUpdateClient</AssemblyName>
+    <AssemblyName>VtecLiveUpdateService</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

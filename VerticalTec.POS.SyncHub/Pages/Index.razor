@@ -22,7 +22,7 @@ else
                 <th>Computer name</th>
                 <th>Current Version</th>
                 <th>Last Status</th>
-                <th>Action</th>
+                @*<th>Action</th>*@
             </tr>
         </thead>
         <tbody>
@@ -42,7 +42,7 @@ else
                     </td>
                     <td>@client.ProgramVersion</td>
                     <td>@client.ProcessMessage</td>
-                    <td>
+                    @*<td>
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" disabled="@(client.CanExecute == false)" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Action
@@ -53,7 +53,7 @@ else
                                 <a class="dropdown-item" href="#" @onclick="@(async() => await SendDownloadFileCommand(client))">Download file</a>
                             </div>
                         </div>
-                    </td>
+                    </td>*@
                 </tr>
             }
         </tbody>

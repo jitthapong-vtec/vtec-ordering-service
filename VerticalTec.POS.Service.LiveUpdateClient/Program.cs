@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 
-namespace VerticalTec.POS.Service.LiveUpdateClient
+namespace VerticalTec.POS.Service.LiveUpdate
 {
     public class Program
     {
@@ -28,7 +28,7 @@ namespace VerticalTec.POS.Service.LiveUpdateClient
                 services.AddSingleton<IDatabase>(db => new MySqlDatabase(connStr));
                 services.AddSingleton<LiveUpdateDbContext>();
                 services.AddSingleton<FrontConfigManager>();
-                services.AddHostedService<LiveUpdateClient>();
+                services.AddHostedService<LiveUpdateService>();
             });
     }
 }
