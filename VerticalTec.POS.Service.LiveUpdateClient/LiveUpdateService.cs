@@ -22,6 +22,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
         static readonly NLog.Logger _gbLogger = NLog.LogManager.GetLogger("global");
 
         IDatabase _db;
+        IConfiguration _config;
         HubConnection _hubConnection;
         LiveUpdateDbContext _liveUpdateCtx;
         FrontConfigManager _frontConfigManager;
@@ -31,9 +32,10 @@ namespace VerticalTec.POS.Service.LiveUpdate
         string _patchDownloadPath;
         string _backupPath;
 
-        public LiveUpdateService(IDatabase db, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
+        public LiveUpdateService(IDatabase db, IConfiguration config, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
         {
             _db = db;
+            _config = config;
             _liveUpdateCtx = liveUpdateCtx;
             _frontConfigManager = frontConfigManager;
         }
@@ -167,6 +169,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
         public Task ReceiveConnectionEstablished()
         {
             var posSetting = _frontConfigManager.POSDataSetting;
+            // Told server to send version deploy info
             return _hubConnection.InvokeAsync("SendVersionDeploy", posSetting);
         }
 
@@ -181,6 +184,8 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 {
                     await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
                 }
+                // Told server whether already received version deploy info
+                // after server received version deploy info, it will send some cmd to client for send back current version info to it 
                 await _hubConnection.InvokeAsync("ClientReceivedVersionDeploy");
             }
         }
@@ -195,20 +200,32 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 {
                     var versionsInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
                     var versionInfo = versionsInfo.FirstOrDefault();
-                    versionInfo ??= new VersionInfo()
+                    if (versionInfo == null)
                     {
-                        ShopId = posSetting.ShopID,
-                        ComputerId = posSetting.ComputerID,
-                        ProgramName = versionDeploy.ProgramName,
-                        ProgramVersion = versionDeploy.ProgramVersion,
-                        ProgramId = versionDeploy.ProgramId,
-                        InsertDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    };
+                        var fileName = versionDeploy.ProgramId == ProgramTypes.Front ? "vTec-ResPOS.exe" : "";
+                        var fileVersion = await _liveUpdateCtx.GetFileVersion(conn, versionDeploy.ShopId, posSetting.ComputerID, fileName);
+                        if (fileVersion == null)
+                            _gbLogger.Error("Not found fileversion of vTec-ResPOS.exe");
+
+                        versionInfo = new VersionInfo()
+                        {
+                            ShopId = posSetting.ShopID,
+                            ComputerId = posSetting.ComputerID,
+                            ProgramName = versionDeploy.ProgramName,
+                            ProgramVersion = fileVersion?.FileVersion,
+                            ProgramId = versionDeploy.ProgramId,
+                            InsertDate = DateTime.Now,
+                            UpdateDate = DateTime.Now
+                        };
+                    }
 
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
+
+                    // Told server to update client version info
                     await _hubConnection.InvokeAsync("ReceiveVersionInfo", versionInfo);
 
+                    // Told server to receive update state
+                    // after this step the server will call ReceiveSyncVersion to update sync state
                     var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
                     await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
                 }
@@ -220,6 +237,26 @@ namespace VerticalTec.POS.Service.LiveUpdate
             using (var conn = await _db.ConnectAsync())
             {
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
+
+                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
+
+                var isUpdateAvailble = false;
+                if (versionLiveUpdate != null)
+                {
+                    if (!Utils.CompareVersion(versionLiveUpdate.UpdateVersion, versionInfo.ProgramVersion))
+                    {
+                        isUpdateAvailble = versionLiveUpdate.RevFile == 0;
+                    }
+                }
+                else
+                {
+                    isUpdateAvailble = true;
+                }
+
+                if (isUpdateAvailble)
+                {
+                    await DownloadFile();
+                }
             }
         }
 
@@ -258,11 +295,14 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                 foreach (var versionDeploy in versionsDeploy)
                 {
-                    var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
+                    if (versionDeploy.BatchStatus < 1)
+                        continue;
+
+                    var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
                     if (!versionInfo.Any())
                         return;
 
-                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
+                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
 
                     updateState ??= new VersionLiveUpdate()
                     {
@@ -274,10 +314,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         UpdateVersion = versionDeploy.ProgramVersion
                     };
 
-                    //var receivedFile = updateState.RevFile == 1;
-                    //if (!receivedFile)
-                    //{
-                    var downloadService = new DownloadService(versionDeploy.GoogleDriveApiKey);
+                    var downloadService = new DownloadService(_config.GetValue<string>("GoogleDriveApiKey"));
                     var updateStateLog = new VersionLiveUpdateLog()
                     {
                         ShopId = posSetting.ShopID,
@@ -313,6 +350,8 @@ namespace VerticalTec.POS.Service.LiveUpdate
                             updateStateLog.ActionStatus = 2;
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
                             await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
+
+                            await BackupFile();
                         }
                         else if (result.Status == Google.Apis.Download.DownloadStatus.Failed)
                         {
@@ -345,7 +384,6 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                         _gbLogger.Error(ex, "Download file");
                     }
-                    //}
                 }
             }
         }

@@ -29,7 +29,6 @@ namespace VerticalTec.POS.LiveUpdate
                ProgramName VARCHAR(100) NOT NULL,
                ProgramVersion VARCHAR(20) NOT NULL,
                GoogleDriveFileID VARCHAR(50),
-               GoogleDriveApiKey VARCHAR(50),
                BatchStatus TINYINT NOT NULL,
                ScheduleUpdate DATETIME NULL,
                InsertDate DATETIME NOT NULL,
@@ -168,7 +167,7 @@ namespace VerticalTec.POS.LiveUpdate
 
         public async Task<List<VersionDeploy>> GetVersionDeploy(IDbConnection conn, int shopId)
         {
-            var cmd = _db.CreateCommand("select * from Version_Deploy where ShopID=@shopId and BatchStatus=1", conn);
+            var cmd = _db.CreateCommand("select * from Version_Deploy where ShopID=@shopId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
 
             List<VersionDeploy> versionsDeploy = new List<VersionDeploy>();
@@ -185,7 +184,6 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         GoogleDriveFileId = reader.GetValue<string>("GoogleDriveFileId"),
-                        GoogleDriveApiKey = reader.GetValue<string>("GoogleDriveApiKey"),
                         BatchStatus = reader.GetValue<int>("BatchStatus"),
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
@@ -260,7 +258,6 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@programName", versionDeploy.ProgramName));
             cmd.Parameters.Add(_db.CreateParameter("@programVersion", versionDeploy.ProgramVersion));
             cmd.Parameters.Add(_db.CreateParameter("@fileId", versionDeploy.GoogleDriveFileId));
-            cmd.Parameters.Add(_db.CreateParameter("@apiKey", versionDeploy.GoogleDriveApiKey));
             cmd.Parameters.Add(_db.CreateParameter("@batchStatus", versionDeploy.BatchStatus));
             cmd.Parameters.Add(_db.CreateParameter("@scheduleUpdate", versionDeploy.ScheduleUpdate.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", versionDeploy.InsertDate.MinValueToDBNull()));

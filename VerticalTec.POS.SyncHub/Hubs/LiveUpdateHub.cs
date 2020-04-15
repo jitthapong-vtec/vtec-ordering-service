@@ -10,7 +10,8 @@ namespace VerticalTec.POS.SyncHub.Hubs
 {
     public class LiveUpdateHub : Hub<ILiveUpdateClient>
     {
-        static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("communication");
+        static readonly NLog.Logger _commLogger = NLog.LogManager.GetLogger("communication");
+        static readonly NLog.Logger _gbLogger = NLog.LogManager.GetLogger("global");
 
         IHubContext<ConsoleHub, IConsoleHub> _consoleHub;
 
@@ -58,36 +59,45 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
         public async Task ReceiveVersionInfo(VersionInfo versionInfo)
         {
-            using (var conn = await _db.ConnectAsync())
+            try
             {
-                versionInfo.ConnectionId = Context.ConnectionId;
-                versionInfo.SyncStatus = 1;
-                versionInfo.IsOnline = true;
-                versionInfo.UpdateDate = DateTime.Now;
+                using (var conn = await _db.ConnectAsync())
+                {
+                    versionInfo.ConnectionId = Context.ConnectionId;
+                    versionInfo.SyncStatus = 1;
+                    versionInfo.IsOnline = true;
+                    versionInfo.UpdateDate = DateTime.Now;
 
-                await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
+                    await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
-                await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo);
-                await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);
+                    await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo);
+                    await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                _gbLogger.Error(ex, "ReceiveVersionInfo");
             }
         }
 
         public async Task ReceiveUpdateVersionState(VersionLiveUpdate updateState)
         {
-            using (var conn = await _db.ConnectAsync())
+            try
             {
-                updateState.SyncStatus = 1;
-                updateState.UpdateDate = DateTime.Now;
+                using (var conn = await _db.ConnectAsync())
+                {
+                    updateState.SyncStatus = 1;
+                    updateState.UpdateDate = DateTime.Now;
 
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 
-                await Clients.Client(Context.ConnectionId).ReceiveSyncUpdateVersionState(updateState);
-                await _consoleHub.Clients.All.ClientUpdateVersionState(updateState);
-
-                if(updateState.RevFile == 0)
-                    await Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.DownloadFile);
-                if (updateState.RevFile == 1 && updateState.BackupStatus == 0)
-                    await Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.BackupFile);
+                    await Clients.Client(Context.ConnectionId).ReceiveSyncUpdateVersionState(updateState);
+                    await _consoleHub.Clients.All.ClientUpdateVersionState(updateState);
+                }
+            }
+            catch (Exception ex)
+            {
+                _gbLogger.Error(ex, "ReceiveUpdateVersionState");
             }
         }
     }
