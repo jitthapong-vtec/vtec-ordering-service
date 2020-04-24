@@ -40,53 +40,54 @@ namespace VerticalTec.POS.Service.LiveUpdate
             _frontConfigManager = frontConfigManager;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        async Task<bool> IninitializeWorkingEnvironment()
         {
-            var isInitSuccess = false;
+            var success = false;
             try
             {
+                var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
+                _vtSoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}\\";
+                _frontCashierPath = $"{_vtSoftwareRootPath}vTec-ResPOS\\";
+                _patchDownloadPath = $"{_vtSoftwareRootPath}Downloads\\";
+                _backupPath = $"{_vtSoftwareRootPath}Backup\\";
+
+                if (!Directory.Exists(_patchDownloadPath))
+                    Directory.CreateDirectory(_patchDownloadPath);
+                if (!Directory.Exists(_backupPath))
+                    Directory.CreateDirectory(_backupPath);
+
+                var confPath = $"{_frontCashierPath}vTec-ResPOS.config";
+                await _frontConfigManager.LoadConfig(confPath);
+            }
+            catch (Exception ex)
+            {
+                _gbLogger.Error(ex, $"Try to load vTec-ResPOS.config");
+            }
+            return success;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            var isInitSuccess = await IninitializeWorkingEnvironment();
+            try
+            {
+                var posSetting = _frontConfigManager.POSDataSetting;
+                _db.SetConnectionString($"Port={posSetting.DBPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={posSetting.DBIPServer};DATABASE={posSetting.DBName};old guids=true;");
+
                 using (var conn = await _db.ConnectAsync())
                 {
                     await _liveUpdateCtx.UpdateStructure(conn);
 
-                    var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
-                    _vtSoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}\\";
                     var posRepo = new VtecPOSRepo(_db);
-                    if (!string.IsNullOrEmpty(_vtSoftwareRootPath))
+                    var liveUpdateHub = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateHub");
+                    if (!string.IsNullOrEmpty(liveUpdateHub))
                     {
-                        _frontCashierPath = $"{_vtSoftwareRootPath}vTec-ResPOS\\";
-                        _patchDownloadPath = $"{_vtSoftwareRootPath}Downloads\\";
-                        _backupPath = $"{_vtSoftwareRootPath}Backup\\";
-
-                        if (!Directory.Exists(_patchDownloadPath))
-                            Directory.CreateDirectory(_patchDownloadPath);
-                        if (!Directory.Exists(_backupPath))
-                            Directory.CreateDirectory(_backupPath);
-
-                        var confPath = $"{_frontCashierPath}vTec-ResPOS.config";
-                        try
-                        {
-                            await _frontConfigManager.LoadConfig(confPath);
-
-                            var liveUpdateHub = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateHub");
-                            if (!string.IsNullOrEmpty(liveUpdateHub))
-                            {
-                                InitHubConnection(liveUpdateHub);
-                                isInitSuccess = true;
-                            }
-                            else
-                            {
-                                _gbLogger.Error($"Not found parameter LiveUpdateHub in property 1050");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _gbLogger.Error(ex, $"when try to load vTec-ResPOS.config => {ex.Message}");
-                        }
+                        InitHubConnection(liveUpdateHub);
+                        isInitSuccess = true;
                     }
                     else
                     {
-                        _gbLogger.Error("Not found parameter VtecSoftwareRootPath in property 2004");
+                        _gbLogger.Error($"Not found parameter LiveUpdateHub in property 1050");
                     }
                 }
 

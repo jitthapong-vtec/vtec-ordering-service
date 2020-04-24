@@ -67,5 +67,10 @@ namespace VerticalTec.POS.Database
         {
             await ((SqlCommand)command).ExecuteNonQueryAsync();
         }
+
+        public void SetConnectionString(string connStr)
+        {
+            _connectionString = connStr;
+        }
     }
 }

@@ -38,5 +38,8 @@ namespace VerticalTec.POS
     {
         public int ShopID { get; set; }
         public int ComputerID { get; set; }
+        public string DBIPServer { get; set; }
+        public string DBName { get; set; }
+        public int DBPort { get; set; }
     }
 }

@@ -5,6 +5,8 @@ namespace VerticalTec.POS.Database
 {
     public interface IDatabase
     {
+        void SetConnectionString(string connStr);
+
         IDbConnection Connect();
 
         Task<IDbConnection> ConnectAsync();

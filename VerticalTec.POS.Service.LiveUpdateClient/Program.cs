@@ -24,8 +24,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
             .UseWindowsService()
             .ConfigureServices((context, services) =>
             {
-                var connStr = context.Configuration.GetConnectionString("VtecPOS");
-                services.AddSingleton<IDatabase>(db => new MySqlDatabase(connStr));
+                services.AddSingleton<IDatabase>();
                 services.AddSingleton<LiveUpdateDbContext>();
                 services.AddSingleton<FrontConfigManager>();
                 services.AddHostedService<LiveUpdateService>();

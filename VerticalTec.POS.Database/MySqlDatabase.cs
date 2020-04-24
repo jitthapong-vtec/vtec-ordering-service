@@ -64,5 +64,10 @@ namespace VerticalTec.POS.Database
         {
             return await ((MySqlCommand)command).ExecuteReaderAsync();
         }
+
+        public void SetConnectionString(string connStr)
+        {
+            _connectionString = connStr;
+        }
     }
 }
