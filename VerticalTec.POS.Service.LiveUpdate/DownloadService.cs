@@ -1,12 +1,6 @@
 ﻿using Google.Apis.Download;
 using Google.Apis.Drive.v3;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace VerticalTec.POS.Service.LiveUpdate

@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 
@@ -24,7 +17,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
             .UseWindowsService()
             .ConfigureServices((context, services) =>
             {
-                services.AddSingleton<IDatabase>();
+                services.AddSingleton<IDatabase, MySqlDatabase>();
                 services.AddSingleton<LiveUpdateDbContext>();
                 services.AddSingleton<FrontConfigManager>();
                 services.AddHostedService<LiveUpdateService>();

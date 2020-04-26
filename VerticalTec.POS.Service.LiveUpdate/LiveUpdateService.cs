@@ -40,35 +40,11 @@ namespace VerticalTec.POS.Service.LiveUpdate
             _frontConfigManager = frontConfigManager;
         }
 
-        async Task<bool> IninitializeWorkingEnvironment()
-        {
-            var success = false;
-            try
-            {
-                var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
-                _vtSoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}\\";
-                _frontCashierPath = $"{_vtSoftwareRootPath}vTec-ResPOS\\";
-                _patchDownloadPath = $"{_vtSoftwareRootPath}Downloads\\";
-                _backupPath = $"{_vtSoftwareRootPath}Backup\\";
-
-                if (!Directory.Exists(_patchDownloadPath))
-                    Directory.CreateDirectory(_patchDownloadPath);
-                if (!Directory.Exists(_backupPath))
-                    Directory.CreateDirectory(_backupPath);
-
-                var confPath = $"{_frontCashierPath}vTec-ResPOS.config";
-                await _frontConfigManager.LoadConfig(confPath);
-            }
-            catch (Exception ex)
-            {
-                _gbLogger.Error(ex, $"Try to load vTec-ResPOS.config");
-            }
-            return success;
-        }
-
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             var isInitSuccess = await IninitializeWorkingEnvironment();
+            if (!isInitSuccess)
+                return;
             try
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
@@ -87,7 +63,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     }
                     else
                     {
-                        _gbLogger.Error($"Not found parameter LiveUpdateHub in property 1050");
+                        _gbLogger.LogError($"Not found parameter LiveUpdateHub in property 1050!!! This property needed to connect to live update server");
                     }
                 }
 
@@ -98,8 +74,61 @@ namespace VerticalTec.POS.Service.LiveUpdate
             }
             catch (Exception ex)
             {
-                _gbLogger.Error(ex, ex.Message);
+                _gbLogger.LogError("StartAsync", ex);
             }
+        }
+
+        async Task<bool> IninitializeWorkingEnvironment()
+        {
+            var success = false;
+            try
+            {
+                _gbLogger.LogInfo("Initialize working environment...");
+
+                var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
+                _vtSoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}\\";
+                _frontCashierPath = $"{_vtSoftwareRootPath}vTec-ResPOS\\";
+                _patchDownloadPath = $"{_vtSoftwareRootPath}Downloads\\";
+                _backupPath = $"{_vtSoftwareRootPath}Backup\\";
+
+                if (!Directory.Exists(_patchDownloadPath))
+                    Directory.CreateDirectory(_patchDownloadPath);
+                if (!Directory.Exists(_backupPath))
+                    Directory.CreateDirectory(_backupPath);
+
+                var confPath = $"{_frontCashierPath}vTec-ResPOS.config";
+                Console.WriteLine($"Loading configuration file {confPath}");
+                await _frontConfigManager.LoadConfig(confPath);
+
+                var config = _frontConfigManager.POSDataSetting;
+                _gbLogger.LogInfo($"Successfully load configuration\nDBServer: {config.DBIPServer}\nDBName: {config.DBName}\nShopID: {config.ShopID}\nComputerID: {config.ComputerID}");
+
+                success = true;
+            }
+            catch (Exception ex)
+            {
+                _gbLogger.LogError($"Could not load vTec-ResPOS.config", ex);
+            }
+            return success;
+        }
+
+        private void InitHubConnection(string liveUpdateConsoleUrl)
+        {
+            _gbLogger.LogInfo($"Initialize connection to live update server {liveUpdateConsoleUrl}");
+
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(liveUpdateConsoleUrl)
+                .WithAutomaticReconnect()
+                .Build();
+            _hubConnection.Reconnecting += Reconnecting;
+            _hubConnection.Reconnected += Reconnected;
+            _hubConnection.Closed += Closed;
+
+            _hubConnection.On("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
+            _hubConnection.On<List<VersionDeploy>>("ReceiveVersionDeploy", ReceiveVersionDeploy);
+            _hubConnection.On<VersionInfo>("ReceiveSyncVersion", ReceiveSyncVersion);
+            _hubConnection.On<VersionLiveUpdate>("ReceiveSyncUpdateVersionState", ReceiveSyncUpdateVersionState);
+            _hubConnection.On<LiveUpdateCommands, object>("ReceiveCmd", ReceiveCmd);
         }
 
         async Task StartHubConnection(CancellationToken cancellationToken = default)
@@ -108,13 +137,14 @@ namespace VerticalTec.POS.Service.LiveUpdate
             {
                 try
                 {
+                    _commLogger.LogInfo("Connect to live update server...");
+
                     await _hubConnection.StartAsync(cancellationToken);
-                    _commLogger.Info("Connected to server");
                     break;
                 }
                 catch (Exception ex)
                 {
-                    _gbLogger.Error(ex.Message);
+                    _commLogger.LogError($"Could not connect to live update server! {ex.Message}");
                     await Task.Delay(1000);
                 }
             }
@@ -132,43 +162,27 @@ namespace VerticalTec.POS.Service.LiveUpdate
             }
         }
 
-        private void InitHubConnection(string liveUpdateConsoleUrl)
-        {
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl(liveUpdateConsoleUrl)
-                .WithAutomaticReconnect()
-                .Build();
-            _hubConnection.Reconnecting += Reconnecting;
-            _hubConnection.Reconnected += Reconnected;
-            _hubConnection.Closed += Closed;
-
-            _hubConnection.On("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
-            _hubConnection.On<List<VersionDeploy>>("ReceiveVersionDeploy", ReceiveVersionDeploy);
-            _hubConnection.On<VersionInfo>("ReceiveSyncVersion", ReceiveSyncVersion);
-            _hubConnection.On<VersionLiveUpdate>("ReceiveSyncUpdateVersionState", ReceiveSyncUpdateVersionState);
-            _hubConnection.On<LiveUpdateCommands, object>("ReceiveCmd", ReceiveCmd);
-        }
-
         private async Task Closed(Exception arg)
         {
-            _commLogger.Info($"Connecting closed {arg}");
+            _commLogger.LogInfo($"Connecting closed {arg}");
             await StartHubConnection();
         }
 
         private Task Reconnected(string arg)
         {
-            _commLogger.Info($"Reconnected {arg}");
+            _commLogger.LogInfo($"Successfully reconnected {arg}");
             return Task.FromResult(true);
         }
 
         private Task Reconnecting(Exception arg)
         {
-            _commLogger.Info($"Reconnecting...{arg}");
+            _commLogger.LogInfo($"Try reconnecting...{arg}");
             return Task.FromResult(true);
         }
 
         public Task ReceiveConnectionEstablished()
         {
+            _commLogger.LogInfo($"Yeh! Successfully connected to live update server");
             var posSetting = _frontConfigManager.POSDataSetting;
             // Told server to send version deploy info
             return _hubConnection.InvokeAsync("SendVersionDeploy", posSetting);
@@ -305,15 +319,18 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                     var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
 
-                    updateState ??= new VersionLiveUpdate()
+                    if (updateState == null)
                     {
-                        BatchId = versionDeploy.BatchId,
-                        ShopId = posSetting.ShopID,
-                        ComputerId = posSetting.ComputerID,
-                        ProgramId = versionDeploy.ProgramId,
-                        ProgramName = versionDeploy.ProgramName,
-                        UpdateVersion = versionDeploy.ProgramVersion
-                    };
+                        updateState = new VersionLiveUpdate()
+                        {
+                            BatchId = versionDeploy.BatchId,
+                            ShopId = posSetting.ShopID,
+                            ComputerId = posSetting.ComputerID,
+                            ProgramId = versionDeploy.ProgramId,
+                            ProgramName = versionDeploy.ProgramName,
+                            UpdateVersion = versionDeploy.ProgramVersion
+                        };
+                    }
 
                     var downloadService = new DownloadService(_config.GetValue<string>("GoogleDriveApiKey"));
                     var updateStateLog = new VersionLiveUpdateLog()
@@ -399,15 +416,17 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 foreach (var versionDeploy in versionsDeploy)
                 {
                     var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
-                    state ??= new VersionLiveUpdate()
-                    {
-                        BatchId = versionDeploy.BatchId,
-                        ShopId = posSetting.ShopID,
-                        ComputerId = posSetting.ComputerID,
-                        ProgramId = versionDeploy.ProgramId,
-                        ProgramName = versionDeploy.ProgramName,
-                        UpdateVersion = versionDeploy.ProgramVersion
-                    };
+                    if (state == null) {
+                        state = new VersionLiveUpdate()
+                        {
+                            BatchId = versionDeploy.BatchId,
+                            ShopId = posSetting.ShopID,
+                            ComputerId = posSetting.ComputerID,
+                            ProgramId = versionDeploy.ProgramId,
+                            ProgramName = versionDeploy.ProgramName,
+                            UpdateVersion = versionDeploy.ProgramVersion
+                        };
+                    }
 
                     var stateLog = new VersionLiveUpdateLog()
                     {
