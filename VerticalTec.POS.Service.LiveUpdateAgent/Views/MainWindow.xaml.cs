@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using VerticalTec.POS.Service.LiveUpdateAgent.ViewModels;
 
 namespace VerticalTec.POS.Service.LiveUpdateAgent.Views
 {
@@ -10,6 +11,13 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.Views
         public MainWindow()
         {
             InitializeComponent();
+
+            Closing += MainWindow_Closing;
+        }
+
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = (DataContext as MainWindowViewModel).OnUpdating;
         }
     }
 }

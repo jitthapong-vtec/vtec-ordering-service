@@ -33,7 +33,7 @@ namespace VerticalTec.POS.LiveUpdate
                ScheduleUpdate DATETIME NULL,
                InsertDate DATETIME NOT NULL,
                UpdateDate DATETIME NOT NULL,
-               PRIMARY KEY(ShopID, ProgramID, ProgramVersion)
+               PRIMARY KEY(BatchID)
             );",
             @"CREATE TABLE VersionInfo (
                ShopID INT NOT NULL,
@@ -67,10 +67,11 @@ namespace VerticalTec.POS.LiveUpdate
                RollbackStatus TINYINT NOT NULL DEFAULT '0',
                UpdateStatus TINYINT NOT NULL DEFAULT '0',
                SyncStatus TINYINT NOT NULL DEFAULT '0',
+               ReadyToUpdate TINYINT NOT NULL DEFAULT '0',
                MessageLog VARCHAR(2000) NULL,
                InsertDate DATETIME NOT NULL,
                UpdateDate DATETIME NOT NULL,
-               PRIMARY KEY(ShopID, ComputerID, ProgramID, UpdateVersion)
+               PRIMARY KEY(BatchID)
             );",
             @"CREATE TABLE Version_LiveUpdateLog (
                LogUUID VARCHAR(50) NOT NULL,
@@ -98,9 +99,10 @@ namespace VerticalTec.POS.LiveUpdate
             }
         }
 
-        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, int shopId, int computerId, ProgramTypes types)
+        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, string batchId, int shopId, int computerId, ProgramTypes types)
         {
-            var cmd = _db.CreateCommand("select * from version_liveupdate where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
+            var cmd = _db.CreateCommand("select * from version_liveupdate where BatchID=@batchId and ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
+            cmd.Parameters.Add(_db.CreateParameter("@batchId", batchId));
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
             cmd.Parameters.Add(_db.CreateParameter("@programId", (int)types));
@@ -126,6 +128,7 @@ namespace VerticalTec.POS.LiveUpdate
                         BackupEndTime = reader.GetValue<DateTime>("BackupEndTime"),
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         SyncStatus = reader.GetValue<int>("SyncStatus"),
+                        ReadyToUpdate = reader.GetValue<int>("ReadyToUpdate"),
                         MessageLog = reader.GetValue<string>("MessageLog"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
                         UpdateDate = reader.GetValue<DateTime>("UpdateDate")
@@ -272,14 +275,14 @@ namespace VerticalTec.POS.LiveUpdate
             if (isHaveRecord)
             {
                 cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ShopID=@shopId, ProgramID=@programId," +
-                    "ProgramName=@programName, ProgramVersion=@programVersion, GoogleDriveFileID=@fileId, GoogleDriveApiKey=@apiKey, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
+                    "ProgramName=@programName, ProgramVersion=@programVersion, GoogleDriveFileID=@fileId, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
                     "InsertDate=@insertDate, UpdateDate=@updateDate where ShopID=@shopId and ProgramID=@programId and ProgramVersion=@programVersion";
             }
             else
             {
-                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, GoogleDriveFileID, GoogleDriveApiKey, BatchStatus," +
+                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, GoogleDriveFileID, BatchStatus," +
                     "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @shopId, @programId, @programName, @programVersion," +
-                    "@fileId, @apikey, @batchStatus, @scheduleUpate, @insertDate, @updateDate)";
+                    "@fileId, @batchStatus, @scheduleUpate, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }
@@ -305,6 +308,7 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@rollbackStatus", liveUpdate.RollbackStatus));
             cmd.Parameters.Add(_db.CreateParameter("@updateStatus", liveUpdate.UpdateStatus));
             cmd.Parameters.Add(_db.CreateParameter("@syncStatus", liveUpdate.SyncStatus));
+            cmd.Parameters.Add(_db.CreateParameter("@readyToUpdate", liveUpdate.RevFile == 1 && liveUpdate.BackupStatus == 2));
             cmd.Parameters.Add(_db.CreateParameter("@messageLog", liveUpdate.MessageLog ?? ""));
             cmd.Parameters.Add(_db.CreateParameter("@batchId", liveUpdate.BatchId));
             cmd.Parameters.Add(_db.CreateParameter("@programName", liveUpdate.ProgramName));
@@ -325,17 +329,17 @@ namespace VerticalTec.POS.LiveUpdate
                     " RevEndTime=@revEndTime, BackupStatus=@backupStatus, BackupStartTime=@backupStartTime," +
                     " BackupEndTime=@backupEndtime, ScheduleUpdate=@scheduleUpdate," +
                     " UpdateEndTime=@updateEndTime, RollbackStatus=@rollbackStatus, UpdateStatus=@updateStatus," +
-                    " SyncStatus=@syncStatus, MessageLog=@messageLog, UpdateDate=@updateDate" +
+                    " SyncStatus=@syncStatus, ReadyToUpdate=@readyToUpdate, MessageLog=@messageLog, UpdateDate=@updateDate" +
                     " where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId and UpdateVersion=@updateVersion";
             }
             else
             {
                 cmd.CommandText = "insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion," +
                     " RevFile, RevStartTime, RevEndTime, BackupStatus, BackupStartTime, BackupEndTime, ScheduleUpdate," +
-                    " UpdateStartTime, UpdateEndTime, RollbackStatus, UpdateStatus, SyncStatus, MessageLog, InsertDate, UpdateDate)" +
+                    " UpdateStartTime, UpdateEndTime, RollbackStatus, UpdateStatus, SyncStatus, ReadyToUpdate, MessageLog, InsertDate, UpdateDate)" +
                     " values (@batchId, @shopId, @computerId, @programId, @programName, @updateVersion, @revFile, @revStartTime," +
                     " @revEndTime, @backupStatus, @backupStartTime, @backupEndTime, @scheduleUpdate, @updateStartTime," +
-                    " @updateEndTime, @rollbackStatus, @updateStatus, @syncStatus, @messageLog, @insertDate, @updateDate)";
+                    " @updateEndTime, @rollbackStatus, @updateStatus, @syncStatus, @readyToUpdate, @messageLog, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }

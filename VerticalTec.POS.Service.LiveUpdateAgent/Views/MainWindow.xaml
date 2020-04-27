@@ -4,9 +4,8 @@
         xmlns:prism="http://prismlibrary.com/" 
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         prism:ViewModelLocator.AutoWireViewModel="True"
-        WindowStyle="ToolWindow"
         ResizeMode="NoResize"
-        Title="{Binding Title}" Height="350" Width="525">
+        Title="{Binding Title}" Height="500" Width="800">
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
             <i:InvokeCommandAction Command="{Binding WindowLoadedCommand}"/>

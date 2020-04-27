@@ -26,6 +26,7 @@ namespace VerticalTec.POS.LiveUpdate
         public int RollbackStatus { get; set; }
         public int UpdateStatus { get; set; }
         public int SyncStatus { get; set; }
+        public int ReadyToUpdate { get; set; }
         public CommandStatus CommandStatus { get; set; }
         [MaxLength(2000)]
         public string MessageLog { get; set; } = "";

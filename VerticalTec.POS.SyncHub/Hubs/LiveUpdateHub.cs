@@ -57,7 +57,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
             return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
         }
 
-        public async Task ReceiveVersionInfo(VersionInfo versionInfo)
+        public async Task ReceiveVersionInfo(VersionDeploy versionDeploy, VersionInfo versionInfo)
         {
             try
             {
@@ -70,7 +70,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
 
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
-                    await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo);
+                    await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionDeploy, versionInfo);
                     await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);
                 }
             }

@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
+using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Service.LiveUpdate
 {
@@ -91,6 +92,23 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 _patchDownloadPath = $"{_vtSoftwareRootPath}Downloads\\";
                 _backupPath = $"{_vtSoftwareRootPath}Backup\\";
 
+                try
+                {
+                    var liveUpdateAgentPath = "D:\\Vtec\\Source\\VerticalTec.POS\\VerticalTec.POS.Service.LiveUpdateAgent\\bin\\Debug";
+                    var path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User);
+                    var updateAgentVar = path.Split(";").Where(p => p.EndsWith(liveUpdateAgentPath)).FirstOrDefault();
+                    if (string.IsNullOrEmpty(updateAgentVar))
+                    {
+                        _gbLogger.LogInfo("Create live update agent environment variable...");//$"{_vtSoftwareRootPath}\\LiveUpdateAgent\\VtecLiveUpdateAgent.exe"
+                        Environment.SetEnvironmentVariable("Path", $"{path};{liveUpdateAgentPath}", EnvironmentVariableTarget.User);
+                        _gbLogger.LogInfo("Successfully create live update agent environment variable");
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+
                 if (!Directory.Exists(_patchDownloadPath))
                     Directory.CreateDirectory(_patchDownloadPath);
                 if (!Directory.Exists(_backupPath))
@@ -126,7 +144,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
             _hubConnection.On("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
             _hubConnection.On<List<VersionDeploy>>("ReceiveVersionDeploy", ReceiveVersionDeploy);
-            _hubConnection.On<VersionInfo>("ReceiveSyncVersion", ReceiveSyncVersion);
+            _hubConnection.On<VersionDeploy, VersionInfo>("ReceiveSyncVersion", ReceiveSyncVersion);
             _hubConnection.On<VersionLiveUpdate>("ReceiveSyncUpdateVersionState", ReceiveSyncUpdateVersionState);
             _hubConnection.On<LiveUpdateCommands, object>("ReceiveCmd", ReceiveCmd);
         }
@@ -195,9 +213,16 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
             using (var conn = await _db.ConnectAsync())
             {
-                foreach (var versionDeploy in versionsDeploy)
+                try
                 {
-                    await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+                    foreach (var versionDeploy in versionsDeploy)
+                    {
+                        await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _gbLogger.LogError("ReceiveVersionDeploy", ex);
                 }
                 // Told server whether already received version deploy info
                 // after server received version deploy info, it will send some cmd to client for send back current version info to it 
@@ -237,49 +262,48 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
                     // Told server to update client version info
-                    await _hubConnection.InvokeAsync("ReceiveVersionInfo", versionInfo);
-
-                    // Told server to receive update state
-                    // after this step the server will call ReceiveSyncVersion to update sync state
-                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
-                    await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
+                    await _hubConnection.InvokeAsync("ReceiveVersionInfo", versionDeploy, versionInfo);
                 }
             }
         }
 
-        public async Task ReceiveSyncVersion(VersionInfo versionInfo)
+        public async Task ReceiveSyncVersion(VersionDeploy versionDeploy, VersionInfo versionInfo)
         {
             using (var conn = await _db.ConnectAsync())
             {
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
-                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
-
-                var isUpdateAvailble = false;
-                if (versionLiveUpdate != null)
+                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, versionInfo.ShopId, versionInfo.ComputerId, versionInfo.ProgramId);
+                if (versionLiveUpdate == null)
                 {
-                    if (!Utils.CompareVersion(versionLiveUpdate.UpdateVersion, versionInfo.ProgramVersion))
+                    var postSetting = _frontConfigManager.POSDataSetting;
+                    versionLiveUpdate = new VersionLiveUpdate()
                     {
-                        isUpdateAvailble = versionLiveUpdate.RevFile == 0;
-                    }
-                }
-                else
-                {
-                    isUpdateAvailble = true;
+                        BatchId = versionDeploy.BatchId,
+                        BranId = versionDeploy.BrandId,
+                        ShopId = versionDeploy.ShopId,
+                        ComputerId = postSetting.ComputerID,
+                        ProgramId = versionDeploy.ProgramId,
+                        ProgramName = versionDeploy.ProgramName,
+                        UpdateVersion = versionDeploy.ProgramVersion,
+                        InsertDate = DateTime.Now,
+                        UpdateDate = DateTime.Now
+                    };
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
                 }
 
-                if (isUpdateAvailble)
-                {
+                if (versionLiveUpdate.RevFile == 0)
                     await DownloadFile();
-                }
+                else
+                    await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", versionLiveUpdate);
             }
         }
 
-        public async Task ReceiveSyncUpdateVersionState(VersionLiveUpdate state)
+        public async Task ReceiveSyncUpdateVersionState(VersionLiveUpdate versionLiveUpdate)
         {
             using (var conn = await _db.ConnectAsync())
             {
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
+                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
             }
         }
 
@@ -317,7 +341,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     if (!versionInfo.Any())
                         return;
 
-                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
+                    var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
 
                     if (updateState == null)
                     {
@@ -415,8 +439,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                 foreach (var versionDeploy in versionsDeploy)
                 {
-                    var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID, versionDeploy.ProgramId);
-                    if (state == null) {
+                    var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
+                    if (state == null)
+                    {
                         state = new VersionLiveUpdate()
                         {
                             BatchId = versionDeploy.BatchId,
