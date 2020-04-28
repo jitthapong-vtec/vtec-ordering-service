@@ -29,17 +29,19 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
             set { SetProperty(ref _title, value); }
         }
 
-        private readonly IRegionManager _regionManager;
-        private readonly IDialogService _dialogService;
+        IRegionManager _regionManager;
+        IDialogService _dialogService;
 
-        private readonly IDatabase _db;
-        private readonly FrontConfigManager _frontConfig;
+        IDatabase _db;
+        FrontConfigManager _frontConfig;
+        VtecPOSEnv _posEnv;
 
-        public MainWindowViewModel(IDatabase db, FrontConfigManager frontConfig, IDialogService dialogService,
-            IRegionManager regionManager, IEventAggregator ea)
+        public MainWindowViewModel(IDatabase db, FrontConfigManager frontConfig, VtecPOSEnv posEnv,
+            IDialogService dialogService, IRegionManager regionManager, IEventAggregator ea)
         {
             _db = db;
             _frontConfig = frontConfig;
+            _posEnv = posEnv;
             _regionManager = regionManager;
             _dialogService = dialogService;
 
@@ -52,12 +54,14 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
         public ICommand WindowLoadedCommand => new DelegateCommand(async () =>
         {
             var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
-            var rootPath = $"{Directory.GetParent(currentDir).FullName}\\";
-            var frontCashierPath = $"{rootPath}vTec-ResPOS\\";
+            _posEnv.SoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}{Path.DirectorySeparatorChar}";
+            _posEnv.FrontCashierPath = $"{_posEnv.SoftwareRootPath}vTec-ResPOS{Path.DirectorySeparatorChar}";
+            _posEnv.PatchDownloadPath = $"{_posEnv.SoftwareRootPath}Downloads{Path.DirectorySeparatorChar}";
+            _posEnv.BackupPath = $"{_posEnv.SoftwareRootPath}Backup{Path.DirectorySeparatorChar}";
 
             try
             {
-                await _frontConfig.LoadConfig($"{frontCashierPath}vTec-ResPOS.config");
+                await _frontConfig.LoadConfig($"{_posEnv.FrontCashierPath}vTec-ResPOS.config");
                 var posSetting = _frontConfig.POSDataSetting;
                 _db.SetConnectionString($"Port={posSetting.DBPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={posSetting.DBIPServer};DATABASE={posSetting.DBName};old guids=true;");
 

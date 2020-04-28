@@ -28,7 +28,7 @@ namespace VerticalTec.POS.LiveUpdate
                ProgramID SMALLINT NOT NULL,
                ProgramName VARCHAR(100) NOT NULL,
                ProgramVersion VARCHAR(20) NOT NULL,
-               GoogleDriveFileID VARCHAR(50),
+               FileUrl VARCHAR(255),
                BatchStatus TINYINT NOT NULL,
                ScheduleUpdate DATETIME NULL,
                InsertDate DATETIME NOT NULL,
@@ -56,9 +56,11 @@ namespace VerticalTec.POS.LiveUpdate
                ProgramName VARCHAR(100) NOT NULL,
                UpdateVersion VARCHAR(20) NOT NULL,
                RevFile TINYINT NOT NULL,
+               DownloadFilePath VARCHAR(255) NULL,
                RevStartTime DATETIME NULL,
                RevEndTime DATETIME NULL,
                BackupStatus TINYINT NOT NULL,
+               BackupFilePath VARCHAR(255) NULL,
                BackupStartTime DATETIME NULL,
                BackupEndTime DATETIME NULL,
                ScheduleUpdate DATETIME NULL,
@@ -121,9 +123,11 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         UpdateVersion = reader.GetValue<string>("UpdateVersion"),
                         RevFile = reader.GetValue<int>("RevFile"),
+                        DownloadFilePath = reader.GetValue<string>("DownloadFilePath"),
                         RevStartTime = reader.GetValue<DateTime>("RevStartTime"),
                         RevEndTime = reader.GetValue<DateTime>("RevEndTime"),
                         BackupStatus = reader.GetValue<int>("BackupStatus"),
+                        BackupFilePath = reader.GetValue<string>("BackupFilePath"),
                         BackupStartTime = reader.GetValue<DateTime>("BackupStartTime"),
                         BackupEndTime = reader.GetValue<DateTime>("BackupEndTime"),
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
@@ -186,7 +190,7 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramId = (ProgramTypes)reader.GetValue<int>("ProgramID"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
-                        GoogleDriveFileId = reader.GetValue<string>("GoogleDriveFileId"),
+                        FileUrl = reader.GetValue<string>("FileUrl"),
                         BatchStatus = reader.GetValue<int>("BatchStatus"),
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
@@ -260,7 +264,7 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@programId", versionDeploy.ProgramId));
             cmd.Parameters.Add(_db.CreateParameter("@programName", versionDeploy.ProgramName));
             cmd.Parameters.Add(_db.CreateParameter("@programVersion", versionDeploy.ProgramVersion));
-            cmd.Parameters.Add(_db.CreateParameter("@fileId", versionDeploy.GoogleDriveFileId));
+            cmd.Parameters.Add(_db.CreateParameter("@fileUrl", versionDeploy.FileUrl));
             cmd.Parameters.Add(_db.CreateParameter("@batchStatus", versionDeploy.BatchStatus));
             cmd.Parameters.Add(_db.CreateParameter("@scheduleUpdate", versionDeploy.ScheduleUpdate.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", versionDeploy.InsertDate.MinValueToDBNull()));
@@ -275,14 +279,14 @@ namespace VerticalTec.POS.LiveUpdate
             if (isHaveRecord)
             {
                 cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ShopID=@shopId, ProgramID=@programId," +
-                    "ProgramName=@programName, ProgramVersion=@programVersion, GoogleDriveFileID=@fileId, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
+                    "ProgramName=@programName, ProgramVersion=@programVersion, FileUrl=@fileUrl, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
                     "InsertDate=@insertDate, UpdateDate=@updateDate where ShopID=@shopId and ProgramID=@programId and ProgramVersion=@programVersion";
             }
             else
             {
-                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, GoogleDriveFileID, BatchStatus," +
+                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, FileUrl, BatchStatus," +
                     "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @shopId, @programId, @programName, @programVersion," +
-                    "@fileId, @batchStatus, @scheduleUpate, @insertDate, @updateDate)";
+                    "@fileUrl, @batchStatus, @scheduleUpate, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }
@@ -299,8 +303,10 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@programId", liveUpdate.ProgramId));
             cmd.Parameters.Add(_db.CreateParameter("@updateVersion", liveUpdate.UpdateVersion));
             cmd.Parameters.Add(_db.CreateParameter("@revFile", liveUpdate.RevFile));
+            cmd.Parameters.Add(_db.CreateParameter("@downloadFilePath", liveUpdate.DownloadFilePath));
             cmd.Parameters.Add(_db.CreateParameter("@revStartTime", liveUpdate.RevStartTime.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@backupStatus", liveUpdate.BackupStatus));
+            cmd.Parameters.Add(_db.CreateParameter("@backupFilePath", liveUpdate.BackupFilePath));
             cmd.Parameters.Add(_db.CreateParameter("@backupStartTime", liveUpdate.BackupStartTime.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@backupEndTime", liveUpdate.BackupEndTime.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@scheduleUpdate", liveUpdate.ScheduleUpdate.MinValueToDBNull()));
@@ -325,8 +331,9 @@ namespace VerticalTec.POS.LiveUpdate
 
             if (isHaveRecord)
             {
-                cmd.CommandText = "update Version_LiveUpdate set BatchID=@batchId, ProgramName=@programName, RevFile=@revFile, RevStartTime=@revStartTime," +
-                    " RevEndTime=@revEndTime, BackupStatus=@backupStatus, BackupStartTime=@backupStartTime," +
+                cmd.CommandText = "update Version_LiveUpdate set BatchID=@batchId, ProgramName=@programName, RevFile=@revFile, " +
+                    " DownloadFilePath=@downloadFilePath, RevStartTime=@revStartTime," +
+                    " RevEndTime=@revEndTime, BackupStatus=@backupStatus, BackupFilePath=@backupFilePath, BackupStartTime=@backupStartTime," +
                     " BackupEndTime=@backupEndtime, ScheduleUpdate=@scheduleUpdate," +
                     " UpdateEndTime=@updateEndTime, RollbackStatus=@rollbackStatus, UpdateStatus=@updateStatus," +
                     " SyncStatus=@syncStatus, ReadyToUpdate=@readyToUpdate, MessageLog=@messageLog, UpdateDate=@updateDate" +
@@ -335,10 +342,10 @@ namespace VerticalTec.POS.LiveUpdate
             else
             {
                 cmd.CommandText = "insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion," +
-                    " RevFile, RevStartTime, RevEndTime, BackupStatus, BackupStartTime, BackupEndTime, ScheduleUpdate," +
+                    " RevFile, DownloadFilePath, RevStartTime, RevEndTime, BackupStatus, BackupFilePath, BackupStartTime, BackupEndTime, ScheduleUpdate," +
                     " UpdateStartTime, UpdateEndTime, RollbackStatus, UpdateStatus, SyncStatus, ReadyToUpdate, MessageLog, InsertDate, UpdateDate)" +
-                    " values (@batchId, @shopId, @computerId, @programId, @programName, @updateVersion, @revFile, @revStartTime," +
-                    " @revEndTime, @backupStatus, @backupStartTime, @backupEndTime, @scheduleUpdate, @updateStartTime," +
+                    " values (@batchId, @shopId, @computerId, @programId, @programName, @updateVersion, @revFile, @downloadFilePath, @revStartTime," +
+                    " @revEndTime, @backupStatus, @backupFilePath, @backupStartTime, @backupEndTime, @scheduleUpdate, @updateStartTime," +
                     " @updateEndTime, @rollbackStatus, @updateStatus, @syncStatus, @readyToUpdate, @messageLog, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);

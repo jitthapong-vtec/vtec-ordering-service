@@ -17,14 +17,26 @@ namespace VerticalTec.POS.Service.LiveUpdate
             });
         }
 
-        public async Task<IDownloadProgress> DownloadFile(string fileId, string savePath)
+        public async Task<DownloadInfo> DownloadFile(string fileId, string savePath)
         {
             var request = _driveService.Files.Get(fileId);
-            savePath += request.Execute().Name;
+            var fileName = request.Execute().Name;
+            savePath += fileName;
+            var downloadInfo = new DownloadInfo();
+            downloadInfo.FileName = fileName; 
             using (var fileStream = new FileStream(savePath, FileMode.Create, FileAccess.Write))
             {
-                return await request.DownloadAsync(fileStream);
+                var result = await request.DownloadAsync(fileStream);
+                downloadInfo.Success = result.Status == DownloadStatus.Completed;
             }
+            return downloadInfo;
         }
+    }
+
+    public class DownloadInfo
+    {
+        public bool Success { get; set; }
+
+        public string FileName { get; set; }
     }
 }

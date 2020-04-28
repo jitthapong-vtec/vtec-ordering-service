@@ -23,6 +23,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent
             containerRegistry.RegisterSingleton<IDatabase, MySqlDatabase>();
             containerRegistry.RegisterSingleton<FrontConfigManager>();
             containerRegistry.RegisterSingleton<LiveUpdateDbContext>();
+            containerRegistry.RegisterSingleton<VtecPOSEnv>();
 
             containerRegistry.RegisterDialog<Dialog, DialogViewModel>();
             containerRegistry.RegisterForNavigation<MainView>();

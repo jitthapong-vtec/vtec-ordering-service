@@ -27,18 +27,17 @@ namespace VerticalTec.POS.Service.LiveUpdate
         HubConnection _hubConnection;
         LiveUpdateDbContext _liveUpdateCtx;
         FrontConfigManager _frontConfigManager;
+        VtecPOSEnv _vtecEnv;
 
-        string _vtSoftwareRootPath;
-        string _frontCashierPath;
-        string _patchDownloadPath;
-        string _backupPath;
-
-        public LiveUpdateService(IDatabase db, IConfiguration config, LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager)
+        public LiveUpdateService(IDatabase db, IConfiguration config, LiveUpdateDbContext liveUpdateCtx, 
+            FrontConfigManager frontConfigManager, VtecPOSEnv posEnv)
         {
             _db = db;
             _config = config;
             _liveUpdateCtx = liveUpdateCtx;
             _frontConfigManager = frontConfigManager;
+
+            _vtecEnv = posEnv;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -87,10 +86,10 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 _gbLogger.LogInfo("Initialize working environment...");
 
                 var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
-                _vtSoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}\\";
-                _frontCashierPath = $"{_vtSoftwareRootPath}vTec-ResPOS\\";
-                _patchDownloadPath = $"{_vtSoftwareRootPath}Downloads\\";
-                _backupPath = $"{_vtSoftwareRootPath}Backup\\";
+                _vtecEnv.SoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}\\";
+                _vtecEnv.FrontCashierPath = $"{_vtecEnv.SoftwareRootPath}vTec-ResPOS\\";
+                _vtecEnv.PatchDownloadPath = $"{_vtecEnv.SoftwareRootPath}Downloads\\";
+                _vtecEnv.BackupPath = $"{_vtecEnv.SoftwareRootPath}Backup\\";
 
                 try
                 {
@@ -109,12 +108,12 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                 }
 
-                if (!Directory.Exists(_patchDownloadPath))
-                    Directory.CreateDirectory(_patchDownloadPath);
-                if (!Directory.Exists(_backupPath))
-                    Directory.CreateDirectory(_backupPath);
+                if (!Directory.Exists(_vtecEnv.PatchDownloadPath))
+                    Directory.CreateDirectory(_vtecEnv.PatchDownloadPath);
+                if (!Directory.Exists(_vtecEnv.BackupPath))
+                    Directory.CreateDirectory(_vtecEnv.BackupPath);
 
-                var confPath = $"{_frontCashierPath}vTec-ResPOS.config";
+                var confPath = $"{_vtecEnv.FrontCashierPath}vTec-ResPOS.config";
                 Console.WriteLine($"Loading configuration file {confPath}");
                 await _frontConfigManager.LoadConfig(confPath);
 
@@ -365,6 +364,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     };
 
                     var stepLog = "Start download";
+                    _commLogger.LogInfo(stepLog);
                     try
                     {
                         updateState.RevStartTime = DateTime.Now;
@@ -377,11 +377,15 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
                         await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
 
-                        var result = await downloadService.DownloadFile(versionDeploy.GoogleDriveFileId, _patchDownloadPath);
-                        if (result.Status == Google.Apis.Download.DownloadStatus.Completed)
+                        var fileId = UrlParameterExtensions.GetValue(versionDeploy.FileUrl, "id");
+                        var result = await downloadService.DownloadFile(fileId, _vtecEnv.PatchDownloadPath);
+                        if (result.Success)
                         {
                             stepLog = "Download complete";
+                            _commLogger.LogInfo(stepLog);
+
                             updateState.RevFile = 1;
+                            updateState.DownloadFilePath = _vtecEnv.PatchDownloadPath + result.FileName;
                             updateState.RevEndTime = DateTime.Now;
                             updateState.MessageLog = stepLog;
                             updateState.CommandStatus = CommandStatus.Finish;
@@ -395,9 +399,11 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                             await BackupFile();
                         }
-                        else if (result.Status == Google.Apis.Download.DownloadStatus.Failed)
+                        else
                         {
                             stepLog = "Download failed";
+                            _commLogger.LogInfo(stepLog);
+
                             updateState.MessageLog = stepLog;
                             updateState.CommandStatus = CommandStatus.Finish;
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
@@ -424,7 +430,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                         await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
 
-                        _gbLogger.Error(ex, "Download file");
+                        _gbLogger.LogError("Download file", ex);
                     }
                 }
             }
@@ -465,8 +471,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     {
                         var stepLog = "";
 
-                        var backupFileName = $"{_backupPath}{state.ProgramName}{DateTime.Now.ToString("yyyyMMdd")}.zip";
-                        stepLog = $"Start backup {backupFileName}"; ;
+                        var backupFileName = $"{_vtecEnv.BackupPath}{state.ProgramName}{DateTime.Now.ToString("yyyyMMdd")}.zip";
+                        stepLog = $"Start backup {backupFileName}";
+                        _commLogger.LogInfo(stepLog);
 
                         stateLog.LogMessage = stepLog;
                         stateLog.ActionStatus = 1;
@@ -484,12 +491,14 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         if (File.Exists(backupFileName))
                             File.Delete(backupFileName);
 
-                        ZipFile.CreateFromDirectory(_frontCashierPath, backupFileName);
+                        ZipFile.CreateFromDirectory(_vtecEnv.FrontCashierPath, backupFileName);
 
                         stepLog = $"Backup {backupFileName} finish";
+                        _commLogger.LogInfo(stepLog);
 
                         state.BackupEndTime = DateTime.Now;
                         state.BackupStatus = 2;
+                        state.BackupFilePath = backupFileName;
                         state.CommandStatus = CommandStatus.Finish;
                         state.MessageLog = stepLog;
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
@@ -510,6 +519,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         stateLog.ActionStatus = 99;
                         stateLog.LogMessage = $"Backup error {ex.Message}";
                         stateLog.EndTime = DateTime.Now;
+
+                        _gbLogger.LogError(stateLog.LogMessage, ex);
+
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
                         await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", state);
                     }

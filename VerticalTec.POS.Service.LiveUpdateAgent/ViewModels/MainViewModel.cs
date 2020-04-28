@@ -1,12 +1,19 @@
-﻿using Prism.Commands;
+﻿using Microsoft.AspNetCore.SignalR.Client;
+using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
 using Prism.Regions;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 using VerticalTec.POS.Service.LiveUpdateAgent.Events;
@@ -17,22 +24,40 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
     {
         IEventAggregator _eventAggregator;
         IDatabase _db;
+
+        HubConnection _hubConnection;
+
         LiveUpdateDbContext _liveUpdateContext;
         POSDataSetting _posSetting;
+        VtecPOSEnv _posEnv;
+
+        VersionDeploy _lastDeploy;
+        VersionLiveUpdate _versionLiveUpdate;
 
         bool _isBusy;
 
         bool _updateButtonEnable;
-        string _updateProcessInfoMessage;
+        ObservableCollection<string> _processInfoMessages;
         string _currentVersion;
         string _updateVersion;
+        string _buttonText = "Start Update";
 
-        public MainViewModel(IEventAggregator ea, IDatabase db, LiveUpdateDbContext liveupdateContext, FrontConfigManager frontConfig)
+        public MainViewModel(IEventAggregator ea, IDatabase db, LiveUpdateDbContext liveupdateContext,
+            FrontConfigManager frontConfig, VtecPOSEnv posEnv)
         {
             _eventAggregator = ea;
             _db = db;
             _liveUpdateContext = liveupdateContext;
             _posSetting = frontConfig.POSDataSetting;
+            _posEnv = posEnv;
+
+            _processInfoMessages = new ObservableCollection<string>();
+        }
+
+        public string ButtonText
+        {
+            get => _buttonText;
+            set => SetProperty(ref _buttonText, value);
         }
 
         public bool IsBusy
@@ -47,10 +72,10 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
             set => SetProperty(ref _updateButtonEnable, value);
         }
 
-        public string UpdateProcessInfoMessage
+        public ObservableCollection<string> ProcessInfoMessages
         {
-            get => _updateProcessInfoMessage;
-            set => SetProperty(ref _updateProcessInfoMessage, value);
+            get => _processInfoMessages;
+            set => SetProperty(ref _processInfoMessages, value);
         }
 
         public string CurrentVersion
@@ -67,20 +92,111 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
 
         public ICommand StartUpdateCommand => new DelegateCommand(async () =>
         {
-            _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(true);
-
-            UpdateInfoMessage("Starting update...");
-            UpdateButtonEnable = false;
-            for (var i = 0; i < 100; i++)
+            await Task.Run(async () =>
             {
-                await Task.Delay(100);
-                UpdateInfoMessage($"Extract file {i}...");
-                _eventAggregator.GetEvent<UpdateInfoMessageEvent>().Publish("");
-            }
-            _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(false);
+                _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(true);
+
+                UpdateInfoMessage("Starting update...");
+                UpdateButtonEnable = false;
+
+                try
+                {
+                    var updateFilePath = _versionLiveUpdate.DownloadFilePath;
+                    var posPath = _posEnv.FrontCashierPath;
+                    var totalFile = 0;
+                    using (var archive = ZipFile.OpenRead(updateFilePath))
+                    {
+                        totalFile = archive.Entries.Count();
+                        foreach (var entry in archive.Entries)
+                        {
+                            if (entry.FullName.Equals("vTec-ResPOS.config", StringComparison.OrdinalIgnoreCase))
+                                continue;
+
+                            var destinationPath = Path.GetFullPath(Path.Combine(posPath, entry.FullName));
+                            if (string.IsNullOrEmpty(entry.Name))
+                            {
+                                if (!Directory.Exists(destinationPath))
+                                    Directory.CreateDirectory(destinationPath);
+                            }
+                            else
+                            {
+                                entry.ExtractToFile(destinationPath, true);
+                                UpdateInfoMessage($"Extract file {posPath}{entry.Name}");
+                            }
+                        }
+                    }
+
+                    using (var conn = await _db.ConnectAsync())
+                    {
+                        _lastDeploy.BatchStatus = 2;
+                        _lastDeploy.UpdateDate = DateTime.Now;
+                        await _liveUpdateContext.AddOrUpdateVersionDeploy(conn, _lastDeploy);
+
+                        await _hubConnection?.InvokeAsync("UpdateVersionDeploy", _lastDeploy);
+                    }
+
+                    ButtonText = "Done!";
+
+                    UpdateInfoMessage($"Successfully extract {totalFile} files");
+                    _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(false);
+                }
+                catch (Exception ex)
+                {
+                    UpdateInfoMessage($"Extract file error {ex.Message}");
+                }
+            });
         });
 
         public async void OnNavigatedTo(NavigationContext navigationContext)
+        {
+            await InitHubConnection();
+            await GetVersionInfoAsync();
+        }
+
+        async Task InitHubConnection()
+        {
+            try
+            {
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var posRepo = new VtecPOSRepo(_db);
+                    var liveUpdateHub = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateHub");
+                    if (!string.IsNullOrEmpty(liveUpdateHub))
+                    {
+                        _hubConnection = new HubConnectionBuilder()
+                            .WithUrl(liveUpdateHub)
+                            .WithAutomaticReconnect()
+                            .Build();
+                        _hubConnection.Closed += Closed;
+                        await StartHubConnection();
+                    }
+                }
+            }
+            catch { }
+        }
+
+        async Task StartHubConnection(CancellationToken cancellationToken = default)
+        {
+            while (true)
+            {
+                try
+                {
+                    await _hubConnection.StartAsync(cancellationToken);
+                    break;
+                }
+                catch
+                {
+                    await Task.Delay(1000);
+                }
+            }
+        }
+
+        private Task Closed(Exception arg)
+        {
+            return StartHubConnection();
+        }
+
+        private async Task GetVersionInfoAsync()
         {
             try
             {
@@ -89,22 +205,28 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 using (var conn = await _db.ConnectAsync())
                 {
                     var versionDeploys = await _liveUpdateContext.GetVersionDeploy(conn, _posSetting.ShopID);
-                    var lastDeploy = versionDeploys.Where(v => v.BatchStatus == 1).OrderByDescending(v => v.UpdateDate).FirstOrDefault();
-                    if (lastDeploy != null)
+                    _lastDeploy = versionDeploys.Where(v => v.BatchStatus == 1).OrderByDescending(v => v.UpdateDate).FirstOrDefault();
+                    if (_lastDeploy != null)
                     {
-                        var versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, lastDeploy.BatchId, lastDeploy.ShopId, _posSetting.ComputerID, ProgramTypes.Front);
-                        if (versionLiveUpdate != null)
+                        _versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, _lastDeploy.BatchId, _lastDeploy.ShopId, _posSetting.ComputerID, ProgramTypes.Front);
+                        if (_versionLiveUpdate != null)
                         {
-                            var newVersionAvailable = versionLiveUpdate.ReadyToUpdate == 1;
-                            UpdateButtonEnable = newVersionAvailable;
-                            UpdateVersion = versionLiveUpdate.UpdateVersion;
+                            var newVersionAvailable = _versionLiveUpdate.ReadyToUpdate == 1;
 
                             if (newVersionAvailable)
-                                UpdateInfoMessage($"New version {UpdateVersion} available");
-                            else
-                                UpdateInfoMessage($"No update available");
+                            {
+                                UpdateButtonEnable = newVersionAvailable;
+                                UpdateVersion = _versionLiveUpdate.UpdateVersion;
 
-                            var versionInfo = await _liveUpdateContext.GetVersionInfo(conn, lastDeploy.ShopId, _posSetting.ComputerID, ProgramTypes.Front);
+                                UpdateInfoMessage($"New version {UpdateVersion} available");
+                            }
+                            else
+                            {
+                                UpdateInfoMessage($"No update available");
+                                UpdateVersion = "-";
+                            }
+
+                            var versionInfo = await _liveUpdateContext.GetVersionInfo(conn, _lastDeploy.ShopId, _posSetting.ComputerID, ProgramTypes.Front);
                             CurrentVersion = versionInfo.FirstOrDefault()?.ProgramVersion;
                         }
                         else
@@ -130,7 +252,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
 
         void UpdateInfoMessage(string message)
         {
-            UpdateProcessInfoMessage += message + "\n";
+            Application.Current.Dispatcher.Invoke(() => ProcessInfoMessages.Add(message));
         }
 
         public bool IsNavigationTarget(NavigationContext navigationContext)

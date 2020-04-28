@@ -12,7 +12,7 @@ namespace VerticalTec.POS.LiveUpdate
         public ProgramTypes ProgramId { get; set; }
         public string ProgramName { get; set; } = "";
         public string ProgramVersion { get; set; } = "";
-        public string GoogleDriveFileId { get; set; } = "";
+        public string FileUrl { get; set; } = "";
         public int BatchStatus { get; set; }
         public DateTime ScheduleUpdate { get; set; } = DateTime.MinValue;
         public DateTime InsertDate { get; set; } = DateTime.MinValue;

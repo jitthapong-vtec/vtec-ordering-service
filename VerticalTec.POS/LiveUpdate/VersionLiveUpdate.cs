@@ -15,9 +15,11 @@ namespace VerticalTec.POS.LiveUpdate
         public string ProgramName { get; set; } = "";
         public string UpdateVersion { get; set; }
         public int RevFile { get; set; }
+        public string DownloadFilePath { get; set; }
         public DateTime RevStartTime { get; set; } = DateTime.MinValue;
         public DateTime RevEndTime { get; set; } = DateTime.MinValue;
         public int BackupStatus { get; set; }
+        public string BackupFilePath { get; set; }
         public DateTime BackupStartTime { get; set; } = DateTime.MinValue;
         public DateTime BackupEndTime { get; set; } = DateTime.MinValue;
         public DateTime ScheduleUpdate { get; set; } = DateTime.MinValue;

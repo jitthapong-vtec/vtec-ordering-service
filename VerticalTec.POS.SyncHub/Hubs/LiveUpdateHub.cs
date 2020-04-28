@@ -52,6 +52,14 @@ namespace VerticalTec.POS.SyncHub.Hubs
             }
         }
 
+        public async Task UpdateVersionDeploy(VersionDeploy versionDeploy)
+        {
+            using(var conn = await _db.ConnectAsync())
+            {
+                await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+            }
+        }
+
         public Task ClientReceivedVersionDeploy()
         {
             return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
