@@ -3,8 +3,8 @@ using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
 using Prism.Regions;
+using Prism.Services.Dialogs;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Compression;
@@ -13,7 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Threading;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 using VerticalTec.POS.Service.LiveUpdateAgent.Events;
@@ -24,6 +23,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
     {
         IEventAggregator _eventAggregator;
         IDatabase _db;
+        IDialogService _dialogService;
 
         HubConnection _hubConnection;
 
@@ -42,11 +42,12 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
         string _updateVersion;
         string _buttonText = "Start Update";
 
-        public MainViewModel(IEventAggregator ea, IDatabase db, LiveUpdateDbContext liveupdateContext,
-            FrontConfigManager frontConfig, VtecPOSEnv posEnv)
+        public MainViewModel(IEventAggregator ea, IDatabase db, IDialogService dialogService,
+            LiveUpdateDbContext liveupdateContext, FrontConfigManager frontConfig, VtecPOSEnv posEnv)
         {
             _eventAggregator = ea;
             _db = db;
+            _dialogService = dialogService;
             _liveUpdateContext = liveupdateContext;
             _posSetting = frontConfig.POSDataSetting;
             _posEnv = posEnv;
@@ -94,15 +95,19 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
         {
             await Task.Run(async () =>
             {
-                _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(true);
+                _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.Updating);
 
-                UpdateInfoMessage("Starting update...");
+                UpdateInfoMessage("Extracting file...");
                 UpdateButtonEnable = false;
 
                 try
                 {
                     var updateFilePath = _versionLiveUpdate.DownloadFilePath;
                     var posPath = _posEnv.FrontCashierPath;
+                    var extractPath = Path.Combine(Path.GetTempPath(), $"vTec-ResPOS-{DateTime.Now.ToString("yyyyMMdd")}");
+                    if (!Directory.Exists(extractPath))
+                        Directory.CreateDirectory(extractPath);
+
                     var totalFile = 0;
                     using (var archive = ZipFile.OpenRead(updateFilePath))
                     {
@@ -112,7 +117,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                             if (entry.FullName.Equals("vTec-ResPOS.config", StringComparison.OrdinalIgnoreCase))
                                 continue;
 
-                            var destinationPath = Path.GetFullPath(Path.Combine(posPath, entry.FullName));
+                            var destinationPath = Path.GetFullPath(Path.Combine(extractPath, entry.FullName));
                             if (string.IsNullOrEmpty(entry.Name))
                             {
                                 if (!Directory.Exists(destinationPath))
@@ -121,36 +126,65 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                             else
                             {
                                 entry.ExtractToFile(destinationPath, true);
-                                UpdateInfoMessage($"Extract file {posPath}{entry.Name}");
+                                UpdateInfoMessage($"Extract file {entry.Name}");
                             }
                         }
                     }
 
+                    UpdateInfoMessage("Start copy file");
+                    
+                    // copy file from temp
+                    foreach (string dirPath in Directory.GetDirectories(extractPath, "*", SearchOption.AllDirectories))
+                    {
+                        var destinationPath = dirPath.Replace(extractPath, posPath);
+                        if (!Directory.Exists(destinationPath))
+                            Directory.CreateDirectory(destinationPath);
+                    }
+
+                    foreach (string newPath in Directory.GetFiles(extractPath, "*.*", SearchOption.AllDirectories))
+                    {
+                        var destinationPath = newPath.Replace(extractPath, posPath);
+                        File.Copy(newPath, destinationPath, true);
+                        UpdateInfoMessage($"Copy file {destinationPath}");
+                    }
+
+                    try
+                    {
+                        Directory.Delete(extractPath);
+                    }
+                    catch { }
+
                     using (var conn = await _db.ConnectAsync())
                     {
-                        _lastDeploy.BatchStatus = 2;
+                        //_lastDeploy.BatchStatus = 2;
                         _lastDeploy.UpdateDate = DateTime.Now;
                         await _liveUpdateContext.AddOrUpdateVersionDeploy(conn, _lastDeploy);
 
-                        await _hubConnection?.InvokeAsync("UpdateVersionDeploy", _lastDeploy);
+                        try
+                        {
+                            await _hubConnection?.InvokeAsync("UpdateVersionDeploy", _lastDeploy);
+                        }
+                        catch { }
                     }
 
                     ButtonText = "Done!";
+                    UpdateButtonEnable = true;
 
-                    UpdateInfoMessage($"Successfully extract {totalFile} files");
-                    _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(false);
+                    UpdateInfoMessage($"Successfully");
+                    _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.UpdateSuccess);
                 }
                 catch (Exception ex)
                 {
                     UpdateInfoMessage($"Extract file error {ex.Message}");
+                    _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.UpdateFail);
                 }
             });
         });
 
         public async void OnNavigatedTo(NavigationContext navigationContext)
         {
-            await InitHubConnection();
             await GetVersionInfoAsync();
+            await InitHubConnection();
         }
 
         async Task InitHubConnection()
@@ -201,7 +235,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
             try
             {
                 IsBusy = true;
-                UpdateInfoMessage("Collecting version information...");
+                //UpdateInfoMessage("Collecting version information...");
                 using (var conn = await _db.ConnectAsync())
                 {
                     var versionDeploys = await _liveUpdateContext.GetVersionDeploy(conn, _posSetting.ShopID);

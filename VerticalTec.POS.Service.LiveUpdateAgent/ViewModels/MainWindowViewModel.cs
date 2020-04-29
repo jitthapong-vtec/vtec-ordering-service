@@ -47,21 +47,34 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
 
             ea.GetEvent<VersionUpdateEvent>().Subscribe((val) =>
             {
-                OnUpdating = val;
+                OnUpdating = val == UpdateEvents.Updating;
+                if(val == UpdateEvents.UpdateSuccess)
+                {
+                    var parameters = new DialogParameters()
+                    {
+                        {"title", "การอัพเดต" },
+                        {"message",  "อัพเดตเวอร์ชั่นสำเร็จ"}
+                    };
+                    _dialogService.ShowDialog("Dialog", parameters, (r) =>
+                    {
+                        App.Current.Shutdown();
+                    });
+                }
             }, ThreadOption.UIThread);
         }
 
         public ICommand WindowLoadedCommand => new DelegateCommand(async () =>
         {
             var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
-            _posEnv.SoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}{Path.DirectorySeparatorChar}";
-            _posEnv.FrontCashierPath = $"{_posEnv.SoftwareRootPath}vTec-ResPOS{Path.DirectorySeparatorChar}";
-            _posEnv.PatchDownloadPath = $"{_posEnv.SoftwareRootPath}Downloads{Path.DirectorySeparatorChar}";
-            _posEnv.BackupPath = $"{_posEnv.SoftwareRootPath}Backup{Path.DirectorySeparatorChar}";
+            _posEnv.SoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}";
+            _posEnv.FrontCashierPath = Path.Combine(_posEnv.SoftwareRootPath, "vTec-ResPOS");
+            _posEnv.PatchDownloadPath = Path.Combine(_posEnv.SoftwareRootPath, "Downloads");
+            _posEnv.BackupPath = Path.Combine(_posEnv.SoftwareRootPath, "Backup");
 
             try
             {
-                await _frontConfig.LoadConfig($"{_posEnv.FrontCashierPath}vTec-ResPOS.config");
+                var configPath = Path.Combine(_posEnv.FrontCashierPath, "vTec-ResPOS.config");
+                await _frontConfig.LoadConfig(configPath);
                 var posSetting = _frontConfig.POSDataSetting;
                 _db.SetConnectionString($"Port={posSetting.DBPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={posSetting.DBIPServer};DATABASE={posSetting.DBName};old guids=true;");
 

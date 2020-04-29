@@ -7,7 +7,14 @@ using System.Threading.Tasks;
 
 namespace VerticalTec.POS.Service.LiveUpdateAgent.Events
 {
-    public class VersionUpdateEvent : PubSubEvent<bool>
+    public enum UpdateEvents
+    {
+        Updating,
+        UpdateSuccess,
+        UpdateFail
+    }
+
+    public class VersionUpdateEvent : PubSubEvent<UpdateEvents>
     {
     }
 }
