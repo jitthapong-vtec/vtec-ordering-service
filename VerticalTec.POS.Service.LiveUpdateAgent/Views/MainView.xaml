@@ -12,21 +12,19 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Margin="10,10,10,0">
+            <StackPanel Grid.Row="0" Margin="10,10,10,0" VerticalAlignment="Center">
                 <StackPanel.Resources>
                     <Style TargetType="Label">
                         <Setter Property="FontSize" Value="24"/>
                         <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="VerticalContentAlignment" Value="Center"/>
                     </Style>
                 </StackPanel.Resources>
-                <!--<Label VerticalAlignment="Center" Content="Live update" FontSize="32"/>-->
                 <StackPanel Orientation="Horizontal" Margin="4">
                     <Label Content="อัพเดตเวอร์ชั่น:"/>
+                    <Label Content="{Binding CurrentVersion}" FontSize="14" VerticalContentAlignment="Center"/>
+                    <Label Content=" -> " FontSize="14"/>
                     <Label Content="{Binding UpdateVersion}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="4,-8,0,0">
-                    <Label Content="เวอร์ชั่นปัจจุบัน: " FontSize="14"/>
-                    <Label Content="{Binding CurrentVersion}" FontSize="14"/>
                 </StackPanel>
             </StackPanel>
             <ListBox ItemsSource="{Binding ProcessInfoMessages}" Grid.Row="1" Margin="12" Background="WhiteSmoke"

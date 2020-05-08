@@ -100,11 +100,13 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 UpdateInfoMessage("Extracting file...");
                 UpdateButtonEnable = false;
 
+                var isExtractSuccess = false;
+                var updateFilePath = _versionLiveUpdate.DownloadFilePath;
+                var posPath = _posEnv.FrontCashierPath;
+                var extractPath = Path.Combine(Path.GetTempPath(), $"vTec-ResPOS-{DateTime.Now.ToString("yyyyMMdd")}");
+
                 try
                 {
-                    var updateFilePath = _versionLiveUpdate.DownloadFilePath;
-                    var posPath = _posEnv.FrontCashierPath;
-                    var extractPath = Path.Combine(Path.GetTempPath(), $"vTec-ResPOS-{DateTime.Now.ToString("yyyyMMdd")}");
                     if (!Directory.Exists(extractPath))
                         Directory.CreateDirectory(extractPath);
 
@@ -130,9 +132,21 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                             }
                         }
                     }
+                    isExtractSuccess = true;
+                }
+                catch (Exception ex)
+                {
+                    UpdateInfoMessage($"Extract file error {ex.Message}");
+                    _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.UpdateFail);
+                }
 
+                if (!isExtractSuccess)
+                    return;
+
+                var isCopySuccess = false;
+                try
+                {
                     UpdateInfoMessage("Start copy file");
-                    
                     // copy file from temp
                     foreach (string dirPath in Directory.GetDirectories(extractPath, "*", SearchOption.AllDirectories))
                     {
@@ -147,13 +161,22 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                         File.Copy(newPath, destinationPath, true);
                         UpdateInfoMessage($"Copy file {destinationPath}");
                     }
+                    isCopySuccess = true;
+                }
+                catch (Exception ex)
+                {
+                    UpdateInfoMessage($"Copy error {ex.Message}");
+                    _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.UpdateFail);
+                }
 
-                    try
-                    {
-                        Directory.Delete(extractPath);
-                    }
-                    catch { }
+                try
+                {
+                    Directory.Delete(extractPath);
+                }
+                catch { }
 
+                if (isCopySuccess)
+                {
                     using (var conn = await _db.ConnectAsync())
                     {
                         //_lastDeploy.BatchStatus = 2;
@@ -173,10 +196,10 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                     UpdateInfoMessage($"Successfully");
                     _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.UpdateSuccess);
                 }
-                catch (Exception ex)
+                else
                 {
-                    UpdateInfoMessage($"Extract file error {ex.Message}");
-                    _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.UpdateFail);
+                    ButtonText = "Start Update";
+                    UpdateButtonEnable = true;
                 }
             });
         });

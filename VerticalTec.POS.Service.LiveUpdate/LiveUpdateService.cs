@@ -93,8 +93,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                 try
                 {
-                    //TODO: set this path same as liveupdate service
-                    var liveUpdateAgentPath = "D:\\Vtec\\Source\\VerticalTec.POS\\VerticalTec.POS.Service.LiveUpdateAgent\\bin\\Debug";
+                    var liveUpdateAgentPath = currentDir;//"D:\\Vtec\\Source\\VerticalTec.POS\\VerticalTec.POS.Service.LiveUpdateAgent\\bin\\Debug";
                     var path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User);
                     var updateAgentVar = path.Split(";").Where(p => p.EndsWith(liveUpdateAgentPath)).FirstOrDefault();
                     if (string.IsNullOrEmpty(updateAgentVar))
