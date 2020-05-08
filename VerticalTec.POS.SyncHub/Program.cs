@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NLog.Web;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 
@@ -18,29 +19,47 @@ namespace VerticalTec.POS.SyncHub
     {
         public static void Main(string[] args)
         {
-            var host = CreateHostBuilder(args).Build();
+            var logger = NLogBuilder.ConfigureNLog("nlog.config").GetCurrentClassLogger();
             try
             {
-                var db = host.Services.GetRequiredService<IDatabase>();
-                var dbCtx = host.Services.GetRequiredService<LiveUpdateDbContext>();
-                Task.Run(async () =>
+                var host = CreateHostBuilder(args).Build();
+                try
                 {
-                    using (var conn = await db.ConnectAsync())
+                    var db = host.Services.GetRequiredService<IDatabase>();
+                    var dbCtx = host.Services.GetRequiredService<LiveUpdateDbContext>();
+                    Task.Run(async () =>
                     {
-                        await dbCtx.UpdateStructure(conn);
-                    }
-                });
+                        using (var conn = await db.ConnectAsync())
+                        {
+                            await dbCtx.UpdateStructure(conn);
+                        }
+                    });
+                }
+                catch { }
+                host.Run();
             }
-            catch { }
-            host.Run();
+            catch (Exception ex)
+            {
+                logger.Error(ex, "Stopped program because of exception");
+                throw;
+            }
+            finally
+            {
+                NLog.LogManager.Shutdown();
+            }
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-            .UseWindowsService()
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseStartup<Startup>();
+            })
+            .ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.SetMinimumLevel(LogLevel.Trace);
+            })
+            .UseNLog();
     }
 }

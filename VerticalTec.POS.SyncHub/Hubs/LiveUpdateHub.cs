@@ -10,8 +10,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
 {
     public class LiveUpdateHub : Hub<ILiveUpdateClient>
     {
-        static readonly NLog.Logger _commLogger = NLog.LogManager.GetLogger("communication");
-        static readonly NLog.Logger _gbLogger = NLog.LogManager.GetLogger("global");
+        static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
         IHubContext<ConsoleHub, IConsoleHub> _consoleHub;
 
@@ -84,7 +83,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
             }
             catch (Exception ex)
             {
-                _gbLogger.Error(ex, "ReceiveVersionInfo");
+                _logger.Error(ex, "ReceiveVersionInfo");
             }
         }
 
@@ -105,7 +104,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
             }
             catch (Exception ex)
             {
-                _gbLogger.Error(ex, "ReceiveUpdateVersionState");
+                _logger.Error(ex, "ReceiveUpdateVersionState");
             }
         }
     }

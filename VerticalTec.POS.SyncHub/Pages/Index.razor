@@ -7,64 +7,102 @@
 @inject LiveUpdateDbContext LiveupdateContext
 @inject NavigationManager NavigationManager
 
-<h1>Liveupdate Console</h1>
+<div class="form-row">
+    <div class="form-group col-md-6">
+        <h3>Client</h3>
+    </div>
+</div>
 
-@if (_clients == null)
+@if (clients == null)
 {
-    <p><em>Loading...</em></p>
+<p><em>Loading...</em></p>
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Online</th>
-                <th>Computer name</th>
-                <th>Current Version</th>
-                <th>Last Status</th>
-                @*<th>Action</th>*@
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var client in _clients)
-            {
-                <tr>
-                    <td>
-                        <span style="width:24px;height:24px;border-radius:50%;display:inline-block;" class="@(client.IsOnline ? "bg-success" : "bg-danger")"></span>
-                    </td>
-                    <td>
-                        <h4>
-                            @client.ComputerName
-                        </h4>
-                        <h6>
-                            @client.ShopName
-                        </h6>
-                    </td>
-                    <td>@client.ProgramVersion</td>
-                    <td>@client.ProcessMessage</td>
-                    @*<td>
-                        <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle" disabled="@(client.CanExecute == false)" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Action
-                            </button>
-                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client))">Get version info</a>
-                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendBackupCommand(client))">Backup</a>
-                                <a class="dropdown-item" href="#" @onclick="@(async() => await SendDownloadFileCommand(client))">Download file</a>
-                            </div>
-                        </div>
-                    </td>*@
-                </tr>
+@*<DxDataGrid Data="@clients" ShowFilterRow="false" PageSize="10" ShowPager="true">
+    <DxDataGridColumn Caption="Online" TextAlignment="@DataGridTextAlign.Center">
+        <DisplayTemplate>
+            @{
+                var client = (context as VersionInfo);
+                <span style="width:24px;height:24px;border-radius:50%;display:inline-block;" class="@(client.IsOnline ? "bg-success" : "bg-danger")"></span>
             }
-        </tbody>
-    </table>
+        </DisplayTemplate>
+    </DxDataGridColumn>
+    <DxDataGridColumn Caption="Computer Name">
+        <DisplayTemplate>
+            @{
+                var client = (context as VersionInfo);
+                <h4>
+                    @client.ComputerName
+                </h4>
+                <h6>
+                    @client.ShopName
+                </h6>
+            }
+        </DisplayTemplate>
+    </DxDataGridColumn>
+    <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="Current Version" />
+    <DxDataGridColumn Field="@nameof(VersionInfo.ProcessMessage)" Caption="Last status" />
+</DxDataGrid>*@
+<table class="table" width="100%">
+    <colgroup>
+        <col style="width:10%">
+        <col style="width:20%">
+        <col style="width:20%">
+        <col style="width:30%">
+        <col style="width:20%">
+    </colgroup>
+    <thead>
+        <tr>
+            <th>Online</th>
+            <th>Computer name</th>
+            <th>Current Version</th>
+            <th>Last Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var client in clients)
+            {
+        <tr>
+            <td>
+                <span style="width:24px;height:24px;border-radius:50%;display:inline-block;" class="@(client.IsOnline ? "bg-success" : "bg-danger")"></span>
+            </td>
+            <td>
+                <h4>
+                    @client.ComputerName
+                </h4>
+                <h6>
+                    @client.ShopName
+                </h6>
+            </td>
+            <td>@client.ProgramVersion</td>
+            <td>
+                <div class="col" style="width:300px; overflow:auto;">@client.ProcessMessage</div>
+            </td>
+            <td>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" disabled="@(client.CanExecute == false)" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Action
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="#" @onclick="@(async() => await GetClientInfo(client))">Get version info</a>
+                        <a class="dropdown-item" href="#" @onclick="@(async() => await SendBackupCommand(client))">Backup</a>
+                        <a class="dropdown-item" href="#" @onclick="@(async() => await SendDownloadFileCommand(client))">Download file</a>
+                    </div>
+                </div>
+            </td>
+        </tr>
+            }
+    </tbody>
+</table>
 }
 
 @code{
 
-    HubConnection _connection;
+    HubConnection connection;
 
-    List<VersionInfo> _clients;
+    List<VersionInfo> clients;
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,20 +114,20 @@ else
         if (firstRender)
         {
             var url = NavigationManager.BaseUri + "console";
-            _connection = new HubConnectionBuilder().WithUrl(url)
+            connection = new HubConnectionBuilder().WithUrl(url)
                 .WithAutomaticReconnect()
                 .Build();
 
-            _connection.On<VersionInfo>("ClientUpdateInfo", ClientUpdateInfo);
-            _connection.On<string>("ClientDisconnect", ClientDisconnect);
-            _connection.On<VersionLiveUpdate>("ClientUpdateVersionState", ClientUpdateVersionState);
+            connection.On<VersionInfo>("ClientUpdateInfo", ClientUpdateInfo);
+            connection.On<string>("ClientDisconnect", ClientDisconnect);
+            connection.On<VersionLiveUpdate>("ClientUpdateVersionState", ClientUpdateVersionState);
 
             while (true)
             {
                 try
                 {
-                    await _connection.StartAsync();
-                    await _connection.InvokeAsync("GetClientInfo", "");
+                    await connection.StartAsync();
+                    await connection.InvokeAsync("GetClientInfo", "");
                     break;
                 }
                 catch
@@ -104,7 +142,7 @@ else
     {
         using (var conn = await DbContext.ConnectAsync())
         {
-            _clients = await LiveupdateContext.GetVersionInfo(conn);
+            clients = await LiveupdateContext.GetVersionInfo(conn);
         }
     }
 
@@ -112,9 +150,9 @@ else
     {
         try
         {
-            var client = _clients.Where(c => c.ConnectionId == connectionId).FirstOrDefault();
+            var client = clients.Where(c => c.ConnectionId == connectionId).FirstOrDefault();
             client.IsOnline = false;
-            _clients[_clients.IndexOf(client)] = client;
+            clients[clients.IndexOf(client)] = client;
             StateHasChanged();
         }
         catch { }
@@ -123,19 +161,19 @@ else
 
     public async Task GetClientInfo(VersionInfo client)
     {
-        await _connection.InvokeAsync("GetClientInfo", client.ConnectionId);
+        await connection.InvokeAsync("GetClientInfo", client.ConnectionId);
     }
 
     public async Task SendDownloadFileCommand(VersionInfo client)
     {
-        await _connection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId);
+        await connection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId);
         client.CanExecute = false;
         StateHasChanged();
     }
 
     public async Task SendBackupCommand(VersionInfo client)
     {
-        await _connection.InvokeAsync("SendBackupCommand", client.ConnectionId);
+        await connection.InvokeAsync("SendBackupCommand", client.ConnectionId);
         client.CanExecute = false;
         StateHasChanged();
     }
@@ -144,8 +182,8 @@ else
     {
         try
         {
-            var client = _clients.Where(c => c.ShopId == versionInfo.ShopId && c.ComputerId == versionInfo.ComputerId).FirstOrDefault();
-            _clients[_clients.IndexOf(client)] = versionInfo;
+            var client = clients.Where(c => c.ShopId == versionInfo.ShopId && c.ComputerId == versionInfo.ComputerId).FirstOrDefault();
+            clients[clients.IndexOf(client)] = versionInfo;
             StateHasChanged();
         }
         catch
@@ -158,11 +196,11 @@ else
     {
         try
         {
-            var client = _clients.Where(c => c.ShopId == state.ShopId && c.ComputerId == state.ComputerId).FirstOrDefault();
+            var client = clients.Where(c => c.ShopId == state.ShopId && c.ComputerId == state.ComputerId).FirstOrDefault();
             client.ProcessMessage = state.MessageLog;
             if (state.CommandStatus == CommandStatus.Finish)
                 client.CanExecute = true;
-            _clients[_clients.IndexOf(client)] = client;
+            clients[clients.IndexOf(client)] = client;
             StateHasChanged();
         }
         catch

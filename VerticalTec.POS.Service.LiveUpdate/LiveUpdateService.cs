@@ -29,7 +29,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
         FrontConfigManager _frontConfigManager;
         VtecPOSEnv _vtecEnv;
 
-        public LiveUpdateService(IDatabase db, IConfiguration config, LiveUpdateDbContext liveUpdateCtx, 
+        public LiveUpdateService(IDatabase db, IConfiguration config, LiveUpdateDbContext liveUpdateCtx,
             FrontConfigManager frontConfigManager, VtecPOSEnv posEnv)
         {
             _db = db;
@@ -331,11 +331,8 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 if (!versionsDeploy.Any())
                     return;
 
-                foreach (var versionDeploy in versionsDeploy)
+                foreach (var versionDeploy in versionsDeploy.Where(v => v.BatchStatus == 1))
                 {
-                    if (versionDeploy.BatchStatus < 1)
-                        continue;
-
                     var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
                     if (!versionInfo.Any())
                         return;
@@ -397,7 +394,8 @@ namespace VerticalTec.POS.Service.LiveUpdate
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
                             await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
 
-                            await BackupFile();
+                            if (versionDeploy.AutoBackup)
+                                await BackupFile();
                         }
                         else
                         {

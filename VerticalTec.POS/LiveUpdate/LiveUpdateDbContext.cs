@@ -29,7 +29,8 @@ namespace VerticalTec.POS.LiveUpdate
                ProgramName VARCHAR(100) NOT NULL,
                ProgramVersion VARCHAR(20) NOT NULL,
                FileUrl VARCHAR(255),
-               BatchStatus TINYINT NOT NULL,
+               BatchStatus TINYINT NOT NULL DEFAULT '0',
+               AutoBackup TINYINT NOT NULL DEFAULT '0',
                ScheduleUpdate DATETIME NULL,
                InsertDate DATETIME NOT NULL,
                UpdateDate DATETIME NOT NULL,
@@ -192,6 +193,7 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         FileUrl = reader.GetValue<string>("FileUrl"),
                         BatchStatus = reader.GetValue<int>("BatchStatus"),
+                        AutoBackup = reader.GetValue<bool>("AutoBackup"),
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
                         UpdateDate = reader.GetValue<DateTime>("UpdateDate")
@@ -266,6 +268,7 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@programVersion", versionDeploy.ProgramVersion));
             cmd.Parameters.Add(_db.CreateParameter("@fileUrl", versionDeploy.FileUrl));
             cmd.Parameters.Add(_db.CreateParameter("@batchStatus", versionDeploy.BatchStatus));
+            cmd.Parameters.Add(_db.CreateParameter("@autoBackup", versionDeploy.AutoBackup));
             cmd.Parameters.Add(_db.CreateParameter("@scheduleUpdate", versionDeploy.ScheduleUpdate.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", versionDeploy.InsertDate.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@updateDate", versionDeploy.UpdateDate.MinValueToDBNull()));
@@ -279,14 +282,14 @@ namespace VerticalTec.POS.LiveUpdate
             if (isHaveRecord)
             {
                 cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ShopID=@shopId, ProgramID=@programId," +
-                    "ProgramName=@programName, ProgramVersion=@programVersion, FileUrl=@fileUrl, BatchStatus=@batchStatus, ScheduleUpdate=@scheduleUpdate," +
+                    "ProgramName=@programName, ProgramVersion=@programVersion, FileUrl=@fileUrl, BatchStatus=@batchStatus, AutoBackup=@autoBackup, ScheduleUpdate=@scheduleUpdate," +
                     "InsertDate=@insertDate, UpdateDate=@updateDate where ShopID=@shopId and ProgramID=@programId and ProgramVersion=@programVersion";
             }
             else
             {
-                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, FileUrl, BatchStatus," +
+                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, FileUrl, BatchStatus, AutoBackup," +
                     "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @shopId, @programId, @programName, @programVersion," +
-                    "@fileUrl, @batchStatus, @scheduleUpate, @insertDate, @updateDate)";
+                    "@fileUrl, @batchStatus, @autoBackup, @scheduleUpate, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }

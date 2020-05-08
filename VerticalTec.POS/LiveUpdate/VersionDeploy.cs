@@ -14,6 +14,7 @@ namespace VerticalTec.POS.LiveUpdate
         public string ProgramVersion { get; set; } = "";
         public string FileUrl { get; set; } = "";
         public int BatchStatus { get; set; }
+        public bool AutoBackup { get; set; }
         public DateTime ScheduleUpdate { get; set; } = DateTime.MinValue;
         public DateTime InsertDate { get; set; } = DateTime.MinValue;
         public DateTime UpdateDate { get; set; } = DateTime.MinValue;

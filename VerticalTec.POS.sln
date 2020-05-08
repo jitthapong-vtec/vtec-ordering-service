@@ -35,7 +35,7 @@ Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "Ord
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.Service.LiveUpdate", "VerticalTec.POS.Service.LiveUpdate\VerticalTec.POS.Service.LiveUpdate.csproj", "{267F4EA7-8B42-4D77-A23D-42E8C0170A23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.LiveUpdateAgent", "VerticalTec.POS.Service.LiveUpdateAgent\VerticalTec.POS.Service.LiveUpdateAgent.csproj", "{86BBD52E-CB01-47DA-9165-4F6DDBABD786}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.Service.LiveUpdateAgent", "VerticalTec.POS.Service.LiveUpdateAgent\VerticalTec.POS.Service.LiveUpdateAgent.csproj", "{86BBD52E-CB01-47DA-9165-4F6DDBABD786}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
