@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 
-namespace VerticalTec.POS.SyncHub.Hubs
+namespace VerticalTec.POS.LiveUpdateConsole.Hubs
 {
     public class LiveUpdateHub : Hub<ILiveUpdateClient>
     {
@@ -46,7 +46,7 @@ namespace VerticalTec.POS.SyncHub.Hubs
         {
             using (var conn = await _db.ConnectAsync())
             {
-                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, shopId: posSetting.ShopID);
                 await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionsDeploy);
             }
         }

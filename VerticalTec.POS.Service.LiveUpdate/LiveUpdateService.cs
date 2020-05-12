@@ -234,7 +234,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
             using (var conn = await _db.ConnectAsync())
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, shopId: posSetting.ShopID);
                 foreach (var versionDeploy in versionsDeploy)
                 {
                     var versionsInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
@@ -327,11 +327,11 @@ namespace VerticalTec.POS.Service.LiveUpdate
             using (var conn = await _db.ConnectAsync())
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, shopId: posSetting.ShopID);
                 if (!versionsDeploy.Any())
                     return;
 
-                foreach (var versionDeploy in versionsDeploy.Where(v => v.BatchStatus == 1))
+                foreach (var versionDeploy in versionsDeploy.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived))
                 {
                     var versionInfo = await _liveUpdateCtx.GetVersionInfo(conn, versionDeploy.ShopId, posSetting.ComputerID, versionDeploy.ProgramId);
                     if (!versionInfo.Any())
@@ -439,7 +439,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
             using (var conn = await _db.ConnectAsync())
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, posSetting.ShopID);
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, shopId:posSetting.ShopID);
 
                 foreach (var versionDeploy in versionsDeploy)
                 {

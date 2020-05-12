@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VerticalTec.POS.LiveUpdate;
 
-namespace VerticalTec.POS.SyncHub.Hubs
+namespace VerticalTec.POS.LiveUpdateConsole.Hubs
 {
     public class ConsoleHub : Hub<IConsoleHub>
     {

@@ -1,0 +1,133 @@
+﻿@page "/"
+@page "/versions"
+
+@using VerticalTec.POS.LiveUpdate
+@using VerticalTec.POS.Database
+@using CurrieTechnologies.Razor.SweetAlert2
+
+@inject SweetAlertService Swal
+@inject IDatabase DbContext
+@inject LiveUpdateDbContext LiveupdateContext
+@inject NavigationManager NavigationManager
+
+<div class="form-row">
+    <div class="form-group col-md-6">
+        <h3>Versions</h3>
+    </div>
+    <div class="form-group col-md-6 text-right">
+        <button class="btn btn-light btn-sm" @onclick="@(() => CreateVersion())"><i class="oi oi-plus"></i> สร้างเวอร์ชั่น</button>
+    </div>
+</div>
+
+@if (versionDeploys == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
+        <DxDataGridColumn Width="40px" Caption="Deploy" TextAlignment="@DataGridTextAlign.Center">
+            <DisplayTemplate>
+                @{ 
+                    var data = context as VersionDeploy;
+                    <input type="checkbox" @onclick="(async() => await OnDeployCheckAsync(data))" checked="@(data.BatchStatus == VersionDeployBatchStatus.Actived)"/>
+                }
+            </DisplayTemplate>
+        </DxDataGridColumn>
+        <DxDataGridColumn Caption="Name" Field="@nameof(VersionDeploy.ProgramName)" />
+        <DxDataGridColumn Caption="Version" Field="@nameof(VersionDeploy.ProgramVersion)" />
+        <DxDataGridColumn Width="40px">
+            <DisplayTemplate>
+                @{
+                    var data = context as VersionDeploy;
+                    <button class="btn btn-light btn-sm" @onclick="(()=>EditVersion(data))"><i class="oi oi-pencil"></i></button>
+                }
+            </DisplayTemplate>
+        </DxDataGridColumn>
+        <DxDataGridColumn Width="40px">
+            <DisplayTemplate>
+                @{
+                    var data = context as VersionDeploy;
+                    <button class="btn btn-light btn-sm" @onclick="@(async () => await DeleteVersionAsync(data))"><i class="oi oi-trash"></i></button>
+                }
+            </DisplayTemplate>
+        </DxDataGridColumn>
+    </DxDataGrid>
+}
+
+@code {
+    DxDataGrid<VersionDeploy> gridRef;
+
+    List<VersionDeploy> versionDeploys;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVersionDeployAsync();
+    }
+
+    async Task LoadVersionDeployAsync()
+    {
+        using (var conn = await DbContext.ConnectAsync())
+        {
+            versionDeploys = await LiveupdateContext.GetVersionDeploy(conn);
+        }
+    }
+
+    void CreateVersion()
+    {
+        NavigationManager.NavigateTo("versionedit");
+    }
+
+    async Task OnDeployCheckAsync(VersionDeploy versionDeploy)
+    {
+        var batchStatus = versionDeploy.BatchStatus;
+        if (batchStatus == VersionDeployBatchStatus.Actived)
+            batchStatus = VersionDeployBatchStatus.InActivate;
+        else if (batchStatus == VersionDeployBatchStatus.InActivate)
+            batchStatus = VersionDeployBatchStatus.Actived;
+
+        using(var conn = await DbContext.ConnectAsync())
+        {
+            var cmd = DbContext.CreateCommand(conn);
+            cmd.CommandText = "update Version_Deploy set BatchStatus=0 where BatchStatus != 99";
+            await DbContext.ExecuteNonQueryAsync(cmd);
+
+            cmd.CommandText = "update Version_Deploy set BatchStatus=@batchStatus where BatchID=@batchId";
+            cmd.Parameters.Add(DbContext.CreateParameter("@batchStatus", batchStatus));
+            cmd.Parameters.Add(DbContext.CreateParameter("@batchId", versionDeploy.BatchId));
+            await DbContext.ExecuteNonQueryAsync(cmd);
+        }
+
+        await LoadVersionDeployAsync();
+    }
+
+    void EditVersion(VersionDeploy versionDeploy)
+    {
+        NavigationManager.NavigateTo($"versionedit/{versionDeploy.BatchId}/{versionDeploy.BrandId}/{versionDeploy.ShopId}");
+    }
+
+    async Task DeleteVersionAsync(VersionDeploy versionDeploy)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "แจ้งเตือนลบ",
+            Html = $"คุณต้องการลบ {versionDeploy.ProgramName} <b>{versionDeploy.ProgramVersion}</b> ใช่หรือไม่?",
+            ShowCancelButton = true,
+            ConfirmButtonText = "ใช่",
+            CancelButtonText = "ไม่ใช่"
+        });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            using(var conn = await DbContext.ConnectAsync())
+            {
+                var cmd = DbContext.CreateCommand(conn);
+                cmd.CommandText = "delete from Version_Deploy where BatchID=@batchId";
+                cmd.Parameters.Add(DbContext.CreateParameter("@batchId", versionDeploy.BatchId));
+                await DbContext.ExecuteNonQueryAsync(cmd);
+            }
+
+            await LoadVersionDeployAsync();
+        }
+    }
+}

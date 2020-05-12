@@ -13,7 +13,7 @@ using NLog.Web;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
 
-namespace VerticalTec.POS.SyncHub
+namespace VerticalTec.POS.LiveUpdateConsole
 {
     public class Program
     {

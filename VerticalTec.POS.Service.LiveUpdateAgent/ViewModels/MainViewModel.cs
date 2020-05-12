@@ -6,6 +6,7 @@ using Prism.Regions;
 using Prism.Services.Dialogs;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -179,7 +180,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 {
                     using (var conn = await _db.ConnectAsync())
                     {
-                        //_lastDeploy.BatchStatus = 2;
+                        _lastDeploy.BatchStatus = VersionDeployBatchStatus.Done;
                         _lastDeploy.UpdateDate = DateTime.Now;
                         await _liveUpdateContext.AddOrUpdateVersionDeploy(conn, _lastDeploy);
 
@@ -195,6 +196,9 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
 
                     UpdateInfoMessage($"Successfully");
                     _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.UpdateSuccess);
+
+                    var frontPath = Path.Combine(_posEnv.FrontCashierPath, "vtec-ResPOS.exe");
+                    Process.Start(frontPath);
                 }
                 else
                 {
@@ -262,7 +266,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 using (var conn = await _db.ConnectAsync())
                 {
                     var versionDeploys = await _liveUpdateContext.GetVersionDeploy(conn, _posSetting.ShopID);
-                    _lastDeploy = versionDeploys.Where(v => v.BatchStatus == 1).OrderByDescending(v => v.UpdateDate).FirstOrDefault();
+                    _lastDeploy = versionDeploys.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).OrderByDescending(v => v.UpdateDate).FirstOrDefault();
                     if (_lastDeploy != null)
                     {
                         _versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, _lastDeploy.BatchId, _lastDeploy.ShopId, _posSetting.ComputerID, ProgramTypes.Front);
@@ -293,7 +297,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                     }
                     else
                     {
-                        UpdateInfoMessage("Not found version information!");
+                        UpdateInfoMessage("No version deploy!");
                     }
                 }
             }

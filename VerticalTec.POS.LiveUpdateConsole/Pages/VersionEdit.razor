@@ -1,0 +1,200 @@
+﻿@page "/versionedit"
+@page "/versionedit/{batchId}/{brandId:int}/{shopId:int}"
+
+@using System.Data
+@using System.Collections
+@using VerticalTec.POS.LiveUpdate
+@using VerticalTec.POS.LiveUpdateConsole.Models
+@using VerticalTec.POS.Database
+@using VerticalTec.POS.Utils
+
+@inject IDatabase DbContext
+@inject LiveUpdateDbContext LiveUpdateContext;
+@inject NavigationManager NavigationManager;
+
+<h3>Create version</h3>
+
+@if (allBrands.Rows.Count == 0)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="form-group col-md-4">
+        <label>Brands</label>
+        <select class="form-control" id="inputSection" @bind="@selectedBrandId">
+            @foreach (DataRow brand in allBrands.Rows)
+            {
+                var brandId = brand.GetValue<int>("BrandID");
+                var brandName = brand.GetValue<string>("BrandName");
+                <option value="@brandId">@brandName</option>
+            }
+        </select>
+    </div>
+    <div class="form-group col-md-4">
+        <label>Shops</label>
+        <select class="form-control" id="inputSection" @bind="@selectedShopId">
+            @foreach (DataRow shop in shops.Rows)
+            {
+                var shopId = shop.GetValue<int>("ShopID");
+                var shopName = shop.GetValue<string>("ShopName");
+                <option value="@shopId">@shopName</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group col-md-4">
+        <label>Program types</label>
+        <select class="form-control" id="inputSection" @onchange="@OnProgramTypeChanged">
+            @foreach (var programType in programTypes)
+            {
+                var programId = programType.ProgramTypeId;
+                var programName = programType.ProgramName;
+                <option value="@programId">@programName</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group col-md-4">
+        <label>เวอร์ชั่น</label>
+        <input type="text" class="form-control" @bind="@versionDeploy.ProgramVersion">
+    </div>
+
+    <div class="form-group col-md-4">
+        <label>ไฟล์ url</label>
+        <input type="text" class="form-control" @bind="@versionDeploy.FileUrl">
+    </div>
+
+    <div class="form-group col-md-4">
+        <input type="checkbox" @bind="@versionDeploy.AutoBackup" />
+        <label>Auto backup</label>
+    </div>
+
+    <div class="form-row m-4">
+        <button type="submit" class="btn btn-primary" @onclick="@SaveAsync">บันทึก</button> &nbsp; <button type="button" @onclick="@Cancel" class="btn btn-secondary">ยกเลิก</button>
+    </div>
+}
+@code {
+
+    [Parameter]
+    public string BatchId { get; set; }
+    [Parameter]
+    public int BrandId { get; set; }
+    [Parameter]
+    public int ShopId { get; set; }
+
+    DataTable allBrands = new DataTable();
+    DataTable allShops = new DataTable();
+    DataTable shops = new DataTable();
+
+    int? selectedShopId;
+    int? selectedBrandId;
+
+    List<ProgramType> programTypes = new List<ProgramType>()
+{
+        new ProgramType()
+        {
+            ProgramTypeId = ProgramTypes.Front,
+            ProgramName = "vTec-ResPOS"
+        }
+    };
+
+    ProgramType selectedProgramType;
+    VersionDeploy versionDeploy = new VersionDeploy()
+    {
+        ProgramId = ProgramTypes.Front,
+        ProgramName = "vTec-ResPOS"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBrandAsync();
+        await LoadVersionDeploy();
+
+        if (BrandId > 0)
+            selectedBrandId = BrandId;
+        if (ShopId > 0)
+            selectedShopId = ShopId;
+    }
+
+    void OnBrandChanged(ChangeEventArgs e)
+    {
+        versionDeploy.BrandId = Convert.ToInt32(e.Value);
+        try
+        {
+            shops = allShops.AsEnumerable().Where(r => r.GetValue<int>("BrandID") == Convert.ToInt32(e.Value))?.CopyToDataTable();
+        }
+        catch { }
+    }
+
+    void OnShopChanged(ChangeEventArgs e)
+    {
+        versionDeploy.ShopId = Convert.ToInt32(e.Value);
+    }
+
+    void OnProgramTypeChanged(ChangeEventArgs e)
+    {
+        versionDeploy.ProgramId = (ProgramTypes)e.Value;
+    }
+
+    async Task SaveAsync()
+    {
+        try
+        {
+            using (var conn = await DbContext.ConnectAsync())
+            {
+                versionDeploy.ShopId = (int)selectedShopId;
+                versionDeploy.BrandId = (int)selectedBrandId;
+                versionDeploy.InsertDate = DateTime.Now;
+                versionDeploy.UpdateDate = DateTime.Now;
+                await LiveUpdateContext.AddOrUpdateVersionDeploy(conn, versionDeploy);
+            }
+            NavigationManager.NavigateTo("versions");
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+
+    void Cancel()
+    {
+        NavigationManager.NavigateTo("versions");
+    }
+
+    async Task LoadVersionDeploy()
+    {
+        if (string.IsNullOrWhiteSpace(BatchId))
+            return;
+
+        using (var conn = await DbContext.ConnectAsync())
+        {
+            var versionDeploys = await LiveUpdateContext.GetVersionDeploy(conn, BatchId, ShopId);
+            versionDeploy = versionDeploys.FirstOrDefault();
+        }
+    }
+
+    async Task LoadBrandAsync()
+    {
+        try
+        {
+            using (var conn = await DbContext.ConnectAsync())
+            {
+                var cmd = DbContext.CreateCommand(conn);
+                cmd.CommandText = "select a.* from Brand_Data a inner join Shop_Data b on a.BrandID = b.BrandID where a.Deleted = 0 and IsShop = 1";
+                using (var reader = await DbContext.ExecuteReaderAsync(cmd))
+                {
+                    allBrands.Load(reader);
+                }
+
+                cmd.CommandText = "select * from shop_data where Deleted=0 and IsShop=1";
+                using (var reader = await DbContext.ExecuteReaderAsync(cmd))
+                {
+                    allShops.Load(reader);
+                }
+
+                shops = allShops.AsEnumerable().Where(r => r.GetValue<int>("BrandID") == allBrands.AsEnumerable().FirstOrDefault()?.GetValue<int>("BrandID")).CopyToDataTable();
+            }
+        }
+        catch { }
+    }
+}

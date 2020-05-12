@@ -173,10 +173,21 @@ namespace VerticalTec.POS.LiveUpdate
             return logs;
         }
 
-        public async Task<List<VersionDeploy>> GetVersionDeploy(IDbConnection conn, int shopId)
+        public async Task<List<VersionDeploy>> GetVersionDeploy(IDbConnection conn, string batchId = "", int shopId = 0)
         {
-            var cmd = _db.CreateCommand("select * from Version_Deploy where ShopID=@shopId", conn);
-            cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
+            var cmd = _db.CreateCommand(conn);
+            cmd.CommandText = "select * from Version_Deploy where BatchStatus != 99";
+
+            if (!string.IsNullOrWhiteSpace(batchId))
+            {
+                cmd.CommandText += " and BatchID=@batchId";
+                cmd.Parameters.Add(_db.CreateParameter("@batchId", batchId));
+            }
+            if (shopId > 0)
+            {
+                cmd.CommandText += " and ShopID=@shopId";
+                cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
+            }
 
             List<VersionDeploy> versionsDeploy = new List<VersionDeploy>();
             using (var reader = await _db.ExecuteReaderAsync(cmd))
@@ -192,7 +203,7 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         FileUrl = reader.GetValue<string>("FileUrl"),
-                        BatchStatus = reader.GetValue<int>("BatchStatus"),
+                        BatchStatus = (VersionDeployBatchStatus)reader.GetValue<int>("BatchStatus"),
                         AutoBackup = reader.GetValue<bool>("AutoBackup"),
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
@@ -259,7 +270,7 @@ namespace VerticalTec.POS.LiveUpdate
             if (versionDeploy == null)
                 return;
 
-            var cmd = _db.CreateCommand("select count(BatchID) from Version_Deploy where ShopID=@shopId and ProgramID=@programId and ProgramVersion=@programVersion", conn);
+            var cmd = _db.CreateCommand("select count(BatchID) from Version_Deploy where BatchID=@batchId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@batchId", versionDeploy.BatchId));
             cmd.Parameters.Add(_db.CreateParameter("@brandId", versionDeploy.BrandId));
             cmd.Parameters.Add(_db.CreateParameter("@shopId", versionDeploy.ShopId));
@@ -283,13 +294,13 @@ namespace VerticalTec.POS.LiveUpdate
             {
                 cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ShopID=@shopId, ProgramID=@programId," +
                     "ProgramName=@programName, ProgramVersion=@programVersion, FileUrl=@fileUrl, BatchStatus=@batchStatus, AutoBackup=@autoBackup, ScheduleUpdate=@scheduleUpdate," +
-                    "InsertDate=@insertDate, UpdateDate=@updateDate where ShopID=@shopId and ProgramID=@programId and ProgramVersion=@programVersion";
+                    "InsertDate=@insertDate, UpdateDate=@updateDate where BatchID=@batchId";
             }
             else
             {
                 cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, FileUrl, BatchStatus, AutoBackup," +
                     "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @shopId, @programId, @programName, @programVersion," +
-                    "@fileUrl, @batchStatus, @autoBackup, @scheduleUpate, @insertDate, @updateDate)";
+                    "@fileUrl, @batchStatus, @autoBackup, @scheduleUpdate, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }

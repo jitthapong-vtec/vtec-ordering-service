@@ -5,7 +5,9 @@ using Prism.Regions;
 using Prism.Services.Dialogs;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows.Input;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.LiveUpdateAgent.Events;
@@ -79,6 +81,9 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 _db.SetConnectionString($"Port={posSetting.DBPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={posSetting.DBIPServer};DATABASE={posSetting.DBName};old guids=true;");
 
                 _regionManager.RequestNavigate("ContentRegion", "MainView");
+
+                var frontRes = Process.GetProcessesByName("vtec-ResPOS");
+                frontRes.FirstOrDefault()?.Kill(true);
             }
             catch (Exception ex)
             {

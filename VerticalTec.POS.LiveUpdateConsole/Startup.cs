@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CurrieTechnologies.Razor.SweetAlert2;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
@@ -10,9 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
-using VerticalTec.POS.SyncHub.Hubs;
+using VerticalTec.POS.LiveUpdateConsole.Hubs;
 
-namespace VerticalTec.POS.SyncHub
+namespace VerticalTec.POS.LiveUpdateConsole
 {
     public class Startup
     {
@@ -30,6 +31,7 @@ namespace VerticalTec.POS.SyncHub
             services.AddRazorPages();
             services.AddSignalR();
             services.AddServerSideBlazor();
+            services.AddSweetAlert2();
             services.AddSingleton<IDatabase>(db => new SqlServerDatabase(connStr));
             services.AddSingleton<LiveUpdateDbContext>();
         }

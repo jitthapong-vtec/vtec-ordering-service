@@ -29,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Ord
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RandomPrivateKeyGen", "RandomPrivateKeyGen\RandomPrivateKeyGen.csproj", "{9E97FB4B-F840-4A83-A1D2-E677F14B7EFB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.SyncHub", "VerticalTec.POS.SyncHub\VerticalTec.POS.SyncHub.csproj", "{7E8497FA-F052-436E-B27C-365A9ED65A7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.LiveUpdateConsole", "VerticalTec.POS.LiveUpdateConsole\VerticalTec.POS.LiveUpdateConsole.csproj", "{7E8497FA-F052-436E-B27C-365A9ED65A7C}"
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{DF23A640-5E22-47F4-A26D-54972B6A0176}"
 EndProject
