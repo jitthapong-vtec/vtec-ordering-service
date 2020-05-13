@@ -221,11 +221,14 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 using (var conn = await _db.ConnectAsync())
                 {
                     var posRepo = new VtecPOSRepo(_db);
-                    var liveUpdateHub = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateHub");
-                    if (!string.IsNullOrEmpty(liveUpdateHub))
+                    var liveUpdateServer = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateServer");
+                    if (!string.IsNullOrEmpty(liveUpdateServer))
                     {
+                        if (!liveUpdateServer.EndsWith("/"))
+                            liveUpdateServer += "/";
+                        liveUpdateServer += "liveupdate";
                         _hubConnection = new HubConnectionBuilder()
-                            .WithUrl(liveUpdateHub)
+                            .WithUrl(liveUpdateServer)
                             .WithAutomaticReconnect()
                             .Build();
                         _hubConnection.Closed += Closed;
@@ -265,7 +268,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 //UpdateInfoMessage("Collecting version information...");
                 using (var conn = await _db.ConnectAsync())
                 {
-                    var versionDeploys = await _liveUpdateContext.GetVersionDeploy(conn, _posSetting.ShopID);
+                    var versionDeploys = await _liveUpdateContext.GetVersionDeploy(conn, shopId: _posSetting.ShopID);
                     _lastDeploy = versionDeploys.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).OrderByDescending(v => v.UpdateDate).FirstOrDefault();
                     if (_lastDeploy != null)
                     {

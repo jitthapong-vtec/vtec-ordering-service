@@ -28,4 +28,13 @@
     <ProjectReference Include="..\VerticalTec.POS\VerticalTec.POS.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="INSTALL.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="REMOVE.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

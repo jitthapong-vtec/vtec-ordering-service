@@ -22,7 +22,7 @@
                 </StackPanel.Resources>
                 <StackPanel Orientation="Horizontal" Margin="4">
                     <Label Content="อัพเดตเวอร์ชั่น:"/>
-                    <Label Content="{Binding CurrentVersion}" FontSize="14" VerticalContentAlignment="Center"/>
+                    <Label Content="{Binding CurrentVersion}" VerticalContentAlignment="Center"/>
                     <Label Content=" -> " FontSize="14"/>
                     <Label Content="{Binding UpdateVersion}"/>
                 </StackPanel>

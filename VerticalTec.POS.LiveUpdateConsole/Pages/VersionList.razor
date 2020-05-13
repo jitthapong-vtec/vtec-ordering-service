@@ -70,6 +70,8 @@ else
         using (var conn = await DbContext.ConnectAsync())
         {
             versionDeploys = await LiveupdateContext.GetVersionDeploy(conn);
+            var filter = new VersionDeployBatchStatus[]{ VersionDeployBatchStatus.InActivate, VersionDeployBatchStatus.Actived};
+            versionDeploys = versionDeploys.Where(v => filter.Contains(v.BatchStatus)).ToList();
         }
     }
 
@@ -89,7 +91,7 @@ else
         using(var conn = await DbContext.ConnectAsync())
         {
             var cmd = DbContext.CreateCommand(conn);
-            cmd.CommandText = "update Version_Deploy set BatchStatus=0 where BatchStatus != 99";
+            cmd.CommandText = "update Version_Deploy set BatchStatus=0 where BatchStatus not in(2,99)";
             await DbContext.ExecuteNonQueryAsync(cmd);
 
             cmd.CommandText = "update Version_Deploy set BatchStatus=@batchStatus where BatchID=@batchId";

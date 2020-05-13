@@ -22,7 +22,8 @@ else
 {
     <div class="form-group col-md-4">
         <label>Brands</label>
-        <select class="form-control" id="inputSection" @bind="@selectedBrandId">
+        <select class="form-control" @bind="@SelectedBrandId">
+            <option value="0">-- Please Select --</option>
             @foreach (DataRow brand in allBrands.Rows)
             {
                 var brandId = brand.GetValue<int>("BrandID");
@@ -33,7 +34,8 @@ else
     </div>
     <div class="form-group col-md-4">
         <label>Shops</label>
-        <select class="form-control" id="inputSection" @bind="@selectedShopId">
+        <select class="form-control" @bind="@SelectedShopId">
+            <option value="0">-- Please Select --</option>
             @foreach (DataRow shop in shops.Rows)
             {
                 var shopId = shop.GetValue<int>("ShopID");
@@ -45,7 +47,7 @@ else
 
     <div class="form-group col-md-4">
         <label>Program types</label>
-        <select class="form-control" id="inputSection" @onchange="@OnProgramTypeChanged">
+        <select class="form-control" @onchange="@OnProgramTypeChanged">
             @foreach (var programType in programTypes)
             {
                 var programId = programType.ProgramTypeId;
@@ -87,8 +89,8 @@ else
     DataTable allShops = new DataTable();
     DataTable shops = new DataTable();
 
-    int? selectedShopId;
-    int? selectedBrandId;
+    private int SelectedShopId { get; set; }
+    private int SelectedBrandId { get; set; }
 
     List<ProgramType> programTypes = new List<ProgramType>()
 {
@@ -112,9 +114,9 @@ else
         await LoadVersionDeploy();
 
         if (BrandId > 0)
-            selectedBrandId = BrandId;
+            SelectedBrandId = BrandId;
         if (ShopId > 0)
-            selectedShopId = ShopId;
+            SelectedShopId = ShopId;
     }
 
     void OnBrandChanged(ChangeEventArgs e)
@@ -139,12 +141,14 @@ else
 
     async Task SaveAsync()
     {
+        if (SelectedShopId == 0 || SelectedBrandId == 0)
+            return;
         try
         {
             using (var conn = await DbContext.ConnectAsync())
             {
-                versionDeploy.ShopId = (int)selectedShopId;
-                versionDeploy.BrandId = (int)selectedBrandId;
+                versionDeploy.ShopId = SelectedShopId;
+                versionDeploy.BrandId = SelectedBrandId;
                 versionDeploy.InsertDate = DateTime.Now;
                 versionDeploy.UpdateDate = DateTime.Now;
                 await LiveUpdateContext.AddOrUpdateVersionDeploy(conn, versionDeploy);

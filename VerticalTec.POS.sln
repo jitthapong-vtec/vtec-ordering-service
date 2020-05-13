@@ -31,8 +31,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RandomPrivateKeyGen", "Rand
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.LiveUpdateConsole", "VerticalTec.POS.LiveUpdateConsole\VerticalTec.POS.LiveUpdateConsole.csproj", "{7E8497FA-F052-436E-B27C-365A9ED65A7C}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{DF23A640-5E22-47F4-A26D-54972B6A0176}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.Service.LiveUpdate", "VerticalTec.POS.Service.LiveUpdate\VerticalTec.POS.Service.LiveUpdate.csproj", "{267F4EA7-8B42-4D77-A23D-42E8C0170A23}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.Service.LiveUpdateAgent", "VerticalTec.POS.Service.LiveUpdateAgent\VerticalTec.POS.Service.LiveUpdateAgent.csproj", "{86BBD52E-CB01-47DA-9165-4F6DDBABD786}"
@@ -273,22 +271,6 @@ Global
 		{7E8497FA-F052-436E-B27C-365A9ED65A7C}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{7E8497FA-F052-436E-B27C-365A9ED65A7C}.Release|x86.ActiveCfg = Release|Any CPU
 		{7E8497FA-F052-436E-B27C-365A9ED65A7C}.Release|x86.Build.0 = Release|Any CPU
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Debug|Any CPU.ActiveCfg = Debug
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Debug|Any CPU.Build.0 = Debug
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Debug|iPhone.ActiveCfg = Debug
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Debug|iPhone.Build.0 = Debug
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Debug|iPhoneSimulator.ActiveCfg = Debug
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Debug|iPhoneSimulator.Build.0 = Debug
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Debug|x86.ActiveCfg = Debug
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Debug|x86.Build.0 = Debug
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Release|Any CPU.ActiveCfg = Release
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Release|Any CPU.Build.0 = Release
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Release|iPhone.ActiveCfg = Release
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Release|iPhone.Build.0 = Release
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Release|iPhoneSimulator.ActiveCfg = Release
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Release|iPhoneSimulator.Build.0 = Release
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Release|x86.ActiveCfg = Release
-		{DF23A640-5E22-47F4-A26D-54972B6A0176}.Release|x86.Build.0 = Release
 		{267F4EA7-8B42-4D77-A23D-42E8C0170A23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{267F4EA7-8B42-4D77-A23D-42E8C0170A23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{267F4EA7-8B42-4D77-A23D-42E8C0170A23}.Debug|iPhone.ActiveCfg = Debug|Any CPU
