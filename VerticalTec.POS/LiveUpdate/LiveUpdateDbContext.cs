@@ -56,7 +56,7 @@ namespace VerticalTec.POS.LiveUpdate
                ProgramID SMALLINT NOT NULL,
                ProgramName VARCHAR(100) NOT NULL,
                UpdateVersion VARCHAR(20) NOT NULL,
-               RevFile TINYINT NOT NULL,
+               FileReceiveStatus TINYINT NOT NULL DEFAULT '0',
                DownloadFilePath VARCHAR(255) NULL,
                RevStartTime DATETIME NULL,
                RevEndTime DATETIME NULL,
@@ -123,11 +123,11 @@ namespace VerticalTec.POS.LiveUpdate
                         ProgramId = (ProgramTypes)reader.GetValue<int>("ProgramID"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         UpdateVersion = reader.GetValue<string>("UpdateVersion"),
-                        RevFile = reader.GetValue<int>("RevFile"),
+                        FileReceiveStatus = (FileReceiveStatus)reader.GetValue<int>("FileReceiveStatus"),
                         DownloadFilePath = reader.GetValue<string>("DownloadFilePath"),
                         RevStartTime = reader.GetValue<DateTime>("RevStartTime"),
                         RevEndTime = reader.GetValue<DateTime>("RevEndTime"),
-                        BackupStatus = reader.GetValue<int>("BackupStatus"),
+                        BackupStatus = (BackupStatus)reader.GetValue<int>("BackupStatus"),
                         BackupFilePath = reader.GetValue<string>("BackupFilePath"),
                         BackupStartTime = reader.GetValue<DateTime>("BackupStartTime"),
                         BackupEndTime = reader.GetValue<DateTime>("BackupEndTime"),
@@ -316,7 +316,7 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@computerId", liveUpdate.ComputerId));
             cmd.Parameters.Add(_db.CreateParameter("@programId", liveUpdate.ProgramId));
             cmd.Parameters.Add(_db.CreateParameter("@updateVersion", liveUpdate.UpdateVersion));
-            cmd.Parameters.Add(_db.CreateParameter("@revFile", liveUpdate.RevFile));
+            cmd.Parameters.Add(_db.CreateParameter("@fileReceiveStatus", liveUpdate.FileReceiveStatus));
             cmd.Parameters.Add(_db.CreateParameter("@downloadFilePath", liveUpdate.DownloadFilePath));
             cmd.Parameters.Add(_db.CreateParameter("@revStartTime", liveUpdate.RevStartTime.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@backupStatus", liveUpdate.BackupStatus));
@@ -328,7 +328,7 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@rollbackStatus", liveUpdate.RollbackStatus));
             cmd.Parameters.Add(_db.CreateParameter("@updateStatus", liveUpdate.UpdateStatus));
             cmd.Parameters.Add(_db.CreateParameter("@syncStatus", liveUpdate.SyncStatus));
-            cmd.Parameters.Add(_db.CreateParameter("@readyToUpdate", liveUpdate.RevFile == 1 && liveUpdate.BackupStatus == 2));
+            cmd.Parameters.Add(_db.CreateParameter("@readyToUpdate", liveUpdate.FileReceiveStatus == FileReceiveStatus.Downloaded && liveUpdate.BackupStatus == BackupStatus.BackupFinish));
             cmd.Parameters.Add(_db.CreateParameter("@messageLog", liveUpdate.MessageLog ?? ""));
             cmd.Parameters.Add(_db.CreateParameter("@batchId", liveUpdate.BatchId));
             cmd.Parameters.Add(_db.CreateParameter("@programName", liveUpdate.ProgramName));
@@ -345,7 +345,7 @@ namespace VerticalTec.POS.LiveUpdate
 
             if (isHaveRecord)
             {
-                cmd.CommandText = "update Version_LiveUpdate set BatchID=@batchId, ProgramName=@programName, RevFile=@revFile, " +
+                cmd.CommandText = "update Version_LiveUpdate set BatchID=@batchId, ProgramName=@programName, FileReceiveStatus=@fileReceiveStatus, " +
                     " DownloadFilePath=@downloadFilePath, RevStartTime=@revStartTime," +
                     " RevEndTime=@revEndTime, BackupStatus=@backupStatus, BackupFilePath=@backupFilePath, BackupStartTime=@backupStartTime," +
                     " BackupEndTime=@backupEndtime, ScheduleUpdate=@scheduleUpdate," +
@@ -356,9 +356,9 @@ namespace VerticalTec.POS.LiveUpdate
             else
             {
                 cmd.CommandText = "insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion," +
-                    " RevFile, DownloadFilePath, RevStartTime, RevEndTime, BackupStatus, BackupFilePath, BackupStartTime, BackupEndTime, ScheduleUpdate," +
+                    " FileReceiveStatus, DownloadFilePath, RevStartTime, RevEndTime, BackupStatus, BackupFilePath, BackupStartTime, BackupEndTime, ScheduleUpdate," +
                     " UpdateStartTime, UpdateEndTime, RollbackStatus, UpdateStatus, SyncStatus, ReadyToUpdate, MessageLog, InsertDate, UpdateDate)" +
-                    " values (@batchId, @shopId, @computerId, @programId, @programName, @updateVersion, @revFile, @downloadFilePath, @revStartTime," +
+                    " values (@batchId, @shopId, @computerId, @programId, @programName, @updateVersion, @fileReceiveStatus, @downloadFilePath, @revStartTime," +
                     " @revEndTime, @backupStatus, @backupFilePath, @backupStartTime, @backupEndTime, @scheduleUpdate, @updateStartTime," +
                     " @updateEndTime, @rollbackStatus, @updateStatus, @syncStatus, @readyToUpdate, @messageLog, @insertDate, @updateDate)";
             }

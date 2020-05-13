@@ -15,52 +15,60 @@
 
 @if (clients == null)
 {
-<p><em>Loading...</em></p>
+    <p><em>Loading...</em></p>
 }
 else
 {
-<DxDataGrid Data="@clients" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
-    <DxDataGridColumn Caption="Online" TextAlignment="@DataGridTextAlign.Center">
-        <DisplayTemplate>
-            @{
-                var client = (context as VersionInfo);
-                <span style="width:24px;height:24px;border-radius:50%;display:inline-block;" class="@(client.IsOnline ? "bg-success" : "bg-danger")"></span>
-            }
-        </DisplayTemplate>
-    </DxDataGridColumn>
-    <DxDataGridColumn Caption="Computer Name">
-        <DisplayTemplate>
-            @{
-                var client = (context as VersionInfo);
-                <h4>
-                    @client.ComputerName
-                </h4>
-                <h6>
-                    @client.ShopName
-                </h6>
-            }
-        </DisplayTemplate>
-    </DxDataGridColumn>
-    <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="Current Version" />
-    @*<DxDataGridColumn Field="@nameof(VersionInfo.ProcessMessage)" Caption="Live status" Width="300" />*@
-    <DxDataGridColumn TextAlignment="@DataGridTextAlign.Center">
-        <DisplayTemplate>
-            @{
-                var client = (context as VersionInfo);
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" disabled="@(client.CanExecute == false)" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Action
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" @onclick="@(async() => await GetClientInfo(client))">Get version info</a>
-                        <a class="dropdown-item" @onclick="@(async() => await SendBackupCommand(client))">Backup</a>
-                        <a class="dropdown-item" @onclick="@(async() => await SendDownloadFileCommand(client))">Download file</a>
+    <DxDataGrid Data="@clients" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
+        <DxDataGridColumn Caption="Online" TextAlignment="@DataGridTextAlign.Center">
+            <DisplayTemplate>
+                @{
+                    var client = (context as VersionInfo);
+                    <span style="width:24px;height:24px;border-radius:50%;display:inline-block;" class="@(client.IsOnline ? "bg-success" : "bg-danger")"></span>
+                }
+            </DisplayTemplate>
+        </DxDataGridColumn>
+        <DxDataGridColumn Caption="Computer Name">
+            <DisplayTemplate>
+                @{
+                    var client = (context as VersionInfo);
+                    <h4>
+                        @client.ComputerName
+                    </h4>
+                    <h6>
+                        @client.ShopName
+                    </h6>
+                }
+            </DisplayTemplate>
+        </DxDataGridColumn>
+        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="Current Version" />
+        <DxDataGridColumn Caption="Status message">
+            <DisplayTemplate>
+                @{
+                    var client = (context as VersionInfo);
+                    <div style="overflow-wrap:normal; width:200px;font-size:small;">
+                        @client.ProcessMessage
                     </div>
-                </div>
-            }
-        </DisplayTemplate>
-    </DxDataGridColumn>
-</DxDataGrid>
+                }
+            </DisplayTemplate>
+        </DxDataGridColumn>
+        <DxDataGridColumn TextAlignment="@DataGridTextAlign.Center">
+            <DisplayTemplate>
+                @{
+                    var client = (context as VersionInfo);
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" disabled="@(client.CanExecute == false)" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Action
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <a class="dropdown-item" @onclick="@(async() => await SendBackupCommand(client))">Backup</a>
+                            <a class="dropdown-item" @onclick="@(async() => await SendDownloadFileCommand(client))">Download update file</a>
+                        </div>
+                    </div>
+                }
+            </DisplayTemplate>
+        </DxDataGridColumn>
+    </DxDataGrid>
 }
 
 @code{
@@ -133,16 +141,32 @@ else
 
     public async Task SendDownloadFileCommand(VersionInfo client)
     {
-        await connection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId);
-        client.CanExecute = false;
-        await gridRef.Refresh();
+        using (var conn = await DbContext.ConnectAsync())
+        {
+            var versionDeploys = await LiveupdateContext.GetVersionDeploy(conn, shopId: client.ShopId);
+            var versionDeploy = versionDeploys.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
+            if (versionDeploy != null)
+            {
+                await connection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId, versionDeploy.BatchId);
+                client.CanExecute = false;
+                await gridRef.Refresh();
+            }
+        }
     }
 
     public async Task SendBackupCommand(VersionInfo client)
     {
-        await connection.InvokeAsync("SendBackupCommand", client.ConnectionId);
-        client.CanExecute = false;
-        await gridRef.Refresh();
+        using (var conn = await DbContext.ConnectAsync())
+        {
+            var versionDeploys = await LiveupdateContext.GetVersionDeploy(conn, shopId: client.ShopId);
+            var versionDeploy = versionDeploys.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
+            if (versionDeploy != null)
+            {
+                await connection.InvokeAsync("SendBackupCommand", client.ConnectionId, versionDeploy.BatchId);
+                client.CanExecute = false;
+                await gridRef.Refresh();
+            }
+        }
     }
 
     public async Task ClientUpdateInfo(VersionInfo versionInfo)
@@ -165,7 +189,7 @@ else
         {
             var client = clients.Where(c => c.ShopId == state.ShopId && c.ComputerId == state.ComputerId).FirstOrDefault();
             client.ProcessMessage = state.MessageLog;
-            if (state.CommandStatus == CommandStatus.Finish)
+            if (state.CommandStatus == CommandStatus.Finish || state.CommandStatus == CommandStatus.Error)
                 client.CanExecute = true;
             clients[clients.IndexOf(client)] = client;
             await gridRef.Refresh();

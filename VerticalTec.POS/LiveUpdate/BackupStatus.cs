@@ -4,11 +4,10 @@ using System.Text;
 
 namespace VerticalTec.POS.LiveUpdate
 {
-    public enum CommandStatus
+    public enum BackupStatus
     {
-        Start,
-        Working,
-        Finish,
-        Error
+        NoBackup = 0,
+        BackingUp = 1,
+        BackupFinish = 2
     }
 }

@@ -54,7 +54,7 @@ namespace VerticalTec.POS.Database
 
         public IDataParameter CreateParameter(string parameterName, object parameterValue)
         {
-            return new MySqlParameter(parameterName, parameterValue);
+            return new MySqlParameter(parameterName, parameterValue ?? DBNull.Value);
         }
 
         public async Task ExecuteNonQueryAsync(IDbCommand command)

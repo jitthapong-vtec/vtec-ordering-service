@@ -4,11 +4,10 @@ using System.Text;
 
 namespace VerticalTec.POS.LiveUpdate
 {
-    public enum CommandStatus
+    public enum FileReceiveStatus
     {
-        Start,
-        Working,
-        Finish,
-        Error
+        NoReceivedFile = 0,
+        Downloading = 1,
+        Downloaded = 2
     }
 }

@@ -62,7 +62,7 @@ namespace VerticalTec.POS.Database
 
         public IDataParameter CreateParameter(string parameterName, object parameterValue)
         {
-            return new SqlParameter(parameterName, parameterValue);
+            return new SqlParameter(parameterName, parameterValue ?? DBNull.Value);
         }
 
         public async Task ExecuteNonQueryAsync(IDbCommand command)
