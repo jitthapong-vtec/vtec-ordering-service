@@ -184,7 +184,7 @@ else
             using (var conn = await DbContext.ConnectAsync())
             {
                 var cmd = DbContext.CreateCommand(conn);
-                cmd.CommandText = "select a.* from Brand_Data a inner join Shop_Data b on a.BrandID = b.BrandID where a.Deleted = 0 and IsShop = 1";
+                cmd.CommandText = "select a.BrandID, a.BrandName from Brand_Data a inner join Shop_Data b on a.BrandID = b.BrandID where a.Deleted = 0 and IsShop = 1 group by a.BrandID, a.BrandName";
                 using (var reader = await DbContext.ExecuteReaderAsync(cmd))
                 {
                     allBrands.Load(reader);
