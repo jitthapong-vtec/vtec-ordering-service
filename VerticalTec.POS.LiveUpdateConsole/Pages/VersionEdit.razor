@@ -176,6 +176,7 @@ else
             if (isUpdate)
                 versionDeploy.BatchId = BatchId;
             versionDeploy.BrandId = BrandId;
+            versionDeploy.BatchStatus = deployVersion.BatchStatus;
             versionDeploy.ProgramId = deployVersion.ProgramId;
             versionDeploy.ProgramName = deployVersion.ProgramName;
             versionDeploy.ProgramVersion = deployVersion.ProgramVersion;
@@ -262,6 +263,7 @@ else
             var versionDeploy = versionDeploys.FirstOrDefault();
 
             deployVersion.BrandId = versionDeploy.BrandId;
+            deployVersion.BatchStatus = versionDeploy.BatchStatus;
             deployVersion.ProgramId = versionDeploy.ProgramId;
             deployVersion.ProgramVersion = versionDeploy?.ProgramVersion;
             deployVersion.FileUrl = versionDeploy?.FileUrl;

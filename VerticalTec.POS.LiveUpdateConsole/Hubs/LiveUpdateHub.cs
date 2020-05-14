@@ -48,15 +48,18 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
             using (var conn = await _db.ConnectAsync())
             {
                 var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn);
-                var versionDeploy = versionsDeploy.FirstOrDefault();
-                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+                var versionDeploy = versionsDeploy.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
+                VersionLiveUpdate versionLiveUpdate = null;
+                if (versionDeploy != null)
+                    versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
+
                 await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy, versionLiveUpdate);
             }
         }
 
         public async Task UpdateVersionDeploy(VersionDeploy versionDeploy)
         {
-            using(var conn = await _db.ConnectAsync())
+            using (var conn = await _db.ConnectAsync())
             {
                 await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
             }

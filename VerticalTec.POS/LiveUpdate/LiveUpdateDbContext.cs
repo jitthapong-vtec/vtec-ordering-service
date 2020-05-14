@@ -73,7 +73,7 @@ namespace VerticalTec.POS.LiveUpdate
                MessageLog VARCHAR(2000) NULL,
                InsertDate DATETIME NOT NULL,
                UpdateDate DATETIME NOT NULL,
-               PRIMARY KEY(ShopID, ComputerID, ProgramID)
+               PRIMARY KEY(BatchID, ShopID, ComputerID, ProgramID)
             );",
             @"CREATE TABLE Version_LiveUpdateLog (
                LogUUID VARCHAR(50) NOT NULL,
@@ -101,9 +101,10 @@ namespace VerticalTec.POS.LiveUpdate
             }
         }
 
-        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, int shopId, int computerId, ProgramTypes types = ProgramTypes.Front)
+        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, string batchId, int shopId, int computerId, ProgramTypes types = ProgramTypes.Front)
         {
-            var cmd = _db.CreateCommand("select * from version_liveupdate where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
+            var cmd = _db.CreateCommand("select * from version_liveupdate where BatchID=@batchId and ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
+            cmd.Parameters.Add(_db.CreateParameter("@batchId", batchId));
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
             cmd.Parameters.Add(_db.CreateParameter("@programId", (int)types));

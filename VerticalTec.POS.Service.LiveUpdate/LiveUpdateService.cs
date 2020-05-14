@@ -211,15 +211,29 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
         public async Task ReceiveVersionDeploy(VersionDeploy versionDeploy, VersionLiveUpdate versionLiveUpdate)
         {
-            if (versionDeploy == null)
-                return;
-
             using (var conn = await _db.ConnectAsync())
             {
                 try
                 {
-                    await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
-                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
+                    if (versionDeploy != null)
+                    {
+                        await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+                    }
+                    else
+                    {
+                        var cmd = _db.CreateCommand("delete from Version_Deploy", conn);
+                        await _db.ExecuteNonQueryAsync(cmd);
+                    }
+
+                    if (versionLiveUpdate != null)
+                    {
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
+                    }
+                    else
+                    {
+                        var cmd = _db.CreateCommand("delete from Version_LiveUpdate", conn);
+                        await _db.ExecuteNonQueryAsync(cmd);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -235,8 +249,12 @@ namespace VerticalTec.POS.Service.LiveUpdate
         {
             using (var conn = await _db.ConnectAsync())
             {
+                var versionDeploy = await GetActiveVersionDeploy(conn);
+                if (versionDeploy == null)
+                    return;
+
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
                 var fileName = versionLiveUpdate.ProgramId == ProgramTypes.Front ? "vTec-ResPOS.exe" : "";
                 var fileVersion = await _liveUpdateCtx.GetFileVersion(conn, posSetting.ShopID, posSetting.ComputerID, fileName);
                 var lastVersion = "0";
@@ -249,7 +267,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     _logger.Error("Not found fileversion of vTec-ResPOS.exe");
                 }
 
-                var versionsInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID, versionLiveUpdate.ProgramId);
+                var versionsInfo = await _liveUpdateCtx.GetVersionInfo(conn, posSetting.ShopID, posSetting.ComputerID);
                 var versionInfo = versionsInfo.FirstOrDefault();
                 if (versionInfo == null)
                 {
@@ -278,7 +296,11 @@ namespace VerticalTec.POS.Service.LiveUpdate
             {
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
-                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionInfo.ShopId, versionInfo.ComputerId);
+                var versionDeploy = await GetActiveVersionDeploy(conn);
+                if (versionDeploy == null)
+                    return;
+
+                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, versionInfo.ShopId, versionInfo.ComputerId);
 
                 if (versionLiveUpdate.FileReceiveStatus == FileReceiveStatus.NoReceivedFile)
                     await DownloadFile();
@@ -317,10 +339,11 @@ namespace VerticalTec.POS.Service.LiveUpdate
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
 
-                var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+                var versionDeploy = await GetActiveVersionDeploy(conn);
+                if (versionDeploy == null)
+                    return;
 
-                var versionsDeploys = await _liveUpdateCtx.GetVersionDeploy(conn, updateState.BatchId);
-                var versionDeploy = versionsDeploys.FirstOrDefault();
+                var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
 
                 var downloadService = new DownloadService(_config.GetValue<string>("GoogleDriveApiKey"));
                 var updateStateLog = new VersionLiveUpdateLog()
@@ -412,7 +435,12 @@ namespace VerticalTec.POS.Service.LiveUpdate
             using (var conn = await _db.ConnectAsync())
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+
+                var versionDeploy = await GetActiveVersionDeploy(conn);
+                if (versionDeploy == null)
+                    return;
+
+                var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
 
                 var stateLog = new VersionLiveUpdateLog()
                 {
@@ -484,5 +512,12 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 }
             }
         }
+
+        private async Task<VersionDeploy> GetActiveVersionDeploy(IDbConnection conn)
+        {
+            var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn);
+            return versionsDeploy.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
+        }
+
     }
 }
