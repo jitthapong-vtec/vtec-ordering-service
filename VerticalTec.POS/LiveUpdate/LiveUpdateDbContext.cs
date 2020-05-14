@@ -31,8 +31,8 @@ namespace VerticalTec.POS.LiveUpdate
                BatchStatus TINYINT NOT NULL DEFAULT '0',
                AutoBackup TINYINT NOT NULL DEFAULT '0',
                ScheduleUpdate DATETIME NULL,
-               InsertDate DATETIME NOT NULL,
-               UpdateDate DATETIME NOT NULL,
+               InsertDate DATETIME NULL,
+               UpdateDate DATETIME NULL,
                PRIMARY KEY(BatchID)
             );",
             @"CREATE TABLE VersionInfo (
@@ -257,12 +257,15 @@ namespace VerticalTec.POS.LiveUpdate
             return versionsInfo;
         }
 
-        public async Task AddOrUpdateVersionDeploy(IDbConnection conn, VersionDeploy versionDeploy)
+        public async Task AddOrUpdateVersionDeploy(IDbConnection conn, VersionDeploy versionDeploy, IDbTransaction dbTranSaction = null)
         {
             if (versionDeploy == null)
                 return;
 
             var cmd = _db.CreateCommand("select count(BatchID) from Version_Deploy where BatchID=@batchId", conn);
+            if (dbTranSaction != null)
+                cmd.Transaction = dbTranSaction;
+
             cmd.Parameters.Add(_db.CreateParameter("@batchId", versionDeploy.BatchId));
             cmd.Parameters.Add(_db.CreateParameter("@brandId", versionDeploy.BrandId));
             cmd.Parameters.Add(_db.CreateParameter("@programId", versionDeploy.ProgramId));

@@ -8,7 +8,7 @@
 @using VerticalTec.POS.Database
 @using VerticalTec.POS.Utils
 @using CurrieTechnologies.Razor.SweetAlert2
-@using System.Text; 
+@using System.Text;
 
 @inject IDatabase DbContext
 @inject SweetAlertService Swal
@@ -167,31 +167,33 @@ else
 
     async Task SaveAsync()
     {
-        //if (ShopId == 0 || BrandId == 0)
-        //    return;
-
-        var versionDeploy = new VersionDeploy();
-        var isUpdate = !string.IsNullOrWhiteSpace(BatchId);
-        if (isUpdate)
-            versionDeploy.BatchId = BatchId;
-        versionDeploy.BrandId = BrandId;
-        versionDeploy.ProgramId = deployVersion.ProgramId;
-        versionDeploy.ProgramName = deployVersion.ProgramName;
-        versionDeploy.ProgramVersion = deployVersion.ProgramVersion;
-        versionDeploy.FileUrl = deployVersion.FileUrl;
-        versionDeploy.AutoBackup = deployVersion.AutoBackup;
-        versionDeploy.InsertDate = DateTime.Now;
-        versionDeploy.UpdateDate = DateTime.Now;
-
-        var opsMsg = isUpdate ? "Update" : "Create";
-        try
+        using (var conn = await DbContext.ConnectAsync())
         {
+            System.Data.IDbTransaction sqlTransaction = conn.BeginTransaction();
 
-            using (var conn = await DbContext.ConnectAsync())
+            var versionDeploy = new VersionDeploy();
+            var isUpdate = !string.IsNullOrWhiteSpace(BatchId);
+            if (isUpdate)
+                versionDeploy.BatchId = BatchId;
+            versionDeploy.BrandId = BrandId;
+            versionDeploy.ProgramId = deployVersion.ProgramId;
+            versionDeploy.ProgramName = deployVersion.ProgramName;
+            versionDeploy.ProgramVersion = deployVersion.ProgramVersion;
+            versionDeploy.FileUrl = deployVersion.FileUrl;
+            versionDeploy.AutoBackup = deployVersion.AutoBackup;
+            versionDeploy.InsertDate = deployVersion.InsertDate;
+            versionDeploy.UpdateDate = DateTime.Now;
+
+            var opsMsg = isUpdate ? "Update" : "Create";
+
+            try
             {
-                await LiveUpdateContext.AddOrUpdateVersionDeploy(conn, versionDeploy);
+
+                await LiveUpdateContext.AddOrUpdateVersionDeploy(conn, versionDeploy, sqlTransaction);
 
                 var cmd = DbContext.CreateCommand(conn);
+                cmd.Transaction = sqlTransaction;
+
                 cmd.CommandText = "delete from Version_LiveUpdate where BatchID=@batchId";
                 cmd.Parameters.Add(DbContext.CreateParameter("@batchId", BatchId));
                 await DbContext.ExecuteNonQueryAsync(cmd);
@@ -199,7 +201,7 @@ else
                 cmd.Parameters.Clear();
                 cmd.CommandText = "select ShopID, ComputerID from computername where ComputerType=0 and Deleted=0";
                 var dtComputers = new DataTable();
-                using(var reader = await DbContext.ExecuteReaderAsync(cmd))
+                using (var reader = await DbContext.ExecuteReaderAsync(cmd))
                 {
                     dtComputers.Load(reader);
                 }
@@ -213,29 +215,34 @@ else
 
                     foreach (var computerId in computerIds)
                     {
-                        rows.Add($"('{BatchId}', {shop.ShopId}, {computerId}, {(int)versionDeploy.ProgramId}, '{versionDeploy.ProgramName}', '{versionDeploy.ProgramVersion}', GETDATE(), GETDATE())");
+                        rows.Add($"('{versionDeploy.BatchId}', {shop.ShopId}, {computerId}, {(int)versionDeploy.ProgramId}, '{versionDeploy.ProgramName}', '{versionDeploy.ProgramVersion}', GETDATE(), GETDATE())");
                     }
                 }
-                stringBuilder.Append(string.Join(",", rows));
-                stringBuilder.Append(";");
-                cmd.CommandText = stringBuilder.ToString();
-                await DbContext.ExecuteNonQueryAsync(cmd);
-            }
+                if (rows.Count > 0)
+                {
+                    stringBuilder.Append(string.Join(",", rows));
+                    stringBuilder.Append(";");
+                    cmd.CommandText = stringBuilder.ToString();
+                    await DbContext.ExecuteNonQueryAsync(cmd);
+                }
+                sqlTransaction?.Commit();
 
-            await Swal.FireAsync(new SweetAlertOptions
+                await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"{opsMsg} version",
+                    Text = $"{opsMsg} Update version success"
+                });
+                NavigationManager.NavigateTo("versions");
+            }
+            catch (Exception ex)
             {
-                Title = $"{opsMsg} version",
-                Text = $"{opsMsg} Update version success"
-            });
-            NavigationManager.NavigateTo("versions");
-        }
-        catch (Exception ex)
-        {
-            await Swal.FireAsync(new SweetAlertOptions
-            {
-                Title = $"{opsMsg} version",
-                Html = $"{opsMsg} version fail <strong>{ex.Message}</strong>"
-            });
+                sqlTransaction?.Rollback();
+                await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = $"{opsMsg} version",
+                    Html = $"{opsMsg} version fail <strong>{ex.Message}</strong>"
+                });
+            }
         }
     }
 
@@ -259,6 +266,8 @@ else
             deployVersion.ProgramVersion = versionDeploy?.ProgramVersion;
             deployVersion.FileUrl = versionDeploy?.FileUrl;
             deployVersion.AutoBackup = versionDeploy.AutoBackup;
+            deployVersion.InsertDate = versionDeploy.InsertDate;
+            deployVersion.UpdateDate = versionDeploy.UpdateDate;
         }
     }
 
@@ -277,16 +286,17 @@ else
 
                 cmd.CommandText = "select a.ShopID, a.BrandID, a.ShopName, case when b.ShopID is null then 0 else 1 end as Selected" +
                         " from shop_data a left join " +
-                        " (select ShopID from Version_LiveUpdate group by ShopID) b" +
+                        " (select ShopID from Version_LiveUpdate where BatchID=@batchId group by ShopID) b" +
                         " on a.ShopID=b.ShopID" +
-                        " where a.Deleted=0 and a.IsShop=1 and a.MasterShop = 0" ;
+                        " where a.Deleted=0 and a.IsShop=1 and a.MasterShop = 0";
+                cmd.Parameters.Add(DbContext.CreateParameter("@batchId", BatchId));
                 using (var reader = await DbContext.ExecuteReaderAsync(cmd))
                 {
                     allShops.Load(reader);
                 }
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
         }
     }

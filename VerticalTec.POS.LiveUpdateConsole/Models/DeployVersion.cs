@@ -12,6 +12,8 @@ namespace VerticalTec.POS.LiveUpdateConsole.Models
         public int BrandId { get; set; }
         public int ShopId { get; set; }
         public string ProgramName { get; set; } = "vTec-ResPOS";
+        public DateTime InsertDate { get; set; } = DateTime.MinValue;
+        public DateTime UpdateDate { get; set; } = DateTime.MinValue;
         public ProgramTypes ProgramId { get; set; } = LiveUpdate.ProgramTypes.Front;
         public VersionDeployBatchStatus BatchStatus { get; set; } = VersionDeployBatchStatus.InActivate;
 

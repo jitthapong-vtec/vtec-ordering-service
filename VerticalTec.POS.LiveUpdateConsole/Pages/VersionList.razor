@@ -127,6 +127,9 @@ else
                 cmd.CommandText = "delete from Version_Deploy where BatchID=@batchId";
                 cmd.Parameters.Add(DbContext.CreateParameter("@batchId", versionDeploy.BatchId));
                 await DbContext.ExecuteNonQueryAsync(cmd);
+
+                cmd.CommandText = "delete from Version_LiveUpdate where BatchID=@batchId";
+                await DbContext.ExecuteNonQueryAsync(cmd);
             }
 
             await LoadVersionDeployAsync();
