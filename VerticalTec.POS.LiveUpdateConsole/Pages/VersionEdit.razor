@@ -1,5 +1,5 @@
 ﻿@page "/versionedit"
-@page "/versionedit/{batchId}/{brandId:int}/{shopId:int}"
+@page "/versionedit/{batchId}/{brandId:int}"
 
 @using System.Data
 @using System.Collections
@@ -7,8 +7,11 @@
 @using VerticalTec.POS.LiveUpdateConsole.Models
 @using VerticalTec.POS.Database
 @using VerticalTec.POS.Utils
+@using CurrieTechnologies.Razor.SweetAlert2
+@using System.Text; 
 
 @inject IDatabase DbContext
+@inject SweetAlertService Swal
 @inject LiveUpdateDbContext LiveUpdateContext;
 @inject NavigationManager NavigationManager;
 
@@ -20,93 +23,101 @@
 }
 else
 {
-    <div class="form-group col-md-4">
-        <label>Brands</label>
-        <select class="form-control" @bind="@SelectedBrandId">
-            <option value="0">-- Please Select --</option>
-            @foreach (DataRow brand in allBrands.Rows)
-            {
-                var brandId = brand.GetValue<int>("BrandID");
-                var brandName = brand.GetValue<string>("BrandName");
-                <option value="@brandId">@brandName</option>
-            }
-        </select>
-    </div>
-    <div class="form-group col-md-4">
-        <label>Shops</label>
-        <select class="form-control" @bind="@SelectedShopId">
-            <option value="0">-- Please Select --</option>
-            @foreach (DataRow shop in shops.Rows)
-            {
-                var shopId = shop.GetValue<int>("ShopID");
-                var shopName = shop.GetValue<string>("ShopName");
-                <option value="@shopId">@shopName</option>
-            }
-        </select>
-    </div>
+    <EditForm Model="@deployVersion" OnValidSubmit="@(async() => await SaveAsync())">
+        <DataAnnotationsValidator />
+        <div class="form-group col-md-4">
+            <label>Brands</label>
+            <select class="form-control" @onchange="@OnBrandChanged">
+                <option value="0">-- Please Select --</option>
+                @foreach (DataRow brand in allBrands.Rows)
+                {
+                    var brandId = brand.GetValue<int>("BrandID");
+                    var brandName = brand.GetValue<string>("BrandName");
 
-    <div class="form-group col-md-4">
-        <label>Program types</label>
-        <select class="form-control" @onchange="@OnProgramTypeChanged">
-            @foreach (var programType in programTypes)
-            {
-                var programId = programType.ProgramTypeId;
-                var programName = programType.ProgramName;
-                <option value="@programId">@programName</option>
-            }
-        </select>
-    </div>
+                    @if (brandId == @BrandId)
+                    {
+                        <option selected value="@brandId">@brandName</option>
+                    }
+                    else
+                    {
+                        <option value="@brandId">@brandName</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="form-group col-md-4">
+            <label>Apply to shops</label>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="0" value="0" @onchange="@OnCheckAllShop" />
+                        <label for="0" class="custom-control-label">Check all</label>
+                    </div>
+                </li>
+            </ul>
+            <ul class="list-group list-group-flush" style="height:300px; overflow:auto;">
+                @foreach (var shop in shops)
+                {
+                    <li class="list-group-item">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="@shop.ShopId" @bind="shop.Selected" />
+                            <label for="@shop.ShopId" class="custom-control-label">@shop.ShopName</label>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
 
-    <div class="form-group col-md-4">
-        <label>เวอร์ชั่น</label>
-        <input type="text" class="form-control" @bind="@versionDeploy.ProgramVersion">
-    </div>
+        <div class="form-group col-md-4">
+            <label>Program types</label>
+            <select class="form-control" @bind="@deployVersion.ProgramId">
+                @foreach (var programType in deployVersion.ProgramTypes)
+                {
+                    var programId = programType.ProgramTypeId;
+                    var programName = programType.ProgramName;
+                    <option value="@programId">@programName</option>
+                }
+            </select>
+        </div>
 
-    <div class="form-group col-md-4">
-        <label>ไฟล์ url</label>
-        <input type="text" class="form-control" @bind="@versionDeploy.FileUrl">
-    </div>
+        <div class="form-group col-md-4">
+            <label>Version</label>
+            <input type="text" class="form-control" @bind="@deployVersion.ProgramVersion">
+        </div>
 
-    <div class="form-group col-md-4">
-        <input type="checkbox" @bind="@versionDeploy.AutoBackup" />
-        <label>Auto backup</label>
-    </div>
+        <div class="form-group col-md-4">
+            <label>File Url</label>
+            <input type="text" class="form-control" @bind="@deployVersion.FileUrl">
+        </div>
 
-    <div class="form-row m-4">
-        <button type="submit" class="btn btn-primary" @onclick="@SaveAsync">บันทึก</button> &nbsp; <button type="button" @onclick="@Cancel" class="btn btn-secondary">ยกเลิก</button>
-    </div>
+        <div class="form-group col-md-4">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="chkAutoBackup" @bind="@deployVersion.AutoBackup" />
+                <label for="chkAutoBackup" class="custom-control-label">Auto backup when download file success</label>
+            </div>
+        </div>
+        <ValidationSummary />
+
+        <div class="form-row m-4">
+            <button type="submit" class="btn btn-primary">Ok</button> &nbsp; <button type="button" @onclick="@Cancel" class="btn btn-secondary">Cancel</button>
+        </div>
+    </EditForm>
 }
+
 @code {
 
     [Parameter]
     public string BatchId { get; set; }
+
     [Parameter]
     public int BrandId { get; set; }
-    [Parameter]
-    public int ShopId { get; set; }
+
+    private DeployVersion deployVersion = new DeployVersion();
 
     DataTable allBrands = new DataTable();
     DataTable allShops = new DataTable();
-    DataTable shops = new DataTable();
 
-    private int SelectedShopId { get; set; }
-    private int SelectedBrandId { get; set; }
-
-    List<ProgramType> programTypes = new List<ProgramType>()
-{
-        new ProgramType()
-        {
-            ProgramTypeId = ProgramTypes.Front,
-            ProgramName = "vTec-ResPOS"
-        }
-    };
-
-    ProgramType selectedProgramType;
-    VersionDeploy versionDeploy = new VersionDeploy()
-    {
-        ProgramId = ProgramTypes.Front,
-        ProgramName = "vTec-ResPOS"
-    };
+    List<ShopData> shops = new List<ShopData>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,49 +125,117 @@ else
         await LoadVersionDeploy();
 
         if (BrandId > 0)
-            SelectedBrandId = BrandId;
-        if (ShopId > 0)
-            SelectedShopId = ShopId;
+            RefreshShop();
     }
 
     void OnBrandChanged(ChangeEventArgs e)
     {
-        versionDeploy.BrandId = Convert.ToInt32(e.Value);
+        BrandId = Convert.ToInt32(e.Value);
+        RefreshShop();
+    }
+
+    void RefreshShop()
+    {
         try
         {
-            shops = allShops.AsEnumerable().Where(r => r.GetValue<int>("BrandID") == Convert.ToInt32(e.Value))?.CopyToDataTable();
+            var filters = allShops.AsEnumerable().Where(r => r.GetValue<int>("BrandID") == BrandId);
+            shops.Clear();
+            foreach (var shop in filters)
+            {
+                shops.Add(new ShopData()
+                {
+                    ShopId = shop.GetValue<int>("ShopID"),
+                    BrandId = shop.GetValue<int>("BrandID"),
+                    ShopName = shop.GetValue<string>("ShopName"),
+                    Selected = shop.GetValue<bool>("Selected")
+                });
+            }
         }
         catch { }
     }
 
-    void OnShopChanged(ChangeEventArgs e)
+    void OnCheckAllShop(ChangeEventArgs e)
     {
-        versionDeploy.ShopId = Convert.ToInt32(e.Value);
-    }
+        if (!shops.Any())
+            return;
 
-    void OnProgramTypeChanged(ChangeEventArgs e)
-    {
-        versionDeploy.ProgramId = (ProgramTypes)e.Value;
+        foreach (var shop in shops)
+        {
+            shop.Selected = Convert.ToBoolean(e.Value);
+        }
     }
 
     async Task SaveAsync()
     {
-        if (SelectedShopId == 0 || SelectedBrandId == 0)
-            return;
+        //if (ShopId == 0 || BrandId == 0)
+        //    return;
+
+        var versionDeploy = new VersionDeploy();
+        var isUpdate = !string.IsNullOrWhiteSpace(BatchId);
+        if (isUpdate)
+            versionDeploy.BatchId = BatchId;
+        versionDeploy.BrandId = BrandId;
+        versionDeploy.ProgramId = deployVersion.ProgramId;
+        versionDeploy.ProgramName = deployVersion.ProgramName;
+        versionDeploy.ProgramVersion = deployVersion.ProgramVersion;
+        versionDeploy.FileUrl = deployVersion.FileUrl;
+        versionDeploy.AutoBackup = deployVersion.AutoBackup;
+        versionDeploy.InsertDate = DateTime.Now;
+        versionDeploy.UpdateDate = DateTime.Now;
+
+        var opsMsg = isUpdate ? "Update" : "Create";
         try
         {
+
             using (var conn = await DbContext.ConnectAsync())
             {
-                versionDeploy.ShopId = SelectedShopId;
-                versionDeploy.BrandId = SelectedBrandId;
-                versionDeploy.InsertDate = DateTime.Now;
-                versionDeploy.UpdateDate = DateTime.Now;
                 await LiveUpdateContext.AddOrUpdateVersionDeploy(conn, versionDeploy);
+
+                var cmd = DbContext.CreateCommand(conn);
+                cmd.CommandText = "delete from Version_LiveUpdate where BatchID=@batchId";
+                cmd.Parameters.Add(DbContext.CreateParameter("@batchId", BatchId));
+                await DbContext.ExecuteNonQueryAsync(cmd);
+
+                cmd.Parameters.Clear();
+                cmd.CommandText = "select ShopID, ComputerID from computername where ComputerType=0 and Deleted=0";
+                var dtComputers = new DataTable();
+                using(var reader = await DbContext.ExecuteReaderAsync(cmd))
+                {
+                    dtComputers.Load(reader);
+                }
+
+                var selectedShops = shops.Where(s => s.Selected).ToList();
+                StringBuilder stringBuilder = new StringBuilder("insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion, InsertDate, UpdateDate) values ");
+                List<string> rows = new List<string>();
+                foreach (var shop in selectedShops)
+                {
+                    var computerIds = dtComputers.AsEnumerable().Where(r => r.GetValue<int>("ShopID") == shop.ShopId).Select(c => c.GetValue<int>("ComputerID")).ToList();
+
+                    foreach (var computerId in computerIds)
+                    {
+                        rows.Add($"('{BatchId}', {shop.ShopId}, {computerId}, {(int)versionDeploy.ProgramId}, '{versionDeploy.ProgramName}', '{versionDeploy.ProgramVersion}', GETDATE(), GETDATE())");
+                    }
+                }
+                stringBuilder.Append(string.Join(",", rows));
+                stringBuilder.Append(";");
+                cmd.CommandText = stringBuilder.ToString();
+                await DbContext.ExecuteNonQueryAsync(cmd);
             }
+
+            await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = $"{opsMsg} version",
+                Text = $"{opsMsg} Update version success"
+            });
             NavigationManager.NavigateTo("versions");
         }
         catch (Exception ex)
         {
+            await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = $"{opsMsg} version",
+                Html = $"{opsMsg} version fail <strong>{ex.Message}</strong>"
+            });
         }
     }
 
@@ -172,8 +251,14 @@ else
 
         using (var conn = await DbContext.ConnectAsync())
         {
-            var versionDeploys = await LiveUpdateContext.GetVersionDeploy(conn, BatchId, ShopId);
-            versionDeploy = versionDeploys.FirstOrDefault();
+            var versionDeploys = await LiveUpdateContext.GetVersionDeploy(conn, BatchId);
+            var versionDeploy = versionDeploys.FirstOrDefault();
+
+            deployVersion.BrandId = versionDeploy.BrandId;
+            deployVersion.ProgramId = versionDeploy.ProgramId;
+            deployVersion.ProgramVersion = versionDeploy?.ProgramVersion;
+            deployVersion.FileUrl = versionDeploy?.FileUrl;
+            deployVersion.AutoBackup = versionDeploy.AutoBackup;
         }
     }
 
@@ -190,15 +275,19 @@ else
                     allBrands.Load(reader);
                 }
 
-                cmd.CommandText = "select * from shop_data where Deleted=0 and IsShop=1";
+                cmd.CommandText = "select a.ShopID, a.BrandID, a.ShopName, case when b.ShopID is null then 0 else 1 end as Selected" +
+                        " from shop_data a left join " +
+                        " (select ShopID from Version_LiveUpdate group by ShopID) b" +
+                        " on a.ShopID=b.ShopID" +
+                        " where a.Deleted=0 and a.IsShop=1 and a.MasterShop = 0" ;
                 using (var reader = await DbContext.ExecuteReaderAsync(cmd))
                 {
                     allShops.Load(reader);
                 }
-
-                shops = allShops.AsEnumerable().Where(r => r.GetValue<int>("BrandID") == allBrands.AsEnumerable().FirstOrDefault()?.GetValue<int>("BrandID")).CopyToDataTable();
             }
         }
-        catch { }
+        catch(Exception ex)
+        {
+        }
     }
 }

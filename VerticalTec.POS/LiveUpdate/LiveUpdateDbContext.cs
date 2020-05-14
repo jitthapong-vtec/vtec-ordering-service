@@ -24,7 +24,6 @@ namespace VerticalTec.POS.LiveUpdate
                 @"CREATE TABLE Version_Deploy (
                BatchID VARCHAR(50) NOT NULL,
                BrandID INT NOT NULL,
-               ShopID INT NOT NULL,
                ProgramID SMALLINT NOT NULL,
                ProgramName VARCHAR(100) NOT NULL,
                ProgramVersion VARCHAR(20) NOT NULL,
@@ -60,7 +59,7 @@ namespace VerticalTec.POS.LiveUpdate
                DownloadFilePath VARCHAR(255) NULL,
                RevStartTime DATETIME NULL,
                RevEndTime DATETIME NULL,
-               BackupStatus TINYINT NOT NULL,
+               BackupStatus TINYINT NOT NULL DEFAULT '0',
                BackupFilePath VARCHAR(255) NULL,
                BackupStartTime DATETIME NULL,
                BackupEndTime DATETIME NULL,
@@ -74,7 +73,7 @@ namespace VerticalTec.POS.LiveUpdate
                MessageLog VARCHAR(2000) NULL,
                InsertDate DATETIME NOT NULL,
                UpdateDate DATETIME NOT NULL,
-               PRIMARY KEY(BatchID)
+               PRIMARY KEY(ShopID, ComputerID, ProgramID)
             );",
             @"CREATE TABLE Version_LiveUpdateLog (
                LogUUID VARCHAR(50) NOT NULL,
@@ -102,10 +101,9 @@ namespace VerticalTec.POS.LiveUpdate
             }
         }
 
-        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, string batchId, int shopId, int computerId, ProgramTypes types)
+        public async Task<VersionLiveUpdate> GetVersionLiveUpdate(IDbConnection conn, int shopId, int computerId, ProgramTypes types = ProgramTypes.Front)
         {
-            var cmd = _db.CreateCommand("select * from version_liveupdate where BatchID=@batchId and ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
-            cmd.Parameters.Add(_db.CreateParameter("@batchId", batchId));
+            var cmd = _db.CreateCommand("select * from version_liveupdate where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", computerId));
             cmd.Parameters.Add(_db.CreateParameter("@programId", (int)types));
@@ -173,7 +171,7 @@ namespace VerticalTec.POS.LiveUpdate
             return logs;
         }
 
-        public async Task<List<VersionDeploy>> GetVersionDeploy(IDbConnection conn, string batchId = "", int shopId = 0)
+        public async Task<List<VersionDeploy>> GetVersionDeploy(IDbConnection conn, string batchId = "")
         {
             var cmd = _db.CreateCommand(conn);
             cmd.CommandText = "select * from Version_Deploy where BatchStatus != 99";
@@ -182,11 +180,6 @@ namespace VerticalTec.POS.LiveUpdate
             {
                 cmd.CommandText += " and BatchID=@batchId";
                 cmd.Parameters.Add(_db.CreateParameter("@batchId", batchId));
-            }
-            if (shopId > 0)
-            {
-                cmd.CommandText += " and ShopID=@shopId";
-                cmd.Parameters.Add(_db.CreateParameter("@shopId", shopId));
             }
 
             List<VersionDeploy> versionsDeploy = new List<VersionDeploy>();
@@ -198,7 +191,6 @@ namespace VerticalTec.POS.LiveUpdate
                     {
                         BatchId = reader.GetValue<string>("BatchID"),
                         BrandId = reader.GetValue<int>("BrandID"),
-                        ShopId = reader.GetValue<int>("ShopID"),
                         ProgramId = (ProgramTypes)reader.GetValue<int>("ProgramID"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
@@ -273,7 +265,6 @@ namespace VerticalTec.POS.LiveUpdate
             var cmd = _db.CreateCommand("select count(BatchID) from Version_Deploy where BatchID=@batchId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@batchId", versionDeploy.BatchId));
             cmd.Parameters.Add(_db.CreateParameter("@brandId", versionDeploy.BrandId));
-            cmd.Parameters.Add(_db.CreateParameter("@shopId", versionDeploy.ShopId));
             cmd.Parameters.Add(_db.CreateParameter("@programId", versionDeploy.ProgramId));
             cmd.Parameters.Add(_db.CreateParameter("@programName", versionDeploy.ProgramName));
             cmd.Parameters.Add(_db.CreateParameter("@programVersion", versionDeploy.ProgramVersion));
@@ -292,14 +283,14 @@ namespace VerticalTec.POS.LiveUpdate
 
             if (isHaveRecord)
             {
-                cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ShopID=@shopId, ProgramID=@programId," +
+                cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ProgramID=@programId," +
                     "ProgramName=@programName, ProgramVersion=@programVersion, FileUrl=@fileUrl, BatchStatus=@batchStatus, AutoBackup=@autoBackup, ScheduleUpdate=@scheduleUpdate," +
                     "InsertDate=@insertDate, UpdateDate=@updateDate where BatchID=@batchId";
             }
             else
             {
-                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ShopID, ProgramID, ProgramName, ProgramVersion, FileUrl, BatchStatus, AutoBackup," +
-                    "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @shopId, @programId, @programName, @programVersion," +
+                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ProgramID, ProgramName, ProgramVersion, FileUrl, BatchStatus, AutoBackup," +
+                    "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @programId, @programName, @programVersion," +
                     "@fileUrl, @batchStatus, @autoBackup, @scheduleUpdate, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);

@@ -26,7 +26,7 @@
 else
 {
     <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
-        <DxDataGridColumn Width="40px" Caption="Deploy" TextAlignment="@DataGridTextAlign.Center">
+        <DxDataGridColumn Width="70px" Caption="Deploy" TextAlignment="@DataGridTextAlign.Center">
             <DisplayTemplate>
                 @{ 
                     var data = context as VersionDeploy;
@@ -105,7 +105,7 @@ else
 
     void EditVersion(VersionDeploy versionDeploy)
     {
-        NavigationManager.NavigateTo($"versionedit/{versionDeploy.BatchId}/{versionDeploy.BrandId}/{versionDeploy.ShopId}");
+        NavigationManager.NavigateTo($"versionedit/{versionDeploy.BatchId}/{versionDeploy.BrandId}");
     }
 
     async Task DeleteVersionAsync(VersionDeploy versionDeploy)

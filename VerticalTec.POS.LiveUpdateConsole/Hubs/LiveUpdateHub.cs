@@ -47,8 +47,10 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
         {
             using (var conn = await _db.ConnectAsync())
             {
-                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn, shopId: posSetting.ShopID);
-                await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionsDeploy);
+                var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn);
+                var versionDeploy = versionsDeploy.FirstOrDefault();
+                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, posSetting.ShopID, posSetting.ComputerID);
+                await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy, versionLiveUpdate);
             }
         }
 
@@ -65,7 +67,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
             return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
         }
 
-        public async Task ReceiveVersionInfo(VersionDeploy versionDeploy, VersionInfo versionInfo)
+        public async Task ReceiveVersionInfo(VersionInfo versionInfo)
         {
             try
             {
@@ -78,7 +80,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
 
                     await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
-                    await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionDeploy, versionInfo);
+                    await Clients.Client(Context.ConnectionId).ReceiveSyncVersion(versionInfo);
                     await _consoleHub.Clients.All.ClientUpdateInfo(versionInfo);
                 }
             }

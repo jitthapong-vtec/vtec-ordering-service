@@ -24,14 +24,14 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
                 await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo, connectionId);
         }
 
-        public async Task SendDownloadFileCommand(string connectionId, string batchId)
+        public async Task SendDownloadFileCommand(string connectionId)
         {
-            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.DownloadFile, batchId);
+            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.DownloadFile);
         }
 
-        public async Task SendBackupCommand(string connectionId, string batchId)
+        public async Task SendBackupCommand(string connectionId)
         {
-            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.BackupFile, batchId);
+            await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.BackupFile);
         }
     }
 }

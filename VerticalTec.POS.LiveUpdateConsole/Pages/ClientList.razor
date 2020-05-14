@@ -46,7 +46,7 @@ else
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
-                    <div style="overflow-wrap:normal; width:200px;font-size:small;">
+                    <div style="overflow:hidden; line-height:1.5em; width:200px;font-size:small;">
                         @client.ProcessMessage
                     </div>
                 }
@@ -143,14 +143,9 @@ else
     {
         using (var conn = await DbContext.ConnectAsync())
         {
-            var versionDeploys = await LiveupdateContext.GetVersionDeploy(conn, shopId: client.ShopId);
-            var versionDeploy = versionDeploys.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
-            if (versionDeploy != null)
-            {
-                await connection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId, versionDeploy.BatchId);
-                client.CanExecute = false;
-                await gridRef.Refresh();
-            }
+            await connection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId);
+            client.CanExecute = false;
+            await gridRef.Refresh();
         }
     }
 
@@ -158,14 +153,9 @@ else
     {
         using (var conn = await DbContext.ConnectAsync())
         {
-            var versionDeploys = await LiveupdateContext.GetVersionDeploy(conn, shopId: client.ShopId);
-            var versionDeploy = versionDeploys.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
-            if (versionDeploy != null)
-            {
-                await connection.InvokeAsync("SendBackupCommand", client.ConnectionId, versionDeploy.BatchId);
-                client.CanExecute = false;
-                await gridRef.Refresh();
-            }
+            await connection.InvokeAsync("SendBackupCommand", client.ConnectionId);
+            client.CanExecute = false;
+            await gridRef.Refresh();
         }
     }
 
@@ -174,7 +164,9 @@ else
         try
         {
             var client = clients.Where(c => c.ShopId == versionInfo.ShopId && c.ComputerId == versionInfo.ComputerId).FirstOrDefault();
-            clients[clients.IndexOf(client)] = versionInfo;
+            client.IsOnline = versionInfo.IsOnline;
+            client.ProgramVersion = versionInfo.ProgramVersion;
+            clients[clients.IndexOf(client)] = client;
             await gridRef.Refresh();
         }
         catch

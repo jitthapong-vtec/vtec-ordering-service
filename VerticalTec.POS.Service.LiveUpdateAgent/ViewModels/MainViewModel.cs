@@ -32,7 +32,6 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
         POSDataSetting _posSetting;
         VtecPOSEnv _posEnv;
 
-        VersionDeploy _lastDeploy;
         VersionLiveUpdate _versionLiveUpdate;
 
         bool _isBusy;
@@ -180,15 +179,8 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 {
                     using (var conn = await _db.ConnectAsync())
                     {
-                        _lastDeploy.BatchStatus = VersionDeployBatchStatus.Done;
-                        _lastDeploy.UpdateDate = DateTime.Now;
-                        await _liveUpdateContext.AddOrUpdateVersionDeploy(conn, _lastDeploy);
-
-                        try
-                        {
-                            await _hubConnection?.InvokeAsync("UpdateVersionDeploy", _lastDeploy);
-                        }
-                        catch { }
+                        _versionLiveUpdate.UpdateStatus = 2;
+                        await _liveUpdateContext.AddOrUpdateVersionLiveUpdate(conn, _versionLiveUpdate);
                     }
 
                     ButtonText = "Done!";
@@ -268,39 +260,30 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 //UpdateInfoMessage("Collecting version information...");
                 using (var conn = await _db.ConnectAsync())
                 {
-                    var versionDeploys = await _liveUpdateContext.GetVersionDeploy(conn, shopId: _posSetting.ShopID);
-                    _lastDeploy = versionDeploys.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).OrderByDescending(v => v.UpdateDate).FirstOrDefault();
-                    if (_lastDeploy != null)
+                    _versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, _posSetting.ShopID, _posSetting.ComputerID, ProgramTypes.Front);
+                    if (_versionLiveUpdate != null)
                     {
-                        _versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, _lastDeploy.BatchId, _lastDeploy.ShopId, _posSetting.ComputerID, ProgramTypes.Front);
-                        if (_versionLiveUpdate != null)
+                        var newVersionAvailable = _versionLiveUpdate.ReadyToUpdate == 1;
+
+                        if (newVersionAvailable)
                         {
-                            var newVersionAvailable = _versionLiveUpdate.ReadyToUpdate == 1;
+                            UpdateButtonEnable = newVersionAvailable;
+                            UpdateVersion = _versionLiveUpdate.UpdateVersion;
 
-                            if (newVersionAvailable)
-                            {
-                                UpdateButtonEnable = newVersionAvailable;
-                                UpdateVersion = _versionLiveUpdate.UpdateVersion;
-
-                                UpdateInfoMessage($"New version {UpdateVersion} available");
-                            }
-                            else
-                            {
-                                UpdateInfoMessage($"No update available");
-                                UpdateVersion = "-";
-                            }
-
-                            var versionInfo = await _liveUpdateContext.GetVersionInfo(conn, _lastDeploy.ShopId, _posSetting.ComputerID, ProgramTypes.Front);
-                            CurrentVersion = versionInfo.FirstOrDefault()?.ProgramVersion;
+                            UpdateInfoMessage($"New version {UpdateVersion} available");
                         }
                         else
                         {
-                            UpdateInfoMessage("Not found version information!");
+                            UpdateInfoMessage($"No update available");
+                            UpdateVersion = "-";
                         }
+
+                        var versionInfo = await _liveUpdateContext.GetVersionInfo(conn, _posSetting.ShopID, _posSetting.ComputerID, ProgramTypes.Front);
+                        CurrentVersion = versionInfo.FirstOrDefault()?.ProgramVersion;
                     }
                     else
                     {
-                        UpdateInfoMessage("No version deploy!");
+                        UpdateInfoMessage("Not found version information!");
                     }
                 }
             }

@@ -9,9 +9,9 @@ namespace VerticalTec.POS.LiveUpdate
     {
         Task ReceiveConnectionEstablished();
 
-        Task ReceiveVersionDeploy(List<VersionDeploy> versionsDeploy);
+        Task ReceiveVersionDeploy(VersionDeploy versionDeploy, VersionLiveUpdate versionLiveUpdates);
 
-        Task ReceiveSyncVersion(VersionDeploy versionDeploy, VersionInfo versionInfo);
+        Task ReceiveSyncVersion(VersionInfo versionInfo);
 
         Task ReceiveSyncUpdateVersionState(VersionLiveUpdate state);
 
