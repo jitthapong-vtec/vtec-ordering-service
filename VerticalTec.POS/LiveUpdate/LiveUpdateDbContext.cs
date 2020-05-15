@@ -459,5 +459,11 @@ namespace VerticalTec.POS.LiveUpdate
             }
             return fileVersion;
         }
+
+        public async Task<VersionDeploy> GetActiveVersionDeploy(IDbConnection conn)
+        {
+            var versionsDeploy = await GetVersionDeploy(conn);
+            return versionsDeploy.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
+        }
     }
 }

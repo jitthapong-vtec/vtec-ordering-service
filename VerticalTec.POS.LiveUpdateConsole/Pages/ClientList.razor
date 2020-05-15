@@ -2,16 +2,13 @@
 @using VerticalTec.POS.LiveUpdate
 @using Microsoft.AspNetCore.SignalR.Client
 @using VerticalTec.POS.Database
+@using VerticalTec.POS.LiveUpdateConsole.Services
+@using VerticalTec.POS.LiveUpdateConsole.Models
 
 @inject IDatabase DbContext
 @inject LiveUpdateDbContext LiveupdateContext
 @inject NavigationManager NavigationManager
-
-<div class="form-row">
-    <div class="form-group col-md-6">
-        <h3>Connected clients</h3>
-    </div>
-</div>
+@inject RepoService RepoService
 
 @if (clients == null)
 {
@@ -19,6 +16,28 @@
 }
 else
 {
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <h3>Connected clients</h3>
+            <div class="col-md-6">
+                <label>Brands</label>
+                <select class="form-control" @onchange="@OnBrandChanged">
+                    @foreach (var brand in brands)
+                    {
+                        @if (brand.BrandId == selectedBrandId)
+                        {
+                            <option selected value="@brand.BrandId">@brand.BrandName</option>
+                        }
+                        else
+                        {
+                            <option value="@brand.BrandId">@brand.BrandName</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
     <DxDataGrid Data="@clients" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
         <DxDataGridColumn Caption="Online" TextAlignment="@DataGridTextAlign.Center">
             <DisplayTemplate>
@@ -79,8 +98,14 @@ else
 
     List<VersionInfo> clients;
 
+    List<BrandData> brands = new List<BrandData>();
+    List<ShopData> shops = new List<ShopData>();
+
+    int selectedBrandId;
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadBrandAsync();
         await LoadClient();
     }
 
@@ -113,11 +138,26 @@ else
         }
     }
 
+    async Task LoadBrandAsync()
+    {
+        brands = await RepoService.GetBrandAsync();
+        selectedBrandId = brands.FirstOrDefault().BrandId;
+        shops = await RepoService.GetShopAsync(selectedBrandId);
+    }
+
+    async Task OnBrandChanged(ChangeEventArgs e)
+    {
+        selectedBrandId = Convert.ToInt32(e.Value);
+        await LoadClient();
+    }
+
     async Task LoadClient()
     {
         using (var conn = await DbContext.ConnectAsync())
         {
             clients = await LiveupdateContext.GetVersionInfo(conn);
+            var shopIds = shops.Select(s => s.ShopId).ToArray();
+            clients = clients.Where(c => shopIds.Contains(c.ShopId)).ToList();
         }
     }
 

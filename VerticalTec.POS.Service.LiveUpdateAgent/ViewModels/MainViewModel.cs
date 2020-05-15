@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR.Client;
-using Prism.Commands;
+﻿using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
 using Prism.Regions;
@@ -25,8 +24,6 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
         IEventAggregator _eventAggregator;
         IDatabase _db;
         IDialogService _dialogService;
-
-        HubConnection _hubConnection;
 
         LiveUpdateDbContext _liveUpdateContext;
         POSDataSetting _posSetting;
@@ -203,53 +200,6 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
         public async void OnNavigatedTo(NavigationContext navigationContext)
         {
             await GetVersionInfoAsync();
-            await InitHubConnection();
-        }
-
-        async Task InitHubConnection()
-        {
-            try
-            {
-                using (var conn = await _db.ConnectAsync())
-                {
-                    var posRepo = new VtecPOSRepo(_db);
-                    var liveUpdateServer = await posRepo.GetPropertyValueAsync(conn, 1050, "LiveUpdateServer");
-                    if (!string.IsNullOrEmpty(liveUpdateServer))
-                    {
-                        if (!liveUpdateServer.EndsWith("/"))
-                            liveUpdateServer += "/";
-                        liveUpdateServer += "liveupdate";
-                        _hubConnection = new HubConnectionBuilder()
-                            .WithUrl(liveUpdateServer)
-                            .WithAutomaticReconnect()
-                            .Build();
-                        _hubConnection.Closed += Closed;
-                        await StartHubConnection();
-                    }
-                }
-            }
-            catch { }
-        }
-
-        async Task StartHubConnection(CancellationToken cancellationToken = default)
-        {
-            while (true)
-            {
-                try
-                {
-                    await _hubConnection.StartAsync(cancellationToken);
-                    break;
-                }
-                catch
-                {
-                    await Task.Delay(1000);
-                }
-            }
-        }
-
-        private Task Closed(Exception arg)
-        {
-            return StartHubConnection();
         }
 
         private async Task GetVersionInfoAsync()
@@ -260,7 +210,8 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 //UpdateInfoMessage("Collecting version information...");
                 using (var conn = await _db.ConnectAsync())
                 {
-                    _versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, _posSetting.ShopID, _posSetting.ComputerID, ProgramTypes.Front);
+                    var versionDeploy = await _liveUpdateContext.GetActiveVersionDeploy(conn);
+                    _versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, versionDeploy.BatchId, _posSetting.ShopID, _posSetting.ComputerID, ProgramTypes.Front);
                     if (_versionLiveUpdate != null)
                     {
                         var newVersionAvailable = _versionLiveUpdate.ReadyToUpdate == 1;

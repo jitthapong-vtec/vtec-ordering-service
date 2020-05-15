@@ -1,0 +1,91 @@
+﻿using Microsoft.AspNetCore.SignalR.Client;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace VerticalTec.POS.Service.LiveUpdate
+{
+    public class ClientConnectionService : IClientConnectionService
+    {
+        static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
+
+        public HubConnection HubConnection { get; private set; }
+
+        public void InitConnection(string hubUrl)
+        {
+            HubConnection = new HubConnectionBuilder()
+                   .WithUrl(hubUrl)
+                   .WithAutomaticReconnect()
+                   .Build();
+            HubConnection.Reconnecting += Reconnecting;
+            HubConnection.Reconnected += Reconnected;
+            HubConnection.Closed += Closed;
+        }
+
+        private Task Closed(Exception arg)
+        {
+            _logger.LogInfo($"Try reconnecting...{arg}");
+            return Task.FromResult(true);
+        }
+
+        private Task Reconnected(string arg)
+        {
+            _logger.LogInfo($"Successfully reconnected {arg}");
+            return Task.FromResult(true);
+        }
+
+        private Task Reconnecting(Exception arg)
+        {
+            _logger.LogInfo($"Try reconnecting...{arg}");
+            return Task.FromResult(true);
+        }
+
+        public void Subscribe(string methodName, Func<Task> handler)
+        {
+            HubConnection.On(methodName, handler);
+        }
+
+        public void Subscribe<T1>(string methodName, Func<T1, Task> handler)
+        {
+            HubConnection.On(methodName, handler);
+        }
+
+        public void Subscribe<T1, T2>(string methodName, Func<T1, T2, Task> handler)
+        {
+            HubConnection.On(methodName, handler);
+        }
+
+        public async Task StartConnectionAsync(CancellationToken token = default)
+        {
+            while (true)
+            {
+                try
+                {
+                    _logger.LogInfo("Connect to live update server...");
+
+                    await HubConnection.StartAsync(token);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Could not connect to live update server! {ex.Message}");
+                    await Task.Delay(1000);
+                }
+            }
+        }
+
+        public Task StopConnectionAsync(CancellationToken token = default)
+        {
+            try
+            {
+                return HubConnection.DisposeAsync();
+            }
+            catch
+            {
+                return Task.FromResult(true);
+            }
+        }
+    }
+}

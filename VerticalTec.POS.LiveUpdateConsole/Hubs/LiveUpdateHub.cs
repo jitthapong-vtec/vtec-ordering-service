@@ -47,8 +47,20 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
         {
             using (var conn = await _db.ConnectAsync())
             {
+                var brandId = 0;
+                var cmd = _db.CreateCommand(conn);
+                cmd.CommandText = "select BrandID from shop_data where ShopID=@shopId";
+                cmd.Parameters.Add(_db.CreateParameter("@shopId", posSetting.ShopID));
+                using(var reader = await _db.ExecuteReaderAsync(cmd))
+                {
+                    if (reader.Read())
+                    {
+                        brandId = reader.GetValue<int>("BrandID");
+                    }
+                }
+
                 var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn);
-                var versionDeploy = versionsDeploy.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
+                var versionDeploy = versionsDeploy.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived && v.BrandId == brandId).FirstOrDefault();
                 VersionLiveUpdate versionLiveUpdate = null;
                 if (versionDeploy != null)
                     versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
@@ -63,11 +75,6 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
             {
                 await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
             }
-        }
-
-        public Task ClientReceivedVersionDeploy()
-        {
-            return Clients.Client(Context.ConnectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
         }
 
         public async Task ReceiveVersionInfo(VersionInfo versionInfo)
@@ -99,10 +106,13 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
             {
                 using (var conn = await _db.ConnectAsync())
                 {
-                    updateState.SyncStatus = 1;
-                    updateState.UpdateDate = DateTime.Now;
+                    if (updateState != null)
+                    {
+                        updateState.SyncStatus = 1;
+                        updateState.UpdateDate = DateTime.Now;
 
-                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
+                    }
 
                     await Clients.Client(Context.ConnectionId).ReceiveSyncUpdateVersionState(updateState);
                     await _consoleHub.Clients.All.ClientUpdateVersionState(updateState);

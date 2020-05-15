@@ -1,18 +1,39 @@
 ﻿@page "/"
 @page "/versions"
+@attribute [Authorize]
 
 @using VerticalTec.POS.LiveUpdate
 @using VerticalTec.POS.Database
+@using VerticalTec.POS.LiveUpdateConsole.Services
+@using VerticalTec.POS.LiveUpdateConsole.Models
 @using CurrieTechnologies.Razor.SweetAlert2
+@using System.Data;
 
 @inject SweetAlertService Swal
 @inject IDatabase DbContext
 @inject LiveUpdateDbContext LiveupdateContext
 @inject NavigationManager NavigationManager
+@inject RepoService RepoService;
 
 <div class="form-row">
     <div class="form-group col-md-6">
         <h3>Versions</h3>
+        <div class="col-md-6">
+            <label>Brands</label>
+            <select class="form-control" @onchange="@OnBrandChanged">
+                @foreach (var brand in brands)
+                {
+                @if (brand.BrandId == selectedBrandId)
+                    {
+                <option selected value="@brand.BrandId">@brand.BrandName</option>
+                    }
+                    else
+                    {
+                <option value="@brand.BrandId">@brand.BrandName</option>
+                    }
+                }
+            </select>
+        </div>
     </div>
     <div class="form-group col-md-6 text-right">
         <button class="btn btn-light btn-sm" @onclick="@(() => CreateVersion())"><i class="oi oi-plus"></i> สร้างเวอร์ชั่น</button>
@@ -21,63 +42,79 @@
 
 @if (versionDeploys == null)
 {
-    <p><em>Loading...</em></p>
+<p><em>Loading...</em></p>
 }
 else
 {
-    <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
-        <DxDataGridColumn Width="70px" Caption="Deploy" TextAlignment="@DataGridTextAlign.Center">
-            <DisplayTemplate>
-                @{ 
+<DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
+    <DxDataGridColumn Width="70px" Caption="Deploy" TextAlignment="@DataGridTextAlign.Center">
+        <DisplayTemplate>
+            @{
                     var data = context as VersionDeploy;
-                    <input type="checkbox" @onclick="(async() => await OnDeployCheckAsync(data))" checked="@(data.BatchStatus == VersionDeployBatchStatus.Actived)"/>
-                }
-            </DisplayTemplate>
-        </DxDataGridColumn>
-        <DxDataGridColumn Caption="Name" Field="@nameof(VersionDeploy.ProgramName)" />
-        <DxDataGridColumn Caption="Version" Field="@nameof(VersionDeploy.ProgramVersion)" />
-        <DxDataGridColumn Width="40px">
-            <DisplayTemplate>
-                @{
+                <input type="checkbox" @onclick="(async() => await OnDeployCheckAsync(data))" checked="@(data.BatchStatus == VersionDeployBatchStatus.Actived)" />
+            }
+        </DisplayTemplate>
+    </DxDataGridColumn>
+    <DxDataGridColumn Caption="Name" Field="@nameof(VersionDeploy.ProgramName)" />
+    <DxDataGridColumn Caption="Version" Field="@nameof(VersionDeploy.ProgramVersion)" />
+    <DxDataGridColumn Width="40px">
+        <DisplayTemplate>
+            @{
                     var data = context as VersionDeploy;
-                    <button class="btn btn-light btn-sm" @onclick="(()=>EditVersion(data))"><i class="oi oi-pencil"></i></button>
-                }
-            </DisplayTemplate>
-        </DxDataGridColumn>
-        <DxDataGridColumn Width="40px">
-            <DisplayTemplate>
-                @{
+                <button class="btn btn-light btn-sm" @onclick="(()=>EditVersion(data))"><i class="oi oi-pencil"></i></button>
+            }
+        </DisplayTemplate>
+    </DxDataGridColumn>
+    <DxDataGridColumn Width="40px">
+        <DisplayTemplate>
+            @{
                     var data = context as VersionDeploy;
-                    <button class="btn btn-light btn-sm" @onclick="@(async () => await DeleteVersionAsync(data))"><i class="oi oi-trash"></i></button>
-                }
-            </DisplayTemplate>
-        </DxDataGridColumn>
-    </DxDataGrid>
+                <button class="btn btn-light btn-sm" @onclick="@(async () => await DeleteVersionAsync(data))"><i class="oi oi-trash"></i></button>
+            }
+        </DisplayTemplate>
+    </DxDataGridColumn>
+</DxDataGrid>
 }
 
 @code {
     DxDataGrid<VersionDeploy> gridRef;
+    List<BrandData> brands = new List<BrandData>();
 
+    int selectedBrandId;
     List<VersionDeploy> versionDeploys;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadBrandAsync();
         await LoadVersionDeployAsync();
     }
+
+    async Task OnBrandChanged(ChangeEventArgs e)
+    {
+        selectedBrandId = Convert.ToInt32(e.Value);
+        await LoadVersionDeployAsync();
+    }
+
 
     async Task LoadVersionDeployAsync()
     {
         using (var conn = await DbContext.ConnectAsync())
         {
             versionDeploys = await LiveupdateContext.GetVersionDeploy(conn);
-            var filter = new VersionDeployBatchStatus[]{ VersionDeployBatchStatus.InActivate, VersionDeployBatchStatus.Actived};
-            versionDeploys = versionDeploys.Where(v => filter.Contains(v.BatchStatus)).ToList();
+            var filter = new VersionDeployBatchStatus[] { VersionDeployBatchStatus.InActivate, VersionDeployBatchStatus.Actived };
+            versionDeploys = versionDeploys.Where(v => v.BrandId == selectedBrandId && filter.Contains(v.BatchStatus)).ToList();
         }
     }
 
     void CreateVersion()
     {
         NavigationManager.NavigateTo("versionedit");
+    }
+
+    async Task LoadBrandAsync()
+    {
+        brands = await RepoService.GetBrandAsync();
+        selectedBrandId = brands.FirstOrDefault().BrandId;
     }
 
     async Task OnDeployCheckAsync(VersionDeploy versionDeploy)
@@ -88,13 +125,14 @@ else
         else if (batchStatus == VersionDeployBatchStatus.InActivate)
             batchStatus = VersionDeployBatchStatus.Actived;
 
-        using(var conn = await DbContext.ConnectAsync())
+        using (var conn = await DbContext.ConnectAsync())
         {
             var cmd = DbContext.CreateCommand(conn);
-            cmd.CommandText = "update Version_Deploy set BatchStatus=0 where BatchStatus not in(2,99)";
+            cmd.CommandText = "update Version_Deploy set BatchStatus=0 where BrandID=@brandId and BatchStatus not in(2,99)";
+            cmd.Parameters.Add(DbContext.CreateParameter("@brandId", selectedBrandId));
             await DbContext.ExecuteNonQueryAsync(cmd);
 
-            cmd.CommandText = "update Version_Deploy set BatchStatus=@batchStatus where BatchID=@batchId";
+            cmd.CommandText = "update Version_Deploy set BatchStatus=@batchStatus where BrandID=@brandId and BatchID=@batchId";
             cmd.Parameters.Add(DbContext.CreateParameter("@batchStatus", batchStatus));
             cmd.Parameters.Add(DbContext.CreateParameter("@batchId", versionDeploy.BatchId));
             await DbContext.ExecuteNonQueryAsync(cmd);
@@ -121,7 +159,7 @@ else
 
         if (!string.IsNullOrEmpty(result.Value))
         {
-            using(var conn = await DbContext.ConnectAsync())
+            using (var conn = await DbContext.ConnectAsync())
             {
                 var cmd = DbContext.CreateCommand(conn);
                 cmd.CommandText = "delete from Version_Deploy where BatchID=@batchId";

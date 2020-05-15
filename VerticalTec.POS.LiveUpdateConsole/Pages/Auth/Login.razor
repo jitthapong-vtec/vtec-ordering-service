@@ -1,0 +1,83 @@
+﻿@page "/Login"
+@layout LoginLayout
+
+@using VerticalTec.POS.Database
+@using VerticalTec.POS.LiveUpdateConsole.Models
+@using VerticalTec.POS.LiveUpdateConsole.Extensions
+@using CurrieTechnologies.Razor.SweetAlert2
+
+@inject NavigationManager navigation
+@inject SweetAlertService Swal
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IDatabase Db
+
+<EditForm Model="@login" OnValidSubmit="@(async() => await DoLogin())">
+    <DataAnnotationsValidator />
+    <p>
+        <h3>Login</h3>
+    </p>
+    <p class="col-12 row">
+        <label for="username">User name</label>
+        <input type="text" id="username" class="form-control" @bind="login.UserName" />
+    </p>
+    <p class="col-12 row">
+        <label for="password">Password</label>
+        <input type="password" id="password" class="form-control" @bind="login.Password" />
+    </p>
+    <p class="col-12 row">
+        <button type="submit" class="btn btn-primary">Login</button>
+    </p>
+    <p>
+        &nbsp; <ValidationSummary />
+    </p>
+</EditForm>
+
+@code{
+    LoginData login = new LoginData();
+
+    protected override void OnInitialized()
+    {
+        login.UserName = "";
+        login.Password = "";
+        base.OnInitialized();
+    }
+
+    async Task DoLogin()
+    {
+        try
+        {
+            using (var conn = await Db.ConnectAsync())
+            {
+                var cmd = Db.CreateCommand(conn);
+                cmd.CommandText = "select StaffID, StaffRoleID, StaffLogin from staffs where StaffRoleID=2 and Deleted=0 " +
+                        " and StaffLogin=@username and StaffPassword=@password";
+                cmd.Parameters.Add(Db.CreateParameter("@username", login.UserName));
+                cmd.Parameters.Add(Db.CreateParameter("@password", login.Password.ToSha1()));
+
+                using (var reader = await Db.ExecuteReaderAsync(cmd))
+                {
+                    if (reader.Read())
+                    {
+                        login.StaffId = reader.GetValue<int>("StaffID");
+                        login.StaffRoleId = reader.GetValue<int>("StaffRoleID");
+                        login.StaffFirstName = reader.GetValue<string>("StaffFirstName");
+                        login.StaffLastName = reader.GetValue<string>("StaffLastName");
+
+                        await sessionStorage.SetItemAsync("LoginData", login);
+                        ((AuthenStateProvider)AuthenticationStateProvider).MarkUserAsAuthenticated(login);
+                        navigation.NavigateTo("versions", true);
+                    }
+                    else
+                    {
+                        await Swal.FireAsync("", "ข้อมูลผู้ใช้งานระบบไม่ถูกต้อง", "error");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync("", ex.Message, "error");
+        }
+    }
+}

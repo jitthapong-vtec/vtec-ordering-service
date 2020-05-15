@@ -1,10 +1,18 @@
 ﻿@inherits LayoutComponentBase
+@using VerticalTec.POS.LiveUpdateConsole.Pages.Auth
 
-<div class="sidebar">
-    <NavMenu />
-</div>
-<div class="main">
-    <div class="content px-4">
-        @Body
-    </div>
-</div>
+<AuthorizeView>
+    <Authorized>
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+        <div class="main">
+            <div class="content px-4">
+                @Body
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <DirectToLogin/>
+    </NotAuthorized>
+</AuthorizeView>

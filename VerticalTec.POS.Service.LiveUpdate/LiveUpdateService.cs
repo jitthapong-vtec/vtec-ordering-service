@@ -23,16 +23,17 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
         IDatabase _db;
         IConfiguration _config;
-        HubConnection _hubConnection;
+        IClientConnectionService _connectionService;
         LiveUpdateDbContext _liveUpdateCtx;
         FrontConfigManager _frontConfigManager;
         VtecPOSEnv _vtecEnv;
 
-        public LiveUpdateService(IDatabase db, IConfiguration config, LiveUpdateDbContext liveUpdateCtx,
-            FrontConfigManager frontConfigManager, VtecPOSEnv posEnv)
+        public LiveUpdateService(IDatabase db, IConfiguration config, IClientConnectionService clientConnectionService,
+            LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager, VtecPOSEnv posEnv)
         {
             _db = db;
             _config = config;
+            _connectionService = clientConnectionService;
             _liveUpdateCtx = liveUpdateCtx;
             _frontConfigManager = frontConfigManager;
 
@@ -137,68 +138,22 @@ namespace VerticalTec.POS.Service.LiveUpdate
         {
             _logger.LogInfo($"Initialize connection to live update server {liveUpdateServer}");
 
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl(liveUpdateServer)
-                .WithAutomaticReconnect()
-                .Build();
-            _hubConnection.Reconnecting += Reconnecting;
-            _hubConnection.Reconnected += Reconnected;
-            _hubConnection.Closed += Closed;
-
-            _hubConnection.On("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
-            _hubConnection.On<VersionDeploy, VersionLiveUpdate>("ReceiveVersionDeploy", ReceiveVersionDeploy);
-            _hubConnection.On<VersionInfo>("ReceiveSyncVersion", ReceiveSyncVersion);
-            _hubConnection.On<VersionLiveUpdate>("ReceiveSyncUpdateVersionState", ReceiveSyncUpdateVersionState);
-            _hubConnection.On<LiveUpdateCommands, object>("ReceiveCmd", ReceiveCmd);
+            _connectionService.InitConnection(liveUpdateServer);
+            //_connectionService.Subscribe("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
+            _connectionService.Subscribe<VersionDeploy, VersionLiveUpdate>("ReceiveVersionDeploy", ReceiveVersionDeploy);
+            _connectionService.Subscribe<VersionInfo>("ReceiveSyncVersion", ReceiveSyncVersion);
+            _connectionService.Subscribe<VersionLiveUpdate>("ReceiveSyncUpdateVersionState", ReceiveSyncUpdateVersionState);
+            _connectionService.Subscribe<LiveUpdateCommands, object>("ReceiveCmd", ReceiveCmd);
         }
 
         async Task StartHubConnection(CancellationToken cancellationToken = default)
         {
-            while (true)
-            {
-                try
-                {
-                    _logger.LogInfo("Connect to live update server...");
-
-                    await _hubConnection.StartAsync(cancellationToken);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Could not connect to live update server! {ex.Message}");
-                    await Task.Delay(1000);
-                }
-            }
+            await _connectionService.StartConnectionAsync(cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                return _hubConnection.DisposeAsync();
-            }
-            catch
-            {
-                return Task.FromResult(true);
-            }
-        }
-
-        private async Task Closed(Exception arg)
-        {
-            _logger.LogInfo($"Connecting closed {arg}");
-            await StartHubConnection();
-        }
-
-        private Task Reconnected(string arg)
-        {
-            _logger.LogInfo($"Successfully reconnected {arg}");
-            return Task.FromResult(true);
-        }
-
-        private Task Reconnecting(Exception arg)
-        {
-            _logger.LogInfo($"Try reconnecting...{arg}");
-            return Task.FromResult(true);
+            return _connectionService.StopConnectionAsync(cancellationToken);
         }
 
         public Task ReceiveConnectionEstablished()
@@ -206,7 +161,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
             _logger.LogInfo($"Yeh! Successfully connected to live update server");
             var posSetting = _frontConfigManager.POSDataSetting;
             // Told server to send version deploy info
-            return _hubConnection.InvokeAsync("SendVersionDeploy", posSetting);
+            return _connectionService.HubConnection.InvokeAsync("SendVersionDeploy", posSetting);
         }
 
         public async Task ReceiveVersionDeploy(VersionDeploy versionDeploy, VersionLiveUpdate versionLiveUpdate)
@@ -228,6 +183,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     if (versionLiveUpdate != null)
                     {
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
+                        await SendVersionInfo();
                     }
                     else
                     {
@@ -239,9 +195,6 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 {
                     _logger.LogError("ReceiveVersionDeploy", ex);
                 }
-                // Told server whether already received version deploy info
-                // after server received version deploy info, it will send some cmd to client for send back current version info to it 
-                await _hubConnection.InvokeAsync("ClientReceivedVersionDeploy");
             }
         }
 
@@ -249,13 +202,12 @@ namespace VerticalTec.POS.Service.LiveUpdate
         {
             using (var conn = await _db.ConnectAsync())
             {
-                var versionDeploy = await GetActiveVersionDeploy(conn);
-                if (versionDeploy == null)
-                    return;
+                var versionDeploy = await _liveUpdateCtx.GetActiveVersionDeploy(conn);
 
                 var posSetting = _frontConfigManager.POSDataSetting;
-                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
-                var fileName = versionLiveUpdate.ProgramId == ProgramTypes.Front ? "vTec-ResPOS.exe" : "";
+                var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy?.BatchId, posSetting.ShopID, posSetting.ComputerID);
+
+                var fileName = "vTec-ResPOS.exe";
                 var fileVersion = await _liveUpdateCtx.GetFileVersion(conn, posSetting.ShopID, posSetting.ComputerID, fileName);
                 var lastVersion = "0";
                 if (fileVersion != null)
@@ -275,8 +227,8 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     {
                         ShopId = posSetting.ShopID,
                         ComputerId = posSetting.ComputerID,
-                        ProgramName = versionLiveUpdate.ProgramName,
-                        ProgramId = versionLiveUpdate.ProgramId,
+                        ProgramName = versionLiveUpdate?.ProgramName ?? "vTec-ResPOS",
+                        ProgramId = versionLiveUpdate?.ProgramId ?? ProgramTypes.Front,
                         InsertDate = DateTime.Now,
                         UpdateDate = DateTime.Now
                     };
@@ -286,7 +238,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
                 // Told server to update client version info
-                await _hubConnection.InvokeAsync("ReceiveVersionInfo", versionInfo);
+                await _connectionService.HubConnection.InvokeAsync("ReceiveVersionInfo", versionInfo);
             }
         }
 
@@ -296,21 +248,20 @@ namespace VerticalTec.POS.Service.LiveUpdate
             {
                 await _liveUpdateCtx.AddOrUpdateVersionInfo(conn, versionInfo);
 
-                var versionDeploy = await GetActiveVersionDeploy(conn);
+                var versionDeploy = await _liveUpdateCtx.GetActiveVersionDeploy(conn);
                 if (versionDeploy == null)
                     return;
 
                 var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, versionInfo.ShopId, versionInfo.ComputerId);
-
-                if (versionLiveUpdate.FileReceiveStatus == FileReceiveStatus.NoReceivedFile)
-                    await DownloadFile();
-                else
-                    await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", versionLiveUpdate);
+                await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", versionLiveUpdate);
             }
         }
 
         public async Task ReceiveSyncUpdateVersionState(VersionLiveUpdate versionLiveUpdate)
         {
+            if (versionLiveUpdate == null)
+                return;
+
             using (var conn = await _db.ConnectAsync())
             {
                 await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
@@ -339,11 +290,14 @@ namespace VerticalTec.POS.Service.LiveUpdate
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
 
-                var versionDeploy = await GetActiveVersionDeploy(conn);
+                var versionDeploy = await _liveUpdateCtx.GetActiveVersionDeploy(conn);
                 if (versionDeploy == null)
                     return;
 
                 var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
+                var downloadState = updateState.FileReceiveStatus;
+                if (downloadState == FileReceiveStatus.Downloading)
+                    return;
 
                 var downloadService = new DownloadService(_config.GetValue<string>("GoogleDriveApiKey"));
                 var updateStateLog = new VersionLiveUpdateLog()
@@ -367,7 +321,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     updateStateLog.LogMessage = stepLog;
                     updateStateLog.ActionStatus = 1;
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
-                    await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
+                    await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
 
                     var fileId = UrlParameterExtensions.GetValue(versionDeploy.FileUrl, "id");
                     var result = await downloadService.DownloadFile(fileId, _vtecEnv.PatchDownloadPath);
@@ -387,7 +341,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         updateStateLog.EndTime = DateTime.Now;
                         updateStateLog.ActionStatus = 2;
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
-                        await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
+                        await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
 
                         if (versionDeploy.AutoBackup)
                             await BackupFile();
@@ -407,7 +361,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         updateStateLog.ActionStatus = 99;
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
 
-                        await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
+                        await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
                     }
                 }
                 catch (Exception ex)
@@ -423,7 +377,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     updateStateLog.ActionStatus = 99;
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
 
-                    await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
+                    await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
 
                     _logger.LogError("Download file", ex);
                 }
@@ -436,11 +390,13 @@ namespace VerticalTec.POS.Service.LiveUpdate
             {
                 var posSetting = _frontConfigManager.POSDataSetting;
 
-                var versionDeploy = await GetActiveVersionDeploy(conn);
+                var versionDeploy = await _liveUpdateCtx.GetActiveVersionDeploy(conn);
                 if (versionDeploy == null)
                     return;
 
                 var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
+                if (state.BackupStatus == BackupStatus.BackingUp)
+                    return;
 
                 var stateLog = new VersionLiveUpdateLog()
                 {
@@ -470,7 +426,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, state);
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
-                    await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", state);
+                    await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", state);
 
                     if (File.Exists(backupFileName))
                         File.Delete(backupFileName);
@@ -492,7 +448,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     stateLog.ActionStatus = 2;
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
 
-                    await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", state);
+                    await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", state);
                 }
                 catch (Exception ex)
                 {
@@ -508,16 +464,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     _logger.LogError(stateLog.LogMessage, ex);
 
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
-                    await _hubConnection.InvokeAsync("ReceiveUpdateVersionState", state);
+                    await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", state);
                 }
             }
         }
-
-        private async Task<VersionDeploy> GetActiveVersionDeploy(IDbConnection conn)
-        {
-            var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn);
-            return versionsDeploy.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived).FirstOrDefault();
-        }
-
     }
 }

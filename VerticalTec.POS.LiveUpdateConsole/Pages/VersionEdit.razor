@@ -7,6 +7,7 @@
 @using VerticalTec.POS.LiveUpdateConsole.Models
 @using VerticalTec.POS.Database
 @using VerticalTec.POS.Utils
+@using VerticalTec.POS.LiveUpdateConsole.Services
 @using CurrieTechnologies.Razor.SweetAlert2
 @using System.Text;
 
@@ -14,10 +15,11 @@
 @inject SweetAlertService Swal
 @inject LiveUpdateDbContext LiveUpdateContext;
 @inject NavigationManager NavigationManager;
+@inject RepoService RepoService;
 
 <h3>Create version</h3>
 
-@if (allBrands.Rows.Count == 0)
+@if (brands.Count == 0)
 {
     <p><em>Loading...</em></p>
 }
@@ -28,19 +30,15 @@ else
         <div class="form-group col-md-4">
             <label>Brands</label>
             <select class="form-control" @onchange="@OnBrandChanged">
-                <option value="0">-- Please Select --</option>
-                @foreach (DataRow brand in allBrands.Rows)
+                @foreach (var brand in brands)
                 {
-                    var brandId = brand.GetValue<int>("BrandID");
-                    var brandName = brand.GetValue<string>("BrandName");
-
-                    @if (brandId == @BrandId)
+                    @if (brand.BrandId == @BrandId)
                     {
-                        <option selected value="@brandId">@brandName</option>
+                        <option selected value="@brand.BrandId">@brand.BrandName</option>
                     }
                     else
                     {
-                        <option value="@brandId">@brandName</option>
+                        <option value="@brand.BrandId">@brand.BrandName</option>
                     }
                 }
             </select>
@@ -114,9 +112,8 @@ else
 
     private DeployVersion deployVersion = new DeployVersion();
 
-    DataTable allBrands = new DataTable();
-    DataTable allShops = new DataTable();
-
+    List<BrandData> brands = new List<BrandData>();
+    List<ShopData> allShops = new List<ShopData>();
     List<ShopData> shops = new List<ShopData>();
 
     protected override async Task OnInitializedAsync()
@@ -136,22 +133,7 @@ else
 
     void RefreshShop()
     {
-        try
-        {
-            var filters = allShops.AsEnumerable().Where(r => r.GetValue<int>("BrandID") == BrandId);
-            shops.Clear();
-            foreach (var shop in filters)
-            {
-                shops.Add(new ShopData()
-                {
-                    ShopId = shop.GetValue<int>("ShopID"),
-                    BrandId = shop.GetValue<int>("BrandID"),
-                    ShopName = shop.GetValue<string>("ShopName"),
-                    Selected = shop.GetValue<bool>("Selected")
-                });
-            }
-        }
-        catch { }
+        shops = allShops.Where(s => s.BrandId == BrandId).ToList();
     }
 
     void OnCheckAllShop(ChangeEventArgs e)
@@ -277,26 +259,9 @@ else
     {
         try
         {
-            using (var conn = await DbContext.ConnectAsync())
-            {
-                var cmd = DbContext.CreateCommand(conn);
-                cmd.CommandText = "select a.BrandID, a.BrandName from Brand_Data a inner join Shop_Data b on a.BrandID = b.BrandID where a.Deleted = 0 and IsShop = 1 group by a.BrandID, a.BrandName";
-                using (var reader = await DbContext.ExecuteReaderAsync(cmd))
-                {
-                    allBrands.Load(reader);
-                }
-
-                cmd.CommandText = "select a.ShopID, a.BrandID, a.ShopName, case when b.ShopID is null then 0 else 1 end as Selected" +
-                        " from shop_data a left join " +
-                        " (select ShopID from Version_LiveUpdate where BatchID=@batchId group by ShopID) b" +
-                        " on a.ShopID=b.ShopID" +
-                        " where a.Deleted=0 and a.IsShop=1 and a.MasterShop = 0";
-                cmd.Parameters.Add(DbContext.CreateParameter("@batchId", BatchId));
-                using (var reader = await DbContext.ExecuteReaderAsync(cmd))
-                {
-                    allShops.Load(reader);
-                }
-            }
+            brands = await RepoService.GetBrandAsync();
+            allShops = await RepoService.GetShopSelectedUpdateAsync(BatchId);
+            BrandId = brands.FirstOrDefault().BrandId;
         }
         catch (Exception ex)
         {
