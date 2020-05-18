@@ -14,23 +14,27 @@
 
 <EditForm Model="@login" OnValidSubmit="@(async() => await DoLogin())">
     <DataAnnotationsValidator />
-    <p>
-        <h3>Login</h3>
-    </p>
-    <p class="col-12 row">
-        <label for="username">User name</label>
-        <input type="text" id="username" class="form-control" @bind="login.UserName" />
-    </p>
-    <p class="col-12 row">
-        <label for="password">Password</label>
-        <input type="password" id="password" class="form-control" @bind="login.Password" />
-    </p>
-    <p class="col-12 row">
-        <button type="submit" class="btn btn-primary">Login</button>
-    </p>
-    <p>
-        &nbsp; <ValidationSummary />
-    </p>
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Login</h2>
+        </div>
+        <div class="card-body pl-5 pr-5">
+            <p class="row">
+                <label for="username">User name</label>
+                <input type="text" id="username" class="form-control" @bind="login.UserName" />
+            </p>
+            <p class="row">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-control" @bind="login.Password" />
+            </p>
+            <ValidationSummary />
+        </div>
+        <div class="card-footer">
+            <div style="float:right">
+                <button type="submit" class="btn btn-primary">Login</button>
+            </div>
+        </div>
+    </div>
 </EditForm>
 
 @code{
@@ -50,8 +54,9 @@
             using (var conn = await Db.ConnectAsync())
             {
                 var cmd = Db.CreateCommand(conn);
-                cmd.CommandText = "select StaffID, StaffRoleID, StaffLogin from staffs where StaffRoleID=2 and Deleted=0 " +
+                cmd.CommandText = "select StaffID, StaffRoleID, StaffLogin, StaffFirstName, StaffLastName from staffs where StaffRoleID=2 and Deleted=0 " +
                         " and StaffLogin=@username and StaffPassword=@password";
+
                 cmd.Parameters.Add(Db.CreateParameter("@username", login.UserName));
                 cmd.Parameters.Add(Db.CreateParameter("@password", login.Password.ToSha1()));
 
@@ -70,7 +75,7 @@
                     }
                     else
                     {
-                        await Swal.FireAsync("", "ข้อมูลผู้ใช้งานระบบไม่ถูกต้อง", "error");
+                        await Swal.FireAsync("", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", "error");
                     }
                 }
             }
