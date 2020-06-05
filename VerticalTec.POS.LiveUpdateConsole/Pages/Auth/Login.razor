@@ -16,7 +16,7 @@
     <DataAnnotationsValidator />
     <div class="card">
         <div class="card-header">
-            <h2 class="card-title">Login</h2>
+            <h3 class="card-title">Login</h3>
         </div>
         <div class="card-body pl-5 pr-5">
             <p class="row">
@@ -28,9 +28,7 @@
                 <input type="password" id="password" class="form-control" @bind="login.Password" />
             </p>
             <ValidationSummary />
-        </div>
-        <div class="card-footer">
-            <div style="float:right">
+            <div>
                 <button type="submit" class="btn btn-primary">Login</button>
             </div>
         </div>
@@ -54,7 +52,7 @@
             using (var conn = await Db.ConnectAsync())
             {
                 var cmd = Db.CreateCommand(conn);
-                cmd.CommandText = "select StaffID, StaffRoleID, StaffLogin, StaffFirstName, StaffLastName from staffs where StaffRoleID=2 and Deleted=0 " +
+                cmd.CommandText = "select StaffID, StaffRoleID, StaffLogin, StaffFirstName, StaffLastName from staffs where StaffRoleID in (1,2) and Deleted=0 " +
                         " and StaffLogin=@username and StaffPassword=@password";
 
                 cmd.Parameters.Add(Db.CreateParameter("@username", login.UserName));

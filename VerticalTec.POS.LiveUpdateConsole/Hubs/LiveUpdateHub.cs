@@ -51,7 +51,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
                 var cmd = _db.CreateCommand(conn);
                 cmd.CommandText = "select BrandID from shop_data where ShopID=@shopId";
                 cmd.Parameters.Add(_db.CreateParameter("@shopId", posSetting.ShopID));
-                using(var reader = await _db.ExecuteReaderAsync(cmd))
+                using (var reader = await _db.ExecuteReaderAsync(cmd))
                 {
                     if (reader.Read())
                     {
@@ -65,7 +65,14 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
                 if (versionDeploy != null)
                     versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
 
-                await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy, versionLiveUpdate);
+                try
+                {
+                    await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy, versionLiveUpdate);
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
         }
 

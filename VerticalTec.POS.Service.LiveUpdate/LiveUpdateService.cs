@@ -27,9 +27,10 @@ namespace VerticalTec.POS.Service.LiveUpdate
         LiveUpdateDbContext _liveUpdateCtx;
         FrontConfigManager _frontConfigManager;
         VtecPOSEnv _vtecEnv;
+        BackupService _backupService;
 
         public LiveUpdateService(IDatabase db, IConfiguration config, IClientConnectionService clientConnectionService,
-            LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager, VtecPOSEnv posEnv)
+            LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager, VtecPOSEnv posEnv, BackupService backupService)
         {
             _db = db;
             _config = config;
@@ -38,6 +39,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
             _frontConfigManager = frontConfigManager;
 
             _vtecEnv = posEnv;
+            _backupService = backupService;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -254,6 +256,11 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                 var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, versionInfo.ShopId, versionInfo.ComputerId);
                 await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", versionLiveUpdate);
+
+                if(versionLiveUpdate?.FileReceiveStatus == FileReceiveStatus.NoReceivedFile)
+                {
+                    await DownloadFile();
+                }
             }
         }
 
@@ -428,10 +435,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, stateLog);
                     await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", state);
 
-                    if (File.Exists(backupFileName))
-                        File.Delete(backupFileName);
-
-                    ZipFile.CreateFromDirectory(_vtecEnv.FrontCashierPath, backupFileName);
+                    _backupService.Backup(state.DownloadFilePath, backupFileName);
 
                     stepLog = $"Backup {backupFileName} finish";
                     _logger.LogInfo(stepLog);

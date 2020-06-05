@@ -22,6 +22,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 services.AddSingleton<LiveUpdateDbContext>();
                 services.AddSingleton<FrontConfigManager>();
                 services.AddSingleton<VtecPOSEnv>();
+                services.AddSingleton<BackupService>();
                 services.AddHostedService<LiveUpdateService>();
                 services.AddHostedService<UpdateCheckerScheduleService>();
             });

@@ -204,6 +204,7 @@ else
         try
         {
             var client = clients.Where(c => c.ShopId == versionInfo.ShopId && c.ComputerId == versionInfo.ComputerId).FirstOrDefault();
+            client.ConnectionId = versionInfo.ConnectionId;
             client.IsOnline = versionInfo.IsOnline;
             client.ProgramVersion = versionInfo.ProgramVersion;
             clients[clients.IndexOf(client)] = client;
