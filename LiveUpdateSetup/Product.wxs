@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"><?define VerticalTec.POS.Service.LiveUpdate_TargetDir=$(var.VerticalTec.POS.Service.LiveUpdate.TargetDir)?>
+	<Product Id="3b6a3753-24b9-4f63-9074-4108a6e60548" Name="vTec Live Update" Language="1033" Version="1.0.0.0" Manufacturer="Vertical Tec" UpgradeCode="816f4472-9fbd-4568-9ac2-805313a62cce">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+		<WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)\license.rtf"/>
+		
+		<Property Id="WIXUI_INSTALLDIR" Value="VTECFOLDER" />
+		<UIRef Id="WixUI_InstallDir" />
+		
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes"/>
+
+		<Feature Id="ProductFeature" Title="vTec Live Update Setup" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="VTECFOLDER" Name="Vertical Tec">
+					<Directory Id="INSTALLFOLDER" Name="vTec Live Update"/>
+				</Directory>
+			</Directory>
+		</Directory>
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+			<!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
+			<!-- <Component Id="ProductComponent"> -->
+				<!-- TODO: Insert files, registry keys, and other resources here. -->
+			<!-- </Component> -->
+			<Component Id="appsettings.json" Guid="53b5462f-6283-4c13-a76e-7d315eb9a207">
+			  <File Id="appsettings.json" Name="appsettings.json" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)appsettings.json" />
+			</Component>
+			<Component Id="VtecLiveUpdateService.dll" Guid="8f971ad4-1f0c-4b31-955d-57b2e9af14be">
+			  <File Id="VtecLiveUpdateService.dll" Name="VtecLiveUpdateService.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)VtecLiveUpdateService.dll" />
+			</Component>
+			<Component Id="VtecLiveUpdateService.exe" Guid="ce625223-1039-4841-90e2-06e28909445b">
+				<File Id="VtecLiveUpdateService.exe" Name="VtecLiveUpdateService.exe" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)VtecLiveUpdateService.exe" />
+				<ServiceInstall Id="VtecLiveUpdateService" Name="VtecLiveUpdateService" DisplayName="vTec Live Update Service" Type="ownProcess" Start="auto" ErrorControl="normal" Account="NT AUTHORITY\SYSTEM">
+				</ServiceInstall>
+				<ServiceControl Id="VtecLiveUpdateServiceControl" Stop="both" Remove="uninstall" Name="VtecLiveUpdateServiceControl" Wait="yes" />
+			</Component>
+			<Component Id="NLog.dll" Guid="e21fd0cc-3f5e-4a06-a8b2-c2d286e9666c">
+			  <File Id="NLog.dll" Name="NLog.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)NLog.dll" />
+			</Component>
+			<Component Id="VerticalTec.POS.dll" Guid="0a31ac4f-ccfa-4ac8-9aaf-b522647915ef">
+			  <File Id="VerticalTec.POS.dll" Name="VerticalTec.POS.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)VerticalTec.POS.dll" />
+			</Component>
+			<Component Id="Microsoft.AspNetCore.SignalR.Client.Core.dll" Guid="164602b7-1a65-4156-abba-381d06374635">
+			  <File Id="Microsoft.AspNetCore.SignalR.Client.Core.dll" Name="Microsoft.AspNetCore.SignalR.Client.Core.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.AspNetCore.SignalR.Client.Core.dll" />
+			</Component>
+			<Component Id="Google.Apis.Drive.v3.dll" Guid="08b5450e-e55e-4c38-850a-4cad03d5e0dd">
+			  <File Id="Google.Apis.Drive.v3.dll" Name="Google.Apis.Drive.v3.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Google.Apis.Drive.v3.dll" />
+			</Component>
+			<Component Id="Google.Apis.dll" Guid="2bcb7a6a-cf4b-4605-b209-a551a5ac663a">
+			  <File Id="Google.Apis.dll" Name="Google.Apis.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Google.Apis.dll" />
+			</Component>
+			<Component Id="Google.Apis.Auth.dll" Guid="ac8dbd77-46c5-4ad3-91b5-470ead463c05">
+				<File Id="Google.Apis.Auth.dll" Name="Google.Apis.Auth.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Google.Apis.Auth.dll" />
+			</Component>
+			<Component Id="Google.Apis.Auth.PlatformServices.dll" Guid="9c3eb7a7-aec2-4106-9c1c-792353a6abaa">
+				<File Id="Google.Apis.Auth.PlatformServices.dll" Name="Google.Apis.Auth.PlatformServices.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Google.Apis.Auth.PlatformServices.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Hosting.Abstractions.dll" Guid="9cebf63b-360c-40c5-87ae-bcdebf275487">
+			  <File Id="Microsoft.Extensions.Hosting.Abstractions.dll" Name="Microsoft.Extensions.Hosting.Abstractions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Hosting.Abstractions.dll" />
+			</Component>
+			<Component Id="VerticalTec.POS.Database.dll" Guid="522702f9-7fef-45f4-8a15-2f8e1923f9ec">
+			  <File Id="VerticalTec.POS.Database.dll" Name="VerticalTec.POS.Database.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)VerticalTec.POS.Database.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Configuration.Abstractions.dll" Guid="affcdc0a-cf7d-4cfb-9e11-e0370a854126">
+			  <File Id="Microsoft.Extensions.Configuration.Abstractions.dll" Name="Microsoft.Extensions.Configuration.Abstractions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Configuration.Abstractions.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.DependencyInjection.Abstractions.dll" Guid="0b04675e-0c9a-4f90-b1f3-7ece33c473c8">
+			  <File Id="Microsoft.Extensions.DependencyInjection.Abstractions.dll" Name="Microsoft.Extensions.DependencyInjection.Abstractions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+			</Component>
+			<Component Id="Microsoft.AspNetCore.SignalR.Client.dll" Guid="149cadab-1a54-4132-82aa-875409d68431">
+			  <File Id="Microsoft.AspNetCore.SignalR.Client.dll" Name="Microsoft.AspNetCore.SignalR.Client.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.AspNetCore.SignalR.Client.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Hosting.dll" Guid="37970fcb-73f3-497c-ad35-d6ef3ddbeada">
+			  <File Id="Microsoft.Extensions.Hosting.dll" Name="Microsoft.Extensions.Hosting.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Hosting.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Hosting.WindowsServices.dll" Guid="3b23cbb3-8ed1-4889-921c-dd01a113185b">
+			  <File Id="Microsoft.Extensions.Hosting.WindowsServices.dll" Name="Microsoft.Extensions.Hosting.WindowsServices.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Hosting.WindowsServices.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Configuration.Binder.dll" Guid="3a30745a-6ece-4bb8-93e5-3e586f6c0b2e">
+			  <File Id="Microsoft.Extensions.Configuration.Binder.dll" Name="Microsoft.Extensions.Configuration.Binder.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Configuration.Binder.dll" />
+			</Component>
+			<Component Id="Newtonsoft.Json.dll" Guid="d2035738-8e2a-4832-9596-7b478e373c99">
+			  <File Id="Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Newtonsoft.Json.dll" />
+			</Component>
+			<Component Id="vtecPOS.dll" Guid="34638912-2216-4b54-9e7e-d1810d96dc05">
+			  <File Id="vtecPOS.dll" Name="vtecPOS.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)vtecPOS.dll" />
+			</Component>
+			<Component Id="MySql.Data.dll" Guid="96523da9-a563-412e-abd4-4cc2baf2f821">
+			  <File Id="MySql.Data.dll" Name="MySql.Data.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)MySql.Data.dll" />
+			</Component>
+			<Component Id="Google.Protobuf.dll" Guid="83a6317f-3a4d-4692-8b74-6d3d367020ad">
+			  <File Id="Google.Protobuf.dll" Name="Google.Protobuf.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Google.Protobuf.dll" />
+			</Component>
+			<Component Id="BouncyCastle.Crypto.dll" Guid="d5257e3d-030f-4e38-910b-e10cfe75c3cb">
+			  <File Id="BouncyCastle.Crypto.dll" Name="BouncyCastle.Crypto.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)BouncyCastle.Crypto.dll" />
+			</Component>
+			<Component Id="System.Windows.Extensions.dll" Guid="8710cbc2-b5e5-4745-bf72-cf220aea59e6">
+			  <File Id="System.Windows.Extensions.dll" Name="System.Windows.Extensions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Windows.Extensions.dll" />
+			</Component>
+			<Component Id="System.Security.AccessControl.dll" Guid="099ef106-d0ee-49e6-b52f-5768fe536bf3">
+			  <File Id="System.Security.AccessControl.dll" Name="System.Security.AccessControl.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Security.AccessControl.dll" />
+			</Component>
+			<Component Id="System.Security.Permissions.dll" Guid="5f5d7e10-f973-47a1-816c-b500eb336fb5">
+			  <File Id="System.Security.Permissions.dll" Name="System.Security.Permissions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Security.Permissions.dll" />
+			</Component>
+			<Component Id="System.Security.Principal.Windows.dll" Guid="33ba7eb8-def2-42c8-b795-66df9ba78139">
+			  <File Id="System.Security.Principal.Windows.dll" Name="System.Security.Principal.Windows.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Security.Principal.Windows.dll" />
+			</Component>
+			<Component Id="System.Configuration.ConfigurationManager.dll" Guid="47bb887c-d8a3-4ffe-8aa9-13202665ec0b">
+			  <File Id="System.Configuration.ConfigurationManager.dll" Name="System.Configuration.ConfigurationManager.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Configuration.ConfigurationManager.dll" />
+			</Component>
+			<Component Id="System.Security.Cryptography.ProtectedData.dll" Guid="76113c11-94dd-4aa7-89f5-f04fac304a9d">
+			  <File Id="System.Security.Cryptography.ProtectedData.dll" Name="System.Security.Cryptography.ProtectedData.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Security.Cryptography.ProtectedData.dll" />
+			</Component>
+			<Component Id="DevExpress.XtraEditors.v17.1.dll" Guid="54fc4646-818a-419a-a5f8-e67e5902e5d1">
+			  <File Id="DevExpress.XtraEditors.v17.1.dll" Name="DevExpress.XtraEditors.v17.1.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)DevExpress.XtraEditors.v17.1.dll" />
+			</Component>
+			<Component Id="DevExpress.Utils.v17.1.dll" Guid="00d4d597-6c21-4b44-a750-cc1dd7a154f4">
+			  <File Id="DevExpress.Utils.v17.1.dll" Name="DevExpress.Utils.v17.1.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)DevExpress.Utils.v17.1.dll" />
+			</Component>
+			<Component Id="DevExpress.Data.v17.1.dll" Guid="24f1076e-6f15-4c5f-89de-b8d822569f42">
+			  <File Id="DevExpress.Data.v17.1.dll" Name="DevExpress.Data.v17.1.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)DevExpress.Data.v17.1.dll" />
+			</Component>
+			<Component Id="DevExpress.Printing.v17.1.Core.dll" Guid="b5fd04ba-9349-4679-ac80-c14aeaf14a9c">
+			  <File Id="DevExpress.Printing.v17.1.Core.dll" Name="DevExpress.Printing.v17.1.Core.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)DevExpress.Printing.v17.1.Core.dll" />
+			</Component>
+			<Component Id="VerticalTec.POS.Utils.dll" Guid="b00ac099-f7a3-48bb-8dff-c70ff40bc9a8">
+			  <File Id="VerticalTec.POS.Utils.dll" Name="VerticalTec.POS.Utils.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)VerticalTec.POS.Utils.dll" />
+			</Component>
+			<Component Id="System.IO.Pipelines.dll" Guid="b9bcc4ae-d5f2-43e4-9066-a609b58eb849">
+			  <File Id="System.IO.Pipelines.dll" Name="System.IO.Pipelines.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.IO.Pipelines.dll" />
+			</Component>
+			<Component Id="System.Threading.Channels.dll" Guid="a7247d87-bc04-4444-af6d-12b6debd8df1">
+			  <File Id="System.Threading.Channels.dll" Name="System.Threading.Channels.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Threading.Channels.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Logging.Abstractions.dll" Guid="f5eff34f-d00e-4c24-be0e-c84f04db400b">
+			  <File Id="Microsoft.Extensions.Logging.Abstractions.dll" Name="Microsoft.Extensions.Logging.Abstractions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Logging.Abstractions.dll" />
+			</Component>
+			<Component Id="Microsoft.AspNetCore.SignalR.Common.dll" Guid="09820444-ab00-46dd-94e3-84f514ef65ae">
+			  <File Id="Microsoft.AspNetCore.SignalR.Common.dll" Name="Microsoft.AspNetCore.SignalR.Common.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.AspNetCore.SignalR.Common.dll" />
+			</Component>
+			<Component Id="System.Text.Json.dll" Guid="a759e549-0e6e-4565-be39-d5755e8491f0">
+			  <File Id="System.Text.Json.dll" Name="System.Text.Json.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Text.Json.dll" />
+			</Component>
+			<Component Id="System.Text.Encodings.Web.dll" Guid="bd36a4a4-5ce4-4d39-9b47-bc7e93db0031">
+			  <File Id="System.Text.Encodings.Web.dll" Name="System.Text.Encodings.Web.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Text.Encodings.Web.dll" />
+			</Component>
+			<Component Id="System.Runtime.CompilerServices.Unsafe.dll" Guid="0fba6171-82a1-420d-915d-b73890198f45">
+			  <File Id="System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Runtime.CompilerServices.Unsafe.dll" />
+			</Component>
+			<Component Id="Microsoft.AspNetCore.Connections.Abstractions.dll" Guid="8ce41474-13eb-4542-821b-853b7453d152">
+			  <File Id="Microsoft.AspNetCore.Connections.Abstractions.dll" Name="Microsoft.AspNetCore.Connections.Abstractions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.AspNetCore.Connections.Abstractions.dll" />
+			</Component>
+			<Component Id="Microsoft.AspNetCore.Http.Features.dll" Guid="927f58a7-5589-41b1-bc26-342824abcd8b">
+			  <File Id="Microsoft.AspNetCore.Http.Features.dll" Name="Microsoft.AspNetCore.Http.Features.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.AspNetCore.Http.Features.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Primitives.dll" Guid="9145a699-8ab0-4a33-b1fd-00e7041ef89a">
+			  <File Id="Microsoft.Extensions.Primitives.dll" Name="Microsoft.Extensions.Primitives.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Primitives.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Logging.dll" Guid="d93c8095-5ce4-40d0-ae1f-e95d412ca074">
+			  <File Id="Microsoft.Extensions.Logging.dll" Name="Microsoft.Extensions.Logging.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Logging.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Options.dll" Guid="580babd9-d314-490a-8424-751fb1f0c893">
+			  <File Id="Microsoft.Extensions.Options.dll" Name="Microsoft.Extensions.Options.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Options.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.DependencyInjection.dll" Guid="d248bc89-665f-4694-8762-bf8b602aec0c">
+			  <File Id="Microsoft.Extensions.DependencyInjection.dll" Name="Microsoft.Extensions.DependencyInjection.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.DependencyInjection.dll" />
+			</Component>
+			<Component Id="Microsoft.AspNetCore.SignalR.Protocols.Json.dll" Guid="0f18b5b2-21cc-4f22-8620-196e3ab14733">
+			  <File Id="Microsoft.AspNetCore.SignalR.Protocols.Json.dll" Name="Microsoft.AspNetCore.SignalR.Protocols.Json.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.AspNetCore.SignalR.Protocols.Json.dll" />
+			</Component>
+			<Component Id="Google.Apis.Core.dll" Guid="d05e8f39-9fa8-4bda-b00f-38b8ce7c7276">
+			  <File Id="Google.Apis.Core.dll" Name="Google.Apis.Core.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Google.Apis.Core.dll" />
+			</Component>
+			<Component Id="Microsoft.Bcl.AsyncInterfaces.dll" Guid="12287cfb-0770-4883-9a6c-d6cd534d707f">
+			  <File Id="Microsoft.Bcl.AsyncInterfaces.dll" Name="Microsoft.Bcl.AsyncInterfaces.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Bcl.AsyncInterfaces.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.FileProviders.Abstractions.dll" Guid="2d045101-9076-47cb-99aa-15d7fc2bed9c">
+			  <File Id="Microsoft.Extensions.FileProviders.Abstractions.dll" Name="Microsoft.Extensions.FileProviders.Abstractions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.FileProviders.Abstractions.dll" />
+			</Component>
+			<Component Id="System.Data.SqlClient.dll" Guid="ff79f7e4-f4e3-407d-8fb7-05aa7e467912">
+			  <File Id="System.Data.SqlClient.dll" Name="System.Data.SqlClient.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Data.SqlClient.dll" />
+			</Component>
+			<Component Id="Microsoft.AspNetCore.Http.Connections.Common.dll" Guid="f3fceed9-51b6-4dcd-bb54-36f155d3c525">
+			  <File Id="Microsoft.AspNetCore.Http.Connections.Common.dll" Name="Microsoft.AspNetCore.Http.Connections.Common.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.AspNetCore.Http.Connections.Common.dll" />
+			</Component>
+			<Component Id="Microsoft.AspNetCore.Http.Connections.Client.dll" Guid="75b9a095-b10b-4c20-ade1-782aa3a0ed1b">
+			  <File Id="Microsoft.AspNetCore.Http.Connections.Client.dll" Name="Microsoft.AspNetCore.Http.Connections.Client.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.AspNetCore.Http.Connections.Client.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Configuration.dll" Guid="578158b9-4012-42fe-b8bb-98488e9fd2ed">
+			  <File Id="Microsoft.Extensions.Configuration.dll" Name="Microsoft.Extensions.Configuration.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Configuration.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.FileSystemGlobbing.dll" Guid="a2adc111-0be0-4571-b1cb-5208f48d3f29">
+			  <File Id="Microsoft.Extensions.FileSystemGlobbing.dll" Name="Microsoft.Extensions.FileSystemGlobbing.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.FileSystemGlobbing.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.FileProviders.Physical.dll" Guid="ec15e901-751f-4d28-9a46-d16ac086c6b1">
+			  <File Id="Microsoft.Extensions.FileProviders.Physical.dll" Name="Microsoft.Extensions.FileProviders.Physical.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.FileProviders.Physical.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Configuration.FileExtensions.dll" Guid="cf3f5672-e9ad-41f9-b317-ac42c83818af">
+			  <File Id="Microsoft.Extensions.Configuration.FileExtensions.dll" Name="Microsoft.Extensions.Configuration.FileExtensions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Configuration.FileExtensions.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Configuration.EnvironmentVariables.dll" Guid="5740eb52-05e7-4b07-9976-cec87ee3359e">
+			  <File Id="Microsoft.Extensions.Configuration.EnvironmentVariables.dll" Name="Microsoft.Extensions.Configuration.EnvironmentVariables.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Configuration.CommandLine.dll" Guid="ac87cfc8-9442-4f9e-9506-981876e60f3a">
+			  <File Id="Microsoft.Extensions.Configuration.CommandLine.dll" Name="Microsoft.Extensions.Configuration.CommandLine.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Configuration.CommandLine.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Configuration.Json.dll" Guid="f39b0ec3-a1da-4c62-ae59-1291a4446981">
+			  <File Id="Microsoft.Extensions.Configuration.Json.dll" Name="Microsoft.Extensions.Configuration.Json.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Configuration.Json.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Configuration.UserSecrets.dll" Guid="de3d3f21-9bf6-434e-816c-0b7c2cebdf37">
+			  <File Id="Microsoft.Extensions.Configuration.UserSecrets.dll" Name="Microsoft.Extensions.Configuration.UserSecrets.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Configuration.UserSecrets.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Logging.EventLog.dll" Guid="6170f698-d36a-4d40-95f0-4a770eea1e24">
+			  <File Id="Microsoft.Extensions.Logging.EventLog.dll" Name="Microsoft.Extensions.Logging.EventLog.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Logging.EventLog.dll" />
+			</Component>
+			<Component Id="System.Diagnostics.EventLog.dll" Guid="86f326d9-e6e0-4db9-b836-4fe2ab0347c0">
+			  <File Id="System.Diagnostics.EventLog.dll" Name="System.Diagnostics.EventLog.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.Diagnostics.EventLog.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Logging.Configuration.dll" Guid="3c4002ac-83fa-465c-abb1-1f4ce9595fb0">
+			  <File Id="Microsoft.Extensions.Logging.Configuration.dll" Name="Microsoft.Extensions.Logging.Configuration.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Logging.Configuration.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Options.ConfigurationExtensions.dll" Guid="004b32a5-a19c-4ba1-8d76-90246122675b">
+			  <File Id="Microsoft.Extensions.Options.ConfigurationExtensions.dll" Name="Microsoft.Extensions.Options.ConfigurationExtensions.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Logging.Console.dll" Guid="a0c50142-cc2c-4352-8215-c276c362357e">
+			  <File Id="Microsoft.Extensions.Logging.Console.dll" Name="Microsoft.Extensions.Logging.Console.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Logging.Console.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Logging.Debug.dll" Guid="ad211f64-7603-4b37-a151-fa7a014f9ef8">
+			  <File Id="Microsoft.Extensions.Logging.Debug.dll" Name="Microsoft.Extensions.Logging.Debug.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Logging.Debug.dll" />
+			</Component>
+			<Component Id="Microsoft.Extensions.Logging.EventSource.dll" Guid="ea6242ad-a5bf-4c9d-87dc-d3239ffdf168">
+			  <File Id="Microsoft.Extensions.Logging.EventSource.dll" Name="Microsoft.Extensions.Logging.EventSource.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)Microsoft.Extensions.Logging.EventSource.dll" />
+			</Component>
+			<Component Id="System.ServiceProcess.ServiceController.dll" Guid="da7cbc8d-e7b1-4cfb-9f40-b672960cf947">
+			  <File Id="System.ServiceProcess.ServiceController.dll" Name="System.ServiceProcess.ServiceController.dll" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)System.ServiceProcess.ServiceController.dll" />
+			</Component>
+			<Component Id="VtecLiveUpdateService.runtimeconfig.json" Guid="e79a0d61-9a39-48f1-960e-c5e16e01d1c0">
+			  <File Id="VtecLiveUpdateService.runtimeconfig.json" Name="VtecLiveUpdateService.runtimeconfig.json" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)VtecLiveUpdateService.runtimeconfig.json" />
+			</Component>
+			<Component Id="VtecLiveUpdateService.runtimeconfig.dev.json" Guid="0331ecf0-b4d9-4a77-90dc-2a0fd3125b3e">
+				<File Id="VtecLiveUpdateService.runtimeconfig.dev.json" Name="VtecLiveUpdateService.runtimeconfig.dev.json" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)VtecLiveUpdateService.runtimeconfig.dev.json" />
+			</Component>
+			<Component Id="VtecLiveUpdateService.deps.json" Guid="93fda91f-5006-4bdd-8da2-5968ee9cb4f3">
+			  <File Id="VtecLiveUpdateService.deps.json" Name="VtecLiveUpdateService.deps.json" Source="$(var.VerticalTec.POS.Service.LiveUpdate_TargetDir)VtecLiveUpdateService.deps.json" />
+			</Component>
+		</ComponentGroup>
+	</Fragment>
+</Wix>
