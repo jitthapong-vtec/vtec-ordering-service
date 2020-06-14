@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	
+	<?define ProductCode = "{715EB601-BCE6-40BF-A7E6-658638687754}"?>
+	<?define UpgradeCode = "{57D57FF9-F8AB-428F-A940-604BA8A6523D}"?>
+	<?define BuildVersion = 1.0.0.0?>
+	
+	<Product Id="$(var.ProductCode)" 
+			 Name="!(loc.ProductName)" 
+			 Language="!(loc.Language)" 
+			 Version="$(var.BuildVersion)" 
+			 Manufacturer="!(loc.Company)" 
+			 UpgradeCode="$(var.ProductCode)">
+		
+		<Package InstallerVersion="200" 
+				 Compressed="yes" 
+				 InstallScope="perMachine" 
+				 Manufacturer="!(loc.Company)"
+				 Description="!(loc.Description)"
+				 Languages="!(loc.Language)"/>
+
+		<MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeErrorMessage)" />
+		<MediaTemplate EmbedCab="yes"/>
+		
+		<Property Id="WIXUI_INSTALLDIR" Value="COMPANYFOLDER" />
+		<UIRef Id="WixUI_InstallDir"/>
+		
+		<WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)\license.rtf"/>
+		
+		<Feature Id="ProductFeature" Title="!(loc.ProductName)" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+			<ComponentGroupRef Id="PublishedComponents" />
+		</Feature>
+	</Product>
+</Wix>

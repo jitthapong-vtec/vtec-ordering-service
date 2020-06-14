@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+	<String Id="ProductName">vTec Live Update Installer</String>
+	<String Id="Company">Vertical Tec</String>
+	<String Id="Description">vTec Live Update Service</String>
+	<String Id="Language">1033</String>
+	<String Id="DowngradeErrorMessage">A newer version of [ProductName] is already installed.</String>
+	<String Id="ProductNameFolder">vTec Live Update</String>
+</WixLocalization>

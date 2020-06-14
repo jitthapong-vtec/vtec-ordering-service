@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Fragment>
+		<ComponentGroup Id="ProductComponents">
+			<ComponentRef Id="VtecLiveUpdateService.exe"/>
+		</ComponentGroup>
+
+		<DirectoryRef Id="INSTALLFOLDER" FileSource="..\VerticalTec.POS.Service.LiveUpdate\bin\$$(Configuration)\netcoreapp3.0\win-$(var.Platform)\publish\">
+
+			<Component Id="VtecLiveUpdateService.exe" Guid="{48AB3939-6771-4FE2-8F55-0BE2F142354F}">
+				<File Id="VtecLiveUpdateService.exe" KeyPath="yes" Source="$(var.BasePath)\VtecLiveUpdateService.exe" />
+				<ServiceInstall Id="VtecLiveUpdateService" Name="VtecLiveUpdateService" DisplayName="vTec Live Update Service" Type="ownProcess" Start="auto" ErrorControl="normal" Account="NT AUTHORITY\LocalService" />
+				<ServiceControl Id="VtecLiveUpdateServiceControl" Start="install" Stop="both" Remove="uninstall" Name="VtecLiveUpdateService" Wait="yes" />
+			</Component>
+		</DirectoryRef>
+	</Fragment>
+</Wix>
