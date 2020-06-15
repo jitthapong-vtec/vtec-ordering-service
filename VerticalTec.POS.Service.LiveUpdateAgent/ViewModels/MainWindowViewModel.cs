@@ -50,18 +50,18 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
             ea.GetEvent<VersionUpdateEvent>().Subscribe((val) =>
             {
                 OnUpdating = val == UpdateEvents.Updating;
-                if(val == UpdateEvents.UpdateSuccess)
-                {
-                    var parameters = new DialogParameters()
-                    {
-                        {"title", "การอัพเดต" },
-                        {"message",  "อัพเดตเวอร์ชั่นสำเร็จ"}
-                    };
-                    _dialogService.ShowDialog("Dialog", parameters, (r) =>
-                    {
-                        App.Current.Shutdown();
-                    });
-                }
+                //if(val == UpdateEvents.UpdateSuccess)
+                //{
+                //    var parameters = new DialogParameters()
+                //    {
+                //        {"title", "การอัพเดต" },
+                //        {"message",  "อัพเดตเวอร์ชั่นสำเร็จ"}
+                //    };
+                //    _dialogService.ShowDialog("Dialog", parameters, (r) =>
+                //    {
+                //        App.Current.Shutdown();
+                //    });
+                //}
             }, ThreadOption.UIThread);
         }
 

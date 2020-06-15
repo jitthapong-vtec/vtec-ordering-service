@@ -174,8 +174,6 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
 
                 if (isCopySuccess)
                 {
-                    /* SELECT ReadyToUpdate FROM version_liveupdate WHERE ShopID=23 AND ComputerID=44 AND ProgramID=1 AND UpdateStatus != 2
-                     */
                     using (var conn = await _db.ConnectAsync())
                     {
                         _versionLiveUpdate.UpdateStatus = 2;

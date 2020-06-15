@@ -306,7 +306,7 @@ namespace VerticalTec.POS.LiveUpdate
                 return;
 
             var cmd = _db.CreateCommand("select count(BatchID) from Version_LiveUpdate where ShopID=@shopId and ComputerID=@computerId" +
-                " and ProgramID=@programId and UpdateVersion=@updateVersion", conn);
+                " and ProgramID=@programId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", liveUpdate.ShopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", liveUpdate.ComputerId));
             cmd.Parameters.Add(_db.CreateParameter("@programId", liveUpdate.ProgramId));
@@ -346,7 +346,7 @@ namespace VerticalTec.POS.LiveUpdate
                     " BackupEndTime=@backupEndtime, ScheduleUpdate=@scheduleUpdate," +
                     " UpdateEndTime=@updateEndTime, RollbackStatus=@rollbackStatus, UpdateStatus=@updateStatus," +
                     " SyncStatus=@syncStatus, ReadyToUpdate=@readyToUpdate, MessageLog=@messageLog, UpdateDate=@updateDate" +
-                    " where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId and UpdateVersion=@updateVersion";
+                    " where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId";
             }
             else
             {

@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>a757f90d-81ad-4164-9996-187b4207a5a0</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>VerticalTec.POS.Service.LiveUpdate.Installer</OutputName>
+    <OutputName>LiveUpdateSetup</OutputName>
     <OutputType>Package</OutputType>
     <Cultures>;</Cultures>
   </PropertyGroup>
@@ -75,6 +75,7 @@
       <Output TaskParameter="Assemblies" ItemName="AssemblyVersion" />
     </GetAssemblyIdentity>
     <Exec Command="if not exist Installs mkdir Installs" />
-    <Exec Command="move bin\$(Configuration)\$(OutputName).msi Installs\vTecLiveUpdate-%(AssemblyVersion.Version)-$(Configuration)-$(Platform).msi" />
+    <!--<Exec Command="move bin\$(Configuration)\$(OutputName).msi Installs\$(OutputName)-%(AssemblyVersion.Version)-$(Configuration)-$(Platform).msi" />-->
+    <Exec Command="move bin\$(Configuration)\$(OutputName).msi Installs\$(OutputName)-%(AssemblyVersion.Version).msi" />
   </Target>
 </Project>

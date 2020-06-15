@@ -221,7 +221,16 @@ else
         try
         {
             var client = clients.Where(c => c.ShopId == state.ShopId && c.ComputerId == state.ComputerId).FirstOrDefault();
-            client.ProcessMessage = state.MessageLog;
+            if (state.ReadyToUpdate == 1)
+            {
+                client.ProcessMessage = "Ready to update";
+                if (client.VersionStatus == 2)
+                    client.ProcessMessage = "Update successfully";
+            }
+            else
+            {
+                client.ProcessMessage = state.MessageLog;
+            }
             if (state.CommandStatus == CommandStatus.Finish || state.CommandStatus == CommandStatus.Error)
                 client.CanExecute = true;
             clients[clients.IndexOf(client)] = client;
