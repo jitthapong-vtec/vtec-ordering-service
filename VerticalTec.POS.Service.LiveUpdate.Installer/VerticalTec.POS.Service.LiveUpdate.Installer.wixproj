@@ -22,6 +22,7 @@
   <ItemGroup>
     <Compile Include="Components.wxs" />
     <Compile Include="ComponentsGenerated.wxs" />
+    <Compile Include="ComponentsGenerated1.wxs" />
     <Compile Include="Directies.wxs" />
     <Compile Include="Product.wxs" />
   </ItemGroup>
@@ -48,15 +49,26 @@
     <Error Text="The WiX Toolset v3.11 (or newer) build tools must be installed to build this project. To download the WiX Toolset, see http://wixtoolset.org/releases/" />
   </Target>
   <Target Name="BeforeBuild">
+    <PropertyGroup>
+      <DefineConstants>BuildVersion=%(AssemblyVersion.Version);BasePath=..\VerticalTec.POS.Service.LiveUpdate\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\publish;BasePath1=..\VerticalTec.POS.Service.LiveUpdateAgent\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\publish</DefineConstants>
+    </PropertyGroup>
+    <!--<PropertyGroup>
+			<LiveUpdateAgentPath>..\VerticalTec.POS.Service.LiveUpdateAgent\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\publish\</LiveUpdateAgentPath>
+		</PropertyGroup>-->
     <Exec Command="rd /s /q ..\VerticalTec.POS.Service.LiveUpdate\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)" />
+    <Exec Command="rd /s /q ..\VerticalTec.POS.Service.LiveUpdateAgent\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)" />
+    <Exec Command="dotnet publish ..\VerticalTec.POS.Service.LiveUpdateAgent\VerticalTec.POS.Service.LiveUpdateAgent.csproj -c $(Configuration) -r win-$(Platform)" />
     <Exec Command="dotnet publish ..\VerticalTec.POS.Service.LiveUpdate\VerticalTec.POS.Service.LiveUpdate.csproj -c $(Configuration) -r win-$(Platform)" />
+    <!--<ItemGroup>
+			<MySourceFiles Include="$(LiveUpdateAgentPath)*.*"/>
+		</ItemGroup>
+		<Copy SourceFiles="@(MySourceFiles)" DestinationFolder="..\VerticalTec.POS.Service.LiveUpdate\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\publish\"/>
+		-->
     <GetAssemblyIdentity AssemblyFiles="..\VerticalTec.POS.Service.LiveUpdate\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\VtecLiveUpdateService.dll">
       <Output TaskParameter="Assemblies" ItemName="AssemblyVersion" />
     </GetAssemblyIdentity>
-    <PropertyGroup>
-      <DefineConstants>BuildVersion=%(AssemblyVersion.Version);BasePath=..\VerticalTec.POS.Service.LiveUpdate\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\publish</DefineConstants>
-    </PropertyGroup>
     <HeatDirectory OutputFile="ComponentsGenerated.wxs" Transforms="ExcludeTransform.xslt" DirectoryRefId="INSTALLFOLDER" ComponentGroupName="PublishedComponents" SuppressCom="true" Directory="..\VerticalTec.POS.Service.LiveUpdate\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\publish" SuppressFragments="true" SuppressRegistry="true" SuppressRootDirectory="true" AutoGenerateGuids="false" GenerateGuidsNow="true" ToolPath="$(WixToolPath)" PreprocessorVariable="var.BasePath" />
+    <HeatDirectory OutputFile="ComponentsGenerated1.wxs" DirectoryRefId="INSTALLFOLDER1" ComponentGroupName="PublishedComponents1" SuppressCom="true" Directory="..\VerticalTec.POS.Service.LiveUpdateAgent\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\publish" SuppressFragments="true" SuppressRegistry="true" SuppressRootDirectory="true" AutoGenerateGuids="false" GenerateGuidsNow="true" ToolPath="$(WixToolPath)" PreprocessorVariable="var.BasePath1" />
   </Target>
   <Target Name="AfterBuild">
     <GetAssemblyIdentity AssemblyFiles="..\VerticalTec.POS.Service.LiveUpdate\bin\$(Configuration)\netcoreapp3.0\win-$(Platform)\VtecLiveUpdateService.dll">

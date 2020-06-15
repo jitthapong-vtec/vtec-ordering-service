@@ -5,5 +5,8 @@
 	<String Id="Description">vTec Live Update Service</String>
 	<String Id="Language">1033</String>
 	<String Id="DowngradeErrorMessage">A newer version of [ProductName] is already installed.</String>
-	<String Id="ProductNameFolder">vTec Live Update</String>
+	<String Id="LiveUpdateServiceFolder">vTec Live Update</String>
+	<String Id="LiveUpdateAgentFolder">vTec Live Update Agent</String>
+	<String Id="ServiceName">VtecLiveUpdateService</String>
+	<String Id="ServiceDisplayName">vTec Live Update Service</String>
 </WixLocalization>

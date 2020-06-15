@@ -31,12 +31,17 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
         private void DoWork(object state)
         {
-            var posSetting = _fontConfigManager.POSDataSetting;
-            _clientConnectionService.HubConnection.InvokeAsync("SendVersionDeploy", posSetting);
+            try
+            {
+                var posSetting = _fontConfigManager.POSDataSetting;
+                _clientConnectionService.HubConnection.InvokeAsync("SendVersionDeploy", posSetting);
+            }
+            catch { }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            _timer?.Dispose();
             return Task.FromResult(true);
         }
     }

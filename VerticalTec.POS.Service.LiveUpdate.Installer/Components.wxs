@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" 
+	 xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 	<Fragment>
 		<ComponentGroup Id="ProductComponents">
 			<ComponentRef Id="VtecLiveUpdateService.exe"/>
 		</ComponentGroup>
 
+		<ComponentGroup Id="ProductComponents1">
+		</ComponentGroup>
+		
 		<DirectoryRef Id="INSTALLFOLDER" FileSource="..\VerticalTec.POS.Service.LiveUpdate\bin\$$(Configuration)\netcoreapp3.0\win-$(var.Platform)\publish\">
 
 			<Component Id="VtecLiveUpdateService.exe" Guid="{48AB3939-6771-4FE2-8F55-0BE2F142354F}">
 				<File Id="VtecLiveUpdateService.exe" KeyPath="yes" Source="$(var.BasePath)\VtecLiveUpdateService.exe" />
-				<ServiceInstall Id="VtecLiveUpdateService" Name="VtecLiveUpdateService" DisplayName="vTec Live Update Service" Type="ownProcess" Start="auto" ErrorControl="normal" Account="NT AUTHORITY\LocalService" />
-				<ServiceControl Id="VtecLiveUpdateServiceControl" Start="install" Stop="both" Remove="uninstall" Name="VtecLiveUpdateService" Wait="yes" />
+				<ServiceInstall Id="VtecLiveUpdateService" Name="!(loc.ServiceName)" DisplayName="!(loc.ServiceDisplayName)" Type="ownProcess" Start="auto" ErrorControl="normal" Account="LocalSystem" />
+				<ServiceControl Id="VtecLiveUpdateServiceControl" Start="install" Stop="uninstall" Remove="uninstall" Name="!(loc.ServiceName)" Wait="yes" />
+				<util:ServiceConfig ServiceName="!(loc.ServiceName)" FirstFailureActionType="restart" SecondFailureActionType="restart" ThirdFailureActionType="restart" /> 
 			</Component>
+		</DirectoryRef>
+		
+		<DirectoryRef Id="INSTALLFOLDER1" FileSource="..\VerticalTec.POS.Service.LiveUpdateAgent\bin\$$(Configuration)\netcoreapp3.0\win-$(var.Platform)\publish\">
 		</DirectoryRef>
 	</Fragment>
 </Wix>

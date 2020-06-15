@@ -30,6 +30,8 @@
 		<Feature Id="ProductFeature" Title="!(loc.ProductName)" Level="1">
 			<ComponentGroupRef Id="ProductComponents" />
 			<ComponentGroupRef Id="PublishedComponents" />
+			<ComponentGroupRef Id="ProductComponents1" />
+			<ComponentGroupRef Id="PublishedComponents1" />
 		</Feature>
 	</Product>
 </Wix>

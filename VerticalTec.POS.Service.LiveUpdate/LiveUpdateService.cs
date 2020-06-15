@@ -98,22 +98,28 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                 try
                 {
-                    var liveUpdateAgentPath = currentDir;
-                    var path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User);
+                    var liveUpdateAgentPath = Path.Combine(Directory.GetParent(currentDir).FullName, "vTec Live Update Agent");
+                    _logger.Info($"liveUpdateAgentPath => {liveUpdateAgentPath}");
+                    var path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Machine);
                     if (path == null)
                     {
-                        Environment.SetEnvironmentVariable("Path", "", EnvironmentVariableTarget.User);
-                        path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User);
+                        Environment.SetEnvironmentVariable("Path", "", EnvironmentVariableTarget.Machine);
+                        path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Machine);
                     }
+                    _logger.Info($"path => {path}");
                     var updateAgentVar = path.Split(";").Where(p => p.EndsWith(liveUpdateAgentPath)).FirstOrDefault();
+                    _logger.Info($"config upate agent path => {updateAgentVar}");
                     if (string.IsNullOrEmpty(updateAgentVar))
                     {
                         _logger.LogInfo("Create live update agent environment variable...");
-                        Environment.SetEnvironmentVariable("Path", $"{path};{liveUpdateAgentPath}", EnvironmentVariableTarget.User);
+                        Environment.SetEnvironmentVariable("Path", $"{path};{liveUpdateAgentPath}", EnvironmentVariableTarget.Machine);
                         _logger.LogInfo("Successfully create live update agent environment variable");
                     }
                 }
-                catch { }
+                catch(Exception ex) 
+                {
+                    _logger.Error($"Initial working environment error => {ex.Message}");
+                }
 
                 if (!Directory.Exists(_vtecEnv.PatchDownloadPath))
                     Directory.CreateDirectory(_vtecEnv.PatchDownloadPath);
