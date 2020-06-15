@@ -90,6 +90,11 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
 
         public ICommand StartUpdateCommand => new DelegateCommand(async () =>
         {
+            if (_versionLiveUpdate?.UpdateStatus == 2)
+            {
+                App.Current.Shutdown();
+                return;
+            }
             await Task.Run(async () =>
             {
                 _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.Updating);

@@ -116,7 +116,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         _logger.LogInfo("Successfully create live update agent environment variable");
                     }
                 }
-                catch(Exception ex) 
+                catch (Exception ex)
                 {
                     _logger.Error($"Initial working environment error => {ex.Message}");
                 }
@@ -263,7 +263,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, versionInfo.ShopId, versionInfo.ComputerId);
                 await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", versionLiveUpdate);
 
-                if(versionLiveUpdate?.FileReceiveStatus == FileReceiveStatus.NoReceivedFile)
+                if (versionLiveUpdate?.FileReceiveStatus == FileReceiveStatus.NoReceivedFile)
                 {
                     await DownloadFile();
                 }
@@ -277,7 +277,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
             using (var conn = await _db.ConnectAsync())
             {
-                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
+                var localVersion = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionLiveUpdate.BatchId, versionLiveUpdate.ShopId, versionLiveUpdate.ComputerId);
+                if (localVersion == null)
+                    await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
             }
         }
 
