@@ -133,6 +133,7 @@ namespace VerticalTec.POS.LiveUpdate
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         SyncStatus = reader.GetValue<int>("SyncStatus"),
                         ReadyToUpdate = reader.GetValue<int>("ReadyToUpdate"),
+                        UpdateStatus = reader.GetValue<int>("UpdateStatus"),
                         MessageLog = reader.GetValue<string>("MessageLog"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
                         UpdateDate = reader.GetValue<DateTime>("UpdateDate")
@@ -305,7 +306,7 @@ namespace VerticalTec.POS.LiveUpdate
             if (liveUpdate == null)
                 return;
 
-            var cmd = _db.CreateCommand("select count(BatchID) from Version_LiveUpdate where ShopID=@shopId and ComputerID=@computerId" +
+            var cmd = _db.CreateCommand("select count(BatchID) from Version_LiveUpdate where BatchId=@batchId and ShopID=@shopId and ComputerID=@computerId" +
                 " and ProgramID=@programId", conn);
             cmd.Parameters.Add(_db.CreateParameter("@shopId", liveUpdate.ShopId));
             cmd.Parameters.Add(_db.CreateParameter("@computerId", liveUpdate.ComputerId));
@@ -346,7 +347,7 @@ namespace VerticalTec.POS.LiveUpdate
                     " BackupEndTime=@backupEndtime, ScheduleUpdate=@scheduleUpdate," +
                     " UpdateEndTime=@updateEndTime, RollbackStatus=@rollbackStatus, UpdateStatus=@updateStatus," +
                     " SyncStatus=@syncStatus, ReadyToUpdate=@readyToUpdate, MessageLog=@messageLog, UpdateDate=@updateDate" +
-                    " where ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId";
+                    " where BatchId=@batchId and ShopID=@shopId and ComputerID=@computerId and ProgramID=@programId";
             }
             else
             {

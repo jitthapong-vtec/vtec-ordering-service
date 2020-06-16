@@ -147,7 +147,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
             _logger.LogInfo($"Initialize connection to live update server {liveUpdateServer}");
 
             _connectionService.InitConnection(liveUpdateServer);
-            //_connectionService.Subscribe("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
+            _connectionService.Subscribe("ReceiveConnectionEstablished", ReceiveConnectionEstablished);
             _connectionService.Subscribe<VersionDeploy, VersionLiveUpdate>("ReceiveVersionDeploy", ReceiveVersionDeploy);
             _connectionService.Subscribe<VersionInfo>("ReceiveSyncVersion", ReceiveSyncVersion);
             _connectionService.Subscribe<VersionLiveUpdate>("ReceiveSyncUpdateVersionState", ReceiveSyncUpdateVersionState);
@@ -180,6 +180,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 {
                     if (versionDeploy != null)
                     {
+                        var cmd = _db.CreateCommand("delete from version_deploy", conn);
+                        await _db.ExecuteNonQueryAsync(cmd);
+
                         await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
                     }
                     else
