@@ -68,7 +68,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
         public ICommand WindowLoadedCommand => new DelegateCommand(async () =>
         {
             var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
-            _posEnv.SoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}";
+            _posEnv.SoftwareRootPath = $"{Directory.GetParent(Directory.GetParent(currentDir).FullName)}";
             _posEnv.FrontCashierPath = Path.Combine(_posEnv.SoftwareRootPath, "vTec-ResPOS");
             _posEnv.PatchDownloadPath = Path.Combine(_posEnv.SoftwareRootPath, "Downloads");
             _posEnv.BackupPath = Path.Combine(_posEnv.SoftwareRootPath, "Backup");

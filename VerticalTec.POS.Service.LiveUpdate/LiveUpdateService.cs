@@ -91,14 +91,14 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 _logger.LogInfo("Initialize working environment...");
 
                 var currentDir = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath));
-                _vtecEnv.SoftwareRootPath = $"{Directory.GetParent(currentDir).FullName}\\";
-                _vtecEnv.FrontCashierPath = $"{_vtecEnv.SoftwareRootPath}vTec-ResPOS\\";
-                _vtecEnv.PatchDownloadPath = $"{_vtecEnv.SoftwareRootPath}Downloads\\";
-                _vtecEnv.BackupPath = $"{_vtecEnv.SoftwareRootPath}Backup\\";
+                _vtecEnv.SoftwareRootPath = @$"{Directory.GetParent(currentDir).FullName}\";
+                _vtecEnv.FrontCashierPath = @$"{_vtecEnv.SoftwareRootPath}vTec-ResPOS\";
+                _vtecEnv.PatchDownloadPath = @$"{_vtecEnv.SoftwareRootPath}Downloads\";
+                _vtecEnv.BackupPath = @$"{_vtecEnv.SoftwareRootPath}Backup\";
 
                 try
                 {
-                    var liveUpdateAgentPath = Path.Combine(Directory.GetParent(currentDir).FullName, "vTec Live Update Agent");
+                    var liveUpdateAgentPath = Path.Combine(Directory.GetParent(currentDir).FullName, "vTec Live Update", "vTec Live Update Agent");
                     _logger.Info($"liveUpdateAgentPath => {liveUpdateAgentPath}");
                     var path = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Machine);
                     if (path == null)

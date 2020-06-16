@@ -4,8 +4,9 @@
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
 				<Directory Id="COMPANYFOLDER" Name="!(loc.Company)">
-					<Directory Id="INSTALLFOLDER" Name="!(loc.LiveUpdateServiceFolder)" />
-					<Directory Id="INSTALLFOLDER1" Name="!(loc.LiveUpdateAgentFolder)" />
+					<Directory Id="INSTALLFOLDER" Name="!(loc.LiveUpdateServiceFolder)">
+						<Directory Id="INSTALLFOLDER1" Name="!(loc.LiveUpdateAgentFolder)" />
+					</Directory>
 				</Directory>
 			</Directory>
 		</Directory>

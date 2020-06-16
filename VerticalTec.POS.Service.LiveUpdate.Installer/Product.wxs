@@ -3,7 +3,7 @@
 	
 	<?define ProductCode = "{715EB601-BCE6-40BF-A7E6-658638687754}"?>
 	<?define UpgradeCode = "{57D57FF9-F8AB-428F-A940-604BA8A6523D}"?>
-	<?define BuildVersion = 1.0.0.0?>
+	<?define BuildVersion = 1.0.0.1?>
 	
 	<Product Id="$(var.ProductCode)" 
 			 Name="!(loc.ProductName)" 
