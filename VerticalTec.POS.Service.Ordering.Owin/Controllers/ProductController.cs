@@ -353,9 +353,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                                     .Select($"Kiosk_TemplateID={pageRow.GetValue<int>("Kiosk_TemplateID")} and PageID={pageRow.GetValue<int>("PageID")}");
                         foreach (DataRow detailRow in pageDetails)
                         {
+                            var pageId = detailRow.GetValue<int>("PageID");
                             var detailId = detailRow.GetValue<int>("DetailID");
                             var upsales = new List<object>();
-                            foreach (var sugest in dtUpsales.Select($"PageDetailID={detailId}"))
+                            foreach (var sugest in dtUpsales.Select($"PageID={pageId} and PageDetailID={detailId}"))
                             {
                                 upsales.Add(new
                                 {
@@ -530,19 +531,46 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
             }
 
-            if (!alreadyHaveTable)
-            {
-                cmd.CommandText = "create table " + tableName + "(" +
+            var createTableSql = "create table " + tableName + "(" +
                     "PageDetailID int(11), " +
                     "ProductID int(11)," +
-                    "primary key (PageDetailID, ProductID)" +
+                    "PageID int(11), " +
+                    "primary key (PageDetailID, ProductID, PageID)" +
                     ")";
+            if (!alreadyHaveTable)
+            {
+                cmd.CommandText = createTableSql;
                 cmd.ExecuteNonQuery();
+            }
+            else
+            {
+                cmd.CommandText = $"select * from {tableName} limit 1";
+                var pageIdCol = "";
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        try
+                        {
+                            pageIdCol = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).Where(c => c.Equals("PageID")).SingleOrDefault();
+                        }
+                        catch { }
+                    }
+                }
+
+                if (string.IsNullOrEmpty(pageIdCol))
+                {
+                    cmd.CommandText = $"drop table {tableName}";
+                    cmd.ExecuteNonQuery();
+
+                    cmd.CommandText = createTableSql;
+                    cmd.ExecuteNonQuery();
+                }
             }
 
             string imageBaseUrl = await _posRepo.GetKioskMenuImageBaseUrlAsync(conn, shopId);
             cmd = _database.CreateCommand(
-                               " SELECT a.PageDetailID, b.ProductID, b.DisplayName AS ProductName, " +
+                               " SELECT a.PageID, a.PageDetailID, b.ProductID, b.DisplayName AS ProductName, " +
                                " CONCAT('" + imageBaseUrl + "', b.DetailImage) AS MenuImageUrl, c.ProductTypeID, " +
                                " CASE WHEN d.ProductPrice IS NOT NULL THEN d.ProductPrice ELSE 0 END AS ProductPrice " +
                                " FROM kiosk_suggestion_menu_setting a " +
