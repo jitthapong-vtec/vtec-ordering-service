@@ -1,4 +1,5 @@
-﻿using Prism.Commands;
+﻿using ImTools;
+using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
 using Prism.Regions;
@@ -75,15 +76,37 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
 
             try
             {
-                var configPath = Path.Combine(_posEnv.FrontCashierPath, "vTec-ResPOS.config");
-                await _frontConfig.LoadConfig(configPath);
-                var posSetting = _frontConfig.POSDataSetting;
-                _db.SetConnectionString($"Port={posSetting.DBPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={posSetting.DBIPServer};DATABASE={posSetting.DBName};old guids=true;");
-
-                _regionManager.RequestNavigate("ContentRegion", "MainView");
-
+                bool doneCloseProcess = false;
                 var frontRes = Process.GetProcessesByName("vtec-ResPOS");
-                frontRes.FirstOrDefault()?.Kill(true);
+                var syncClientProcess = Process.GetProcessesByName("vTec-SyncClient");
+                try
+                {
+                    syncClientProcess.ForEach(sync => sync.Kill());
+                    frontRes.ForEach(front => front.Kill());
+                    doneCloseProcess = true;
+                }
+                catch (Exception ex)
+                {
+                    var parameters = new DialogParameters()
+                        {
+                            {"title", "Error" },
+                            {"message", $"Could not kill vTec-ResPOS! => {ex.Message}" }
+                        };
+                    _dialogService.ShowDialog("Dialog", parameters, (r) =>
+                    {
+                        App.Current.Shutdown();
+                    });
+                }
+
+                if (doneCloseProcess)
+                {
+                    var configPath = Path.Combine(_posEnv.FrontCashierPath, "vTec-ResPOS.config");
+                    await _frontConfig.LoadConfig(configPath);
+                    var posSetting = _frontConfig.POSDataSetting;
+                    _db.SetConnectionString($"Port={posSetting.DBPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={posSetting.DBIPServer};DATABASE={posSetting.DBName};old guids=true;");
+
+                    _regionManager.RequestNavigate("ContentRegion", "MainView");
+                }
             }
             catch (Exception ex)
             {
