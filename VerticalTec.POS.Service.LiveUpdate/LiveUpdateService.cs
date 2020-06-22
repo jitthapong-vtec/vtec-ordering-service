@@ -167,6 +167,11 @@ namespace VerticalTec.POS.Service.LiveUpdate
         public Task ReceiveConnectionEstablished()
         {
             _logger.LogInfo($"Yeh! Successfully connected to live update server");
+            return RequestVersionDeploy();
+        }
+
+        Task RequestVersionDeploy()
+        {
             var posSetting = _frontConfigManager.POSDataSetting;
             // Told server to send version deploy info
             return _connectionService.HubConnection.InvokeAsync("SendVersionDeploy", posSetting);
@@ -290,6 +295,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
         {
             switch (cmd)
             {
+                case LiveUpdateCommands.ReceiveVersionDeploy:
+                    await RequestVersionDeploy();
+                    break;
                 case LiveUpdateCommands.SendVersionInfo:
                     await SendVersionInfo();
                     break;
@@ -341,8 +349,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
                     await _connectionService.HubConnection.InvokeAsync("ReceiveUpdateVersionState", updateState);
 
-                    var fileId = UrlParameterExtensions.GetValue(versionDeploy.FileUrl, "id");
-                    var result = await downloadService.DownloadFile(fileId, _vtecEnv.PatchDownloadPath);
+                    var result = downloadService.DownloadFile(versionDeploy.FileUrl, _vtecEnv.PatchDownloadPath);
                     if (result.Success)
                     {
                         stepLog = "Download complete";

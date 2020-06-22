@@ -84,8 +84,13 @@ else
         </div>
 
         <div class="form-group col-md-4">
-            <label>File Url</label>
-            <input type="text" class="form-control" @bind="@deployVersion.FileUrl">
+            <label>Upload Patch (Support only .zip)</label>
+            <DxUpload Name="file" na UploadUrl="@GetUploadUrl("api/Resource/UploadPatch")"
+                      AllowMultiFileUpload="false"
+                      AllowedFileExtensions="@(new List<string> { ".zip" })" 
+                      ShowFileList="false"
+                      FileUploaded="OnFileUploaded">
+            </DxUpload>
         </div>
 
         <div class="form-group col-md-4">
@@ -145,6 +150,17 @@ else
         {
             shop.Selected = Convert.ToBoolean(e.Value);
         }
+    }
+
+    void OnFileUploaded(FileUploadEventArgs e)
+    {
+        deployVersion.FileUrl = GetUploadUrl($"Patch/{e.FileInfo.Name}");
+        this.StateHasChanged();
+    }
+
+    string GetUploadUrl(string url)
+    {
+        return NavigationManager.ToAbsoluteUri(url).AbsoluteUri;
     }
 
     async Task SaveAsync()

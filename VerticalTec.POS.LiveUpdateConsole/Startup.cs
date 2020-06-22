@@ -64,6 +64,7 @@ namespace VerticalTec.POS.LiveUpdateConsole
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapControllers();
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
                 endpoints.MapHub<ConsoleHub>("/console");

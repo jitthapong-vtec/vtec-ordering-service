@@ -136,6 +136,12 @@ else
             cmd.Parameters.Add(DbContext.CreateParameter("@batchStatus", batchStatus));
             cmd.Parameters.Add(DbContext.CreateParameter("@batchId", versionDeploy.BatchId));
             await DbContext.ExecuteNonQueryAsync(cmd);
+
+            if(batchStatus == VersionDeployBatchStatus.InActivate)
+            {
+                cmd.CommandText = "update version_liveupdate set FileReceiveStatus=0, BackupStatus=0, UpdateStatus=0, ReadyToUpdate=0 where batchId=@batchId";
+                await DbContext.ExecuteNonQueryAsync(cmd);
+            }
         }
 
         await LoadVersionDeployAsync();
