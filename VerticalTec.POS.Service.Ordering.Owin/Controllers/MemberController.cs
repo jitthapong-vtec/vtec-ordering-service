@@ -135,7 +135,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/members/apply")]
-        public async Task<IHttpActionResult> ApplyMember(string memberCode, string memberFirstName, string memberLastName, string memberMobile,
+        public async Task<IHttpActionResult> ApplyMember(int memberId, string memberCode, string memberFirstName, string memberLastName, string memberMobile,
             string memberGroupName, string memberEmail, int transactionId, int computerId, int shopId)
         {
             _log.Info($"Apply member: memberCode={memberCode}, memberFirstName={memberFirstName}, memberLastName={memberLastName}, memberMobile={memberMobile}, " +
@@ -145,7 +145,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             using (var conn = await _database.ConnectAsync())
             {
                 var responseText = "";
-                var memberId = 0;
                 var saleDate = $"'{await _posRepo.GetSaleDateAsync(conn, shopId, false)}'";
                 var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
                 var posModule = new POSModule();
@@ -157,6 +156,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     result.Message = responseText;
                 }
                 result.Body = memberId;
+                _log.Info($"Apply member successfully {memberId}");
             }
             return result;
         }
