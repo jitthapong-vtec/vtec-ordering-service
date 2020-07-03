@@ -1,11 +1,8 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
@@ -33,41 +30,51 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
         public async Task<IHttpActionResult> GetExchangeInvenDataAsync(List<int> shopIds)
         {
             var result = new HttpActionResult<IEnumerable<object>>(Request);
-            using (var conn = await _database.ConnectAsync())
+            try
             {
-                List<object> exchangeJsons = new List<object>();
-                foreach (var shopId in shopIds)
+                using (var conn = await _database.ConnectAsync())
                 {
-                    var responseText = "";
-                    var docJson = "";
-                    var ds = new DataSet();
-                    var isSuccess = _posModule.ExchangeInventData(ref responseText, ref docJson, ref ds, shopId, conn as SqlConnection);
-                    if (isSuccess)
+                    List<object> exchangeJsons = new List<object>();
+                    foreach (var shopId in shopIds)
                     {
-                        exchangeJsons.Add(new
+                        var responseText = "";
+                        var docJson = "";
+                        var ds = new DataSet();
+                        var isSuccess = _posModule.ExchangeInventData(ref responseText, ref docJson, ref ds, shopId, conn as SqlConnection);
+                        if (isSuccess)
                         {
-                            ShopId = shopId,
-                            ExchInvJson = docJson
-                        });
+                            exchangeJsons.Add(new
+                            {
+                                ShopId = shopId,
+                                ExchInvJson = docJson
+                            });
+                        }
+                    }
+                    if (exchangeJsons.Count > 0)
+                    {
+                        result.StatusCode = HttpStatusCode.OK;
+                        result.Data = exchangeJsons;
+                    }
+                    else
+                    {
+                        result.StatusCode = HttpStatusCode.NotFound;
+                        result.Message = "No exchange inventory data";
                     }
                 }
-                if (exchangeJsons.Count > 0)
-                {
-                    result.StatusCode = HttpStatusCode.OK;
-                    result.Data = exchangeJsons;
-                }
-                else
-                {
-                    result.StatusCode = HttpStatusCode.NotFound;
-                    result.Message = "No exchange inventory data";
-                }
+            }
+            catch (Exception ex)
+            {
+                var message = $"An error occured {ex.Message}";
+                await LogManager.Instance.WriteLogAsync(message);
+                result.StatusCode = HttpStatusCode.InternalServerError;
+                result.Message = message;
             }
             return result;
         }
 
         [HttpPost]
         [Route("v1/inv/import")]
-        public async Task<IHttpActionResult> ImportInventoryDataAsync(int shopId, [FromBody]object payload)
+        public async Task<IHttpActionResult> ImportInventoryDataAsync(int shopId, [FromBody] object payload)
         {
             var result = new HttpActionResult<object>(Request);
             if (payload == null)
