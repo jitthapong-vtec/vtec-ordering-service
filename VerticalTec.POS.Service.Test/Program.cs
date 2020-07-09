@@ -17,7 +17,12 @@ namespace VerticalTec.POS.Service.Test
             try
             {
                 var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
-                using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.Ordering.Owin.Startup("127.0.0.1", "bkgm", hangfireConStr).Configuration(appBuilder)))
+                //using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.Ordering.Owin.Startup("127.0.0.1", "bkgm", hangfireConStr).Configuration(appBuilder)))
+                //{
+                //    Console.ReadLine();
+                //}
+
+                using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.DataSync.Owin.Startup("127.0.0.1", "bkgm", hangfireConStr).Configuration(appBuilder)))
                 {
                     Console.ReadLine();
                 }

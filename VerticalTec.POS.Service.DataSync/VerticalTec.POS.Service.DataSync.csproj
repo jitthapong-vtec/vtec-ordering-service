@@ -8,7 +8,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>VerticalTec.POS.Service.DataSync</RootNamespace>
     <AssemblyName>VerticalTec.POS.Service.DataSync</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -190,12 +190,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VerticalTec.POS.Service.DataSync.Owin\VerticalTec.POS.Service.DataSync.Owin.csproj">
-      <Project>{A0049E0C-5046-417A-9398-9D16565F7E8D}</Project>
+      <Project>{a0049e0c-5046-417a-9398-9d16565f7e8d}</Project>
       <Name>VerticalTec.POS.Service.DataSync.Owin</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj">
-      <Project>{EB612948-E7FD-4F3B-9DC6-26E1D631CE11}</Project>
-      <Name>VerticalTec.POS.Utils</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
