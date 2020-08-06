@@ -30,7 +30,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpGet]
         [Route("v1/promotions/vouchers")]
-        public async Task<IHttpActionResult> GetVoucherAsync(string sn)
+        public async Task<IHttpActionResult> GetVoucherAsync(string sn, int shopId = 0)
         {
             var result = new HttpActionResult<VoucherData>(Request);
 
@@ -41,7 +41,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
 
             var httpClient = new HttpClient();
-            var builder = new UriBuilder($"{baseUrl}LoyaltyApi/Voucher/GetVoucherDataWithVoucherSN?deviceCode=&memberUdid=&voucherSN={sn}");
+            var builder = new UriBuilder($"{baseUrl}LoyaltyApi/Voucher/GetVoucherDataWithVoucherSN?deviceCode=&memberUdid=&voucherSN={sn}&shopId={shopId}");
             var uri = builder.ToString();
             try
             {
