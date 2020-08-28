@@ -21,7 +21,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Models
         [JsonProperty("voucherNo")]
         public string VoucherNo { get; set; }
         [JsonProperty("voucherHeaderId")]
-        public string VoucherHeaderId { get; set; }
+        public int VoucherHeaderId { get; set; }
         [JsonProperty("voucherHeader")]
         public string VoucherHeader { get; set; }
         [JsonProperty("voucherName")]

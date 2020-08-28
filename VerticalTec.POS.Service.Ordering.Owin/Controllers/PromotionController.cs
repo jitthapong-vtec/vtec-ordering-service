@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Data;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -53,8 +54,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     if (loyaltyResult.Status == 0)
                     {
                         var voucher = JsonConvert.DeserializeObject<VoucherData>(loyaltyResult.DataResult.ToString());
-                        result.StatusCode = HttpStatusCode.OK;
-                        result.Body = voucher;
+                        if (voucher?.VoucherStatus == 1)
+                        {
+                            result.StatusCode = HttpStatusCode.OK;
+                            result.Body = voucher;
+                        }
+                        else
+                        {
+                            result.StatusCode = HttpStatusCode.NotFound;
+                            result.Message = "Not found this voucher/coupon";
+                        }
                     }
                     else
                     {
@@ -206,15 +215,53 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     int decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
                     var saleDateStr = await _posRepo.GetSaleDateAsync(conn, orderPromotion.ShopID, false);
                     var saleDate = DateTime.ParseExact(saleDateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    var shopData = await _posRepo.GetShopDataAsync(conn);
+                    var computerData = await _posRepo.GetComputerAsync(conn, orderPromotion.TerminalID);
 
-                    var success = LoyaltyManagerLib.LoyaltyManager.Loyalty_VoucherApplyPromotion(myConn, dbUtil, posModule,
-                        orderPromotion.ShopID, orderPromotion.TerminalID, orderPromotion.TransactionID,
-                        orderPromotion.ComputerID, saleDate, orderPromotion.StaffID, orderPromotion.VoucherSn, ref responseText);
+                    var shopCode = (from row in shopData.AsEnumerable()
+                                    select row.GetValue<string>("ShopCode")).SingleOrDefault();
+                    var deviceCode = (from row in computerData.AsEnumerable()
+                                      select row.GetValue<string>("DeviceCode")).SingleOrDefault();
+                    var staffName = "";
+
+                    var cmd = new MySqlCommand("select StaffFirstName, StaffLastName from staffs where staffId=@staffId", myConn);
+                    cmd.Parameters.Add(new MySqlParameter("@staffId", orderPromotion.StaffID));
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        if (reader.Read())
+                            staffName = $"{reader.GetValue<string>("StaffFirstName")} {reader.GetValue<string>("StaffLastName")}";
+                    }
+
+                    var voucherData = new VoucherManagerLib.VoucherData()
+                    {
+                        voucherHeaderId = orderPromotion.VoucherData?.VoucherHeaderId ?? 0,
+                        voucherSN = orderPromotion.VoucherData?.VoucherSn,
+                        memberCode = orderPromotion.VoucherData?.MemberCode,
+                        memberId = orderPromotion.VoucherData?.MemberID ?? 0,
+                        payTypeId = orderPromotion.VoucherData?.PayTypeID ?? 0,
+                        imgTextColor = orderPromotion.VoucherData?.ImgTextColor ?? 0,
+                        expireDate = orderPromotion.VoucherData?.ExpireDate ?? "",
+                        activateDate = orderPromotion.VoucherData?.ActivateDate ?? "",
+                        refCardId = orderPromotion.VoucherData?.RefCardId ?? 0,
+                        voucherStatus = orderPromotion.VoucherData?.VoucherStatus ?? 0,
+                        promotionCode = orderPromotion.VoucherData?.PromotionCode ?? "",
+                        voucherName = orderPromotion.VoucherData?.VoucherName ?? "",
+                        voucherHeader = orderPromotion.VoucherData?.VoucherHeader ?? "",
+                        voucherNo = orderPromotion.VoucherData?.VoucherNo ?? "",
+                        voucherTypeId = orderPromotion.VoucherData?.VoucherTypeId ?? 0,
+                        voucherShopId = orderPromotion.VoucherData?.VoucherShopId ?? 0,
+                        voucherId = orderPromotion.VoucherData?.VoucherId ?? 0,
+                        voucherUDDID = orderPromotion.VoucherData?.VoucherUDDID ?? "",
+                        memberName = orderPromotion.VoucherData?.MemberName ?? ""
+                    };
+
+                    var success = LoyaltyManagerLib.LoyaltyManager.Loyalty_VoucherApplyPromotion_V1(myConn, dbUtil, posModule,
+                        orderPromotion.ShopID, orderPromotion.TerminalID, orderPromotion.TransactionID, orderPromotion.ComputerID,
+                        saleDate, orderPromotion.StaffID, orderPromotion.VoucherSn, voucherData, ref responseText);
 
                     if (success)
                     {
-                        posModule.OrderDetail_CalBill(ref responseText, orderPromotion.TransactionID, orderPromotion.ComputerID, orderPromotion.ShopID, decimalDigit, "front", conn as MySqlConnection);
-
+                        await UpdateUsedVoucherAsync(deviceCode, orderPromotion.VoucherSn, "", shopCode, staffName);
                         result.StatusCode = HttpStatusCode.OK;
                     }
                     else
@@ -234,6 +281,40 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 _log.Error($"Apply Voucher {ex.Message}");
             }
             return result;
+        }
+
+        async Task UpdateUsedVoucherAsync(string deviceCode, string voucherSn, string remark, string shopCode, string staffName)
+        {
+            string baseUrl = "";
+            using (var conn = await _database.ConnectAsync())
+            {
+                baseUrl = await _posRepo.GetLoyaltyApiAsync(conn);
+            }
+
+            var httpClient = new HttpClient();
+            var builder = new UriBuilder($"{baseUrl}LoyaltyApi/Voucher/UpdateVouherStatusWithVoucherSN?deviceCode={deviceCode}&memberUdid=&voucherSn={voucherSn}&voucherStatus=3&remark={remark}&shopCode={shopCode}&staffName={staffName}");
+            var uri = builder.ToString();
+            try
+            {
+                var resp = await httpClient.PostAsync(uri, null);
+                if (resp.IsSuccessStatusCode)
+                {
+                    var respContent = await resp.Content.ReadAsStringAsync();
+                    var loyaltyResult = JsonConvert.DeserializeObject<LoyaltyApiResult<object, object, object>>(respContent);
+                    if (loyaltyResult.Status != 0)
+                    {
+                        _log.Error($"UpdateVouherStatusWithVoucherSN {loyaltyResult.DataResult.ToString()}");
+                    }
+                }
+                else
+                {
+                    _log.Error($"UpdateVouherStatusWithVoucherSN {resp.ReasonPhrase}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"UpdateVouherStatusWithVoucherSN {ex.Message}");
+            }
         }
 
         [HttpPost]

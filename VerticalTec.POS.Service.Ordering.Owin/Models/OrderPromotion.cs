@@ -10,7 +10,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Models
         public int ShopID { get; set; }
         public int StaffID { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string VoucherSn { get; set; }
         public int MemberID { get; set; }
+        public string VoucherSn { get; set; }
+        public VoucherData VoucherData { get; set; }
     }
 }
