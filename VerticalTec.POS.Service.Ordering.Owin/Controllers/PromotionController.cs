@@ -188,6 +188,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _log.Info($"ApplyVoucher:{JsonConvert.SerializeObject(orderPromotion)}");
 
             var result = new HttpActionResult<object>(Request);
+            if (orderPromotion?.TransactionID == 0 || orderPromotion?.ComputerID == 0)
+            {
+                result.StatusCode = HttpStatusCode.BadRequest;
+                result.Message = "TransactionID and ComputerID is require";
+                return result;
+            }
+
             try
             {
                 using (var conn = await _database.ConnectAsync())
