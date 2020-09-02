@@ -533,13 +533,17 @@ namespace VerticalTec.POS
             return Task.FromResult(dataSet.Tables[0]);
         }
 
-        public Task DeleteChildComboAsync(IDbConnection conn, int transactionId, int computerId, int orderDetailId)
+        public async Task DeleteChildComboAsync(IDbConnection conn, int transactionId, int computerId, int orderDetailId)
         {
             var responseText = "";
             var isSuccess = _posModule.OrderDetail_delCombo(ref responseText, orderDetailId, transactionId, computerId, conn as MySqlConnection);
             if (!isSuccess)
                 throw new VtecPOSException(responseText);
-            return Task.FromResult(isSuccess);
+            IDbCommand cmd = _database.CreateCommand("delete from orderdetailfront where TransactionID=@tranId and ComputerID=@compId and OrderDetailLinkID=@parentOrderId", conn);
+            cmd.Parameters.Add(_database.CreateParameter("@tranId", transactionId));
+            cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
+            cmd.Parameters.Add(_database.CreateParameter("@parentOrderId", orderDetailId));
+            await _database.ExecuteNonQueryAsync(cmd);
         }
 
         public async Task<DataSet> MoveTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText)
