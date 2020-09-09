@@ -44,7 +44,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
             using (var conn = await _db.ConnectAsync())
             {
                 var cmd = _db.CreateCommand(conn);
-                cmd.CommandText = "select a.ShopID, a.BrandID, a.ShopName, case when b.ShopID is null then 0 else 1 end as Selected" +
+                cmd.CommandText = "select a.ShopID, a.BrandID, a.ShopCatID1, a.ShopCode, a.ShopName, case when b.ShopID is null then 0 else 1 end as Selected" +
                         " from shop_data a left join " +
                         " (select ShopID from Version_LiveUpdate where BatchID=@batchId group by ShopID) b" +
                         " on a.ShopID=b.ShopID" +
@@ -57,8 +57,10 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
                         shops.Add(new ShopData()
                         {
                             ShopId = reader.GetValue<int>("ShopID"),
+                            ShopCode = reader.GetValue<string>("ShopCode"),
                             ShopName = reader.GetValue<string>("ShopName"),
                             BrandId = reader.GetValue<int>("BrandID"),
+                            ShopCatId = reader.GetValue<int>("ShopCatID1"),
                             Selected = reader.GetValue<bool>("Selected")
                         });
                     }
@@ -67,7 +69,35 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
             return shops;
         }
 
-        public async Task<List<ShopData>> GetShopAsync(int brandId = 0)
+        public async Task<List<ShopCategory>> GetShopCategoryAsync()
+        {
+            List<ShopCategory> items = new List<ShopCategory>();
+            items.Add(new ShopCategory()
+            {
+                ShopCateId = 0,
+                ShopCateName = "-- All Shop Type--"
+            }); ;
+            using (var conn = await _db.ConnectAsync())
+            {
+                var cmd = _db.CreateCommand(conn);
+                cmd.CommandText = "select * from shop_category where Deleted=0 order by ShopCatOrdering";
+                using(var reader = await _db.ExecuteReaderAsync(cmd))
+                {
+                    while (reader.Read())
+                    {
+                        items.Add(new ShopCategory()
+                        {
+                            ShopCateId = reader.GetValue<int>("ShopCatID"),
+                            ShopCateCode = reader.GetValue<string>("ShopCatCode"),
+                            ShopCateName = reader.GetValue<string>("ShopCatName"),
+                        });
+                    }
+                }
+            }
+                return items;
+        }
+
+        public async Task<List<ShopData>> GetShopAsync(int brandId = 0, int shopCatId=0)
         {
             List<ShopData> shops = new List<ShopData>();
             using (var conn = await _db.ConnectAsync())
@@ -75,11 +105,19 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
                 var cmd = _db.CreateCommand(conn);
                 cmd.CommandText = "select ShopID, BrandID, ShopName from shop_data " +
                         " where Deleted=0 and IsShop=1 and MasterShop = 0 ";
+
                 if(brandId > 0)
                 {
                     cmd.CommandText += " and BrandID=@brandId";
                     cmd.Parameters.Add(_db.CreateParameter("@brandId", brandId));
                 }
+
+                if(shopCatId > 0)
+                {
+                    cmd.CommandText += " and ShopCatID1=@shopCatId";
+                    cmd.Parameters.Add(_db.CreateParameter("@shopCatId", shopCatId));
+                }
+
                 using (var reader = await _db.ExecuteReaderAsync(cmd))
                 {
                     while (reader.Read())

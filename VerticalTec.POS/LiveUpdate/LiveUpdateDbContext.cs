@@ -210,7 +210,7 @@ namespace VerticalTec.POS.LiveUpdate
 
         public async Task<List<VersionInfo>> GetVersionInfo(IDbConnection conn, int shopId = 0, int computerId = 0, ProgramTypes types = ProgramTypes.All)
         {
-            var cmd = _db.CreateCommand("select a.*, b.ComputerName, c.ShopName" +
+            var cmd = _db.CreateCommand("select a.*, b.ComputerName, c.ShopCode, c.ShopName" +
                 " from VersionInfo a" +
                 " left join computername b" +
                 " on a.ComputerID=b.ComputerID" +
@@ -247,6 +247,7 @@ namespace VerticalTec.POS.LiveUpdate
                         ConnectionId = reader.GetValue<string>("ConnectionId"),
                         ProgramName = reader.GetValue<string>("ProgramName"),
                         ComputerName = reader.GetValue<string>("ComputerName"),
+                        ShopCode = reader.GetValue<string>("ShopCode"),
                         ShopName = reader.GetValue<string>("ShopName"),
                         ProgramVersion = reader.GetValue<string>("ProgramVersion"),
                         VersionStatus = reader.GetValue<int>("VersionStatus"),

@@ -32,6 +32,7 @@ namespace VerticalTec.POS.LiveUpdateConsole
         {
             var connStr = Configuration.GetConnectionString("VtecPOS");
 
+            services.AddDevExpressBlazor();
             services.AddRazorPages();
             services.AddSignalR();
             services.AddServerSideBlazor();

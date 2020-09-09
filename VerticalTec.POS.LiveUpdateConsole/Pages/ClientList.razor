@@ -47,20 +47,23 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
+        <DxDataGridColumn Caption="Shop">
+            <DisplayTemplate>
+                @{
+                    var client = (context as VersionInfo);
+                    <span>@client.ShopCode : @client.ShopName</span>
+                }
+            </DisplayTemplate>
+        </DxDataGridColumn>
         <DxDataGridColumn Caption="Computer Name">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
-                    <h4>
-                        @client.ComputerName
-                    </h4>
-                    <h6>
-                        @client.ShopName
-                    </h6>
+                    @client.ComputerName
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="Current Version" />
+        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="Current Version" TextAlignment="DataGridTextAlign.Center" />
         <DxDataGridColumn Caption="Status message">
             <DisplayTemplate>
                 @{

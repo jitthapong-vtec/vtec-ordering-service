@@ -19,57 +19,88 @@
 
 <h3>Create version</h3>
 
-@if (brands.Count == 0)
+@if (_brands.Count == 0)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
-    <EditForm Model="@deployVersion" OnValidSubmit="@(async() => await SaveAsync())">
+    <EditForm Model="@_deployVersion" OnValidSubmit="@(async() => await SaveAsync())">
         <DataAnnotationsValidator />
         <div class="form-group col-md-4">
-            <label>Brands</label>
-            <select class="form-control" @onchange="@OnBrandChanged">
-                @foreach (var brand in brands)
-                {
-                    @if (brand.BrandId == @BrandId)
-                    {
-                        <option selected value="@brand.BrandId">@brand.BrandName</option>
-                    }
-                    else
-                    {
-                        <option value="@brand.BrandId">@brand.BrandName</option>
-                    }
-                }
-            </select>
+            <div class="row">
+                <div class="col">
+                    <label>Brands</label>
+                    <select class="form-control" @onchange="@OnBrandChanged">
+                        @foreach (var brand in _brands)
+                        {
+                            @if (brand.BrandId == @BrandId)
+                            {
+                                <option selected value="@brand.BrandId">@brand.BrandName</option>
+                            }
+                            else
+                            {
+                                <option value="@brand.BrandId">@brand.BrandName</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
         </div>
-        <div class="form-group col-md-4">
-            <label>Apply to shops</label>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="0" value="0" @onchange="@OnCheckAllShop" />
-                        <label for="0" class="custom-control-label">Check all</label>
-                    </div>
-                </li>
-            </ul>
-            <ul class="list-group list-group-flush" style="height:300px; overflow:auto;">
-                @foreach (var shop in shops)
-                {
-                    <li class="list-group-item">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="@shop.ShopId" @bind="shop.Selected" />
-                            <label for="@shop.ShopId" class="custom-control-label">@shop.ShopName</label>
-                        </div>
-                    </li>
-                }
-            </ul>
+        <div class="form-group row">
+                <div class="col">
+                    @if (_shopCats.Count > 0)
+                    {
+                        <label>Select shop type</label>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="chkAllShopCat" @onchange="@OnCheckAllShopCat" />
+                                    <label for="chkAllShopCat" class="custom-control-label">Check all</label>
+                                </div>
+                            </li>
+                        </ul>
+                        <ul class="list-group list-group-flush" style="height:300px; width:500px; overflow:auto;">
+                            @foreach (var shopCat in _shopCats)
+                            {
+                                <li class="list-group-item">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="@shopCat.ShopCateId" @onchange="(e) => OnShopCatCheck(shopCat, e)"/>
+                                        <label for="@shopCat.ShopCateId" class="custom-control-label">@shopCat.ShopCateName</label>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+                <div class="col">
+                    <label>Apply to shops</label>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="chkAllShop" @onchange="@OnCheckAllShop" />
+                                <label for="chkAllShop" class="custom-control-label">Check all</label>
+                            </div>
+                        </li>
+                    </ul>
+                    <ul class="list-group list-group-flush" style="height:300px; width:500px; overflow:auto;">
+                        @foreach (var shop in _shops)
+                        {
+                            <li class="list-group-item">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="@shop.ShopId" @bind="@shop.Selected" />
+                                    <label for="@shop.ShopId" class="custom-control-label">@shop.ShopCode : @shop.ShopName</label>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
         </div>
 
         <div class="form-group col-md-4">
             <label>Program types</label>
-            <select class="form-control" @bind="@deployVersion.ProgramId">
-                @foreach (var programType in deployVersion.ProgramTypes)
+            <select class="form-control" @bind="@_deployVersion.ProgramId">
+                @foreach (var programType in _deployVersion.ProgramTypes)
                 {
                     var programId = programType.ProgramTypeId;
                     var programName = programType.ProgramName;
@@ -80,14 +111,14 @@ else
 
         <div class="form-group col-md-4">
             <label>Version</label>
-            <input type="text" class="form-control" @bind="@deployVersion.ProgramVersion">
+            <input type="text" class="form-control" @bind="@_deployVersion.ProgramVersion">
         </div>
 
         <div class="form-group col-md-4">
             <label>Upload Patch (Support only .zip)</label>
             <DxUpload Name="file" na UploadUrl="@GetUploadUrl("api/Resource/UploadPatch")"
                       AllowMultiFileUpload="false"
-                      AllowedFileExtensions="@(new List<string> { ".zip" })" 
+                      AllowedFileExtensions="@(new List<string> { ".zip" })"
                       ShowFileList="false"
                       FileUploaded="OnFileUploaded">
             </DxUpload>
@@ -95,7 +126,7 @@ else
 
         <div class="form-group col-md-4">
             <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="chkAutoBackup" @bind="@deployVersion.AutoBackup" />
+                <input type="checkbox" class="custom-control-input" id="chkAutoBackup" @bind="@_deployVersion.AutoBackup" />
                 <label for="chkAutoBackup" class="custom-control-label">Auto backup when download file success</label>
             </div>
         </div>
@@ -115,19 +146,20 @@ else
     [Parameter]
     public int BrandId { get; set; }
 
-    private DeployVersion deployVersion = new DeployVersion();
+    private DeployVersion _deployVersion = new DeployVersion();
 
-    List<BrandData> brands = new List<BrandData>();
-    List<ShopData> allShops = new List<ShopData>();
-    List<ShopData> shops = new List<ShopData>();
+    List<BrandData> _brands = new List<BrandData>();
+    List<ShopData> _allShops = new List<ShopData>();
+    List<ShopData> _shops = new List<ShopData>();
+    List<ShopCategory> _shopCats = new List<ShopCategory>();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadBrandAsync();
+        await LoadShopCategoryAsync();
         await LoadVersionDeploy();
 
-        if (BrandId > 0)
-            RefreshShop();
+        RefreshShop();
     }
 
     void OnBrandChanged(ChangeEventArgs e)
@@ -138,23 +170,64 @@ else
 
     void RefreshShop()
     {
-        shops = allShops.Where(s => s.BrandId == BrandId).ToList();
+        if (BrandId > 0)
+            _shops = _allShops.Where(s => s.BrandId == BrandId).ToList();
     }
 
     void OnCheckAllShop(ChangeEventArgs e)
     {
+        if (!_shops.Any())
+            return;
+
+        SetCheckToShop(_shops, Convert.ToBoolean(e.Value));
+    }
+
+    void OnCheckAllShopCat(ChangeEventArgs e)
+    {
+        foreach (var shopCat in _shopCats)
+        {
+            shopCat.Selected = Convert.ToBoolean(e.Value);
+        }
+
+        RefreshCheckedShop();
+
+        StateHasChanged();
+    }
+
+    void OnShopCatCheck(ShopCategory shopCat, ChangeEventArgs e)
+    {
+        shopCat.Selected = Convert.ToBoolean(e.Value);
+        RefreshCheckedShop();
+    }
+
+    void RefreshCheckedShop()
+    {
+        var selectedShopCat = _shopCats.Where(s => s.Selected).Select(s=>s.ShopCateId);
+        var shops = _shops.Where(s => selectedShopCat.Contains(s.ShopCatId)).ToList();
+
+        var isNoData = shops.Count == 0;
+        SetCheckToShop(isNoData ? _shops : shops, !isNoData);
+    }
+
+    void SetCheckToShop(List<ShopData> shops, bool isCheck)
+    {
         if (!shops.Any())
             return;
 
+        foreach(var shop in _shops.Where(s => s.Selected).ToList())
+        {
+            shop.Selected = false;
+        }
+
         foreach (var shop in shops)
         {
-            shop.Selected = Convert.ToBoolean(e.Value);
+            shop.Selected = isCheck;
         }
     }
 
     void OnFileUploaded(FileUploadEventArgs e)
     {
-        deployVersion.FileUrl = GetUploadUrl($"Patch/{e.FileInfo.Name}");
+        _deployVersion.FileUrl = GetUploadUrl($"Patch/{e.FileInfo.Name}");
         this.StateHasChanged();
     }
 
@@ -174,13 +247,13 @@ else
             if (isUpdate)
                 versionDeploy.BatchId = BatchId;
             versionDeploy.BrandId = BrandId;
-            versionDeploy.BatchStatus = deployVersion.BatchStatus;
-            versionDeploy.ProgramId = deployVersion.ProgramId;
-            versionDeploy.ProgramName = deployVersion.ProgramName;
-            versionDeploy.ProgramVersion = deployVersion.ProgramVersion;
-            versionDeploy.FileUrl = deployVersion.FileUrl;
-            versionDeploy.AutoBackup = deployVersion.AutoBackup;
-            versionDeploy.InsertDate = deployVersion.InsertDate;
+            versionDeploy.BatchStatus = _deployVersion.BatchStatus;
+            versionDeploy.ProgramId = _deployVersion.ProgramId;
+            versionDeploy.ProgramName = _deployVersion.ProgramName;
+            versionDeploy.ProgramVersion = _deployVersion.ProgramVersion;
+            versionDeploy.FileUrl = _deployVersion.FileUrl;
+            versionDeploy.AutoBackup = _deployVersion.AutoBackup;
+            versionDeploy.InsertDate = _deployVersion.InsertDate;
             versionDeploy.UpdateDate = DateTime.Now;
 
             var opsMsg = isUpdate ? "Update" : "Create";
@@ -205,7 +278,7 @@ else
                     dtComputers.Load(reader);
                 }
 
-                var selectedShops = shops.Where(s => s.Selected).ToList();
+                var selectedShops = _shops.Where(s => s.Selected).ToList();
                 StringBuilder stringBuilder = new StringBuilder("insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion, InsertDate, UpdateDate) values ");
                 List<string> rows = new List<string>();
                 foreach (var shop in selectedShops)
@@ -260,26 +333,35 @@ else
             var versionDeploys = await LiveUpdateContext.GetVersionDeploy(conn, BatchId);
             var versionDeploy = versionDeploys.FirstOrDefault();
 
-            deployVersion.BrandId = versionDeploy.BrandId;
-            deployVersion.BatchStatus = versionDeploy.BatchStatus;
-            deployVersion.ProgramId = versionDeploy.ProgramId;
-            deployVersion.ProgramVersion = versionDeploy?.ProgramVersion;
-            deployVersion.FileUrl = versionDeploy?.FileUrl;
-            deployVersion.AutoBackup = versionDeploy.AutoBackup;
-            deployVersion.InsertDate = versionDeploy.InsertDate;
-            deployVersion.UpdateDate = versionDeploy.UpdateDate;
+            _deployVersion.BrandId = versionDeploy.BrandId;
+            _deployVersion.BatchStatus = versionDeploy.BatchStatus;
+            _deployVersion.ProgramId = versionDeploy.ProgramId;
+            _deployVersion.ProgramVersion = versionDeploy?.ProgramVersion;
+            _deployVersion.FileUrl = versionDeploy?.FileUrl;
+            _deployVersion.AutoBackup = versionDeploy.AutoBackup;
+            _deployVersion.InsertDate = versionDeploy.InsertDate;
+            _deployVersion.UpdateDate = versionDeploy.UpdateDate;
         }
+    }
+
+    async Task LoadShopCategoryAsync()
+    {
+        try
+        {
+            _shopCats = await RepoService.GetShopCategoryAsync();
+        }
+        catch { }
     }
 
     async Task LoadBrandAsync()
     {
         try
         {
-            brands = await RepoService.GetBrandAsync();
-            allShops = await RepoService.GetShopSelectedUpdateAsync(BatchId);
-            BrandId = brands.FirstOrDefault().BrandId;
+            _brands = await RepoService.GetBrandAsync();
+            _allShops = await RepoService.GetShopSelectedUpdateAsync(BatchId);
+            BrandId = _brands.FirstOrDefault().BrandId;
         }
-        catch (Exception ex)
+        catch
         {
         }
     }

@@ -50,17 +50,26 @@ else
     <DxDataGridColumn Width="70px" Caption="Deploy" TextAlignment="@DataGridTextAlign.Center">
         <DisplayTemplate>
             @{
-                    var data = context as VersionDeploy;
+                var data = context as VersionDeploy;
                 <input type="checkbox" @onclick="(async() => await OnDeployCheckAsync(data))" checked="@(data.BatchStatus == VersionDeployBatchStatus.Actived)" />
             }
         </DisplayTemplate>
     </DxDataGridColumn>
     <DxDataGridColumn Caption="Name" Field="@nameof(VersionDeploy.ProgramName)" />
-    <DxDataGridColumn Caption="Version" Field="@nameof(VersionDeploy.ProgramVersion)" />
+    <DxDataGridColumn Caption="Version" Field="@nameof(VersionDeploy.ProgramVersion)"/>
+    <DxDataGridColumn Caption="Create Date">
+        <DisplayTemplate></DisplayTemplate>
+        </DxDataGridColumn>
+    <DxDataGridColumn Caption="Create By">
+        <DisplayTemplate></DisplayTemplate>
+    </DxDataGridColumn>
+    <DxDataGridColumn Caption="Shop List">
+        <DisplayTemplate></DisplayTemplate>
+    </DxDataGridColumn>
     <DxDataGridColumn Width="40px">
         <DisplayTemplate>
             @{
-                    var data = context as VersionDeploy;
+                var data = context as VersionDeploy;
                 <button class="btn btn-light btn-sm" @onclick="(()=>EditVersion(data))"><i class="oi oi-pencil"></i></button>
             }
         </DisplayTemplate>
@@ -68,7 +77,7 @@ else
     <DxDataGridColumn Width="40px">
         <DisplayTemplate>
             @{
-                    var data = context as VersionDeploy;
+                var data = context as VersionDeploy;
                 <button class="btn btn-light btn-sm" @onclick="@(async () => await DeleteVersionAsync(data))"><i class="oi oi-trash"></i></button>
             }
         </DisplayTemplate>
