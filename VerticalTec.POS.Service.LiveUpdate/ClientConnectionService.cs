@@ -11,23 +11,29 @@ namespace VerticalTec.POS.Service.LiveUpdate
     {
         static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
+        CancellationTokenSource _retryConnectionTokenSource;
+
         public HubConnection HubConnection { get; private set; }
 
         public void InitConnection(string hubUrl)
         {
             HubConnection = new HubConnectionBuilder()
                    .WithUrl(hubUrl)
-                   .WithAutomaticReconnect()
+                   //.WithAutomaticReconnect()
                    .Build();
-            HubConnection.Reconnecting += Reconnecting;
-            HubConnection.Reconnected += Reconnected;
+            //HubConnection.Reconnecting += Reconnecting;
+            //HubConnection.Reconnected += Reconnected;
             HubConnection.Closed += Closed;
         }
 
-        private Task Closed(Exception arg)
+        private async Task Closed(Exception arg)
         {
-            _logger.LogInfo($"Try reconnecting...{arg}");
-            return Task.FromResult(true);
+            _logger.Info("The connection was closed and retry to connect");
+            _retryConnectionTokenSource?.Cancel();
+            _retryConnectionTokenSource ??= new CancellationTokenSource();
+
+            var token = _retryConnectionTokenSource.Token;
+            await StartConnectionAsync(token);
         }
 
         private Task Reconnected(string arg)
@@ -61,6 +67,8 @@ namespace VerticalTec.POS.Service.LiveUpdate
         {
             while (true)
             {
+                if (token.IsCancellationRequested)
+                    break;
                 try
                 {
                     _logger.LogInfo("Connect to live update server...");

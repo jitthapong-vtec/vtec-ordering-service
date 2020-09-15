@@ -19,6 +19,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
             {
                 services.AddSingleton<IDatabase, MySqlDatabase>();
                 services.AddSingleton<IClientConnectionService, ClientConnectionService>();
+                services.AddSingleton<IDbstructureUpdateService, DbStructureUpdateService>();
                 services.AddSingleton<LiveUpdateDbContext>();
                 services.AddSingleton<FrontConfigManager>();
                 services.AddSingleton<VtecPOSEnv>();

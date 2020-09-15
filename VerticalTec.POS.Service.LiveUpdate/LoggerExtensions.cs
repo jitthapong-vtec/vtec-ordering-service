@@ -1,8 +1,5 @@
-﻿using Google.Apis.Logging;
-using NLog;
+﻿using NLog;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace VerticalTec.POS.Service.LiveUpdate
 {

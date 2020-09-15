@@ -17,125 +17,132 @@
 @inject NavigationManager NavigationManager;
 @inject RepoService RepoService;
 
-<h3>Create version</h3>
+<h3>สร้างเวอร์ชั่น</h3>
 
 @if (_brands.Count == 0)
 {
-    <p><em>Loading...</em></p>
+    <p><em>กำลังโหลด...</em></p>
 }
 else
 {
-    <EditForm Model="@_deployVersion" OnValidSubmit="@(async() => await SaveAsync())">
-        <DataAnnotationsValidator />
-        <div class="form-group col-md-4">
-            <div class="row">
-                <div class="col">
-                    <label>Brands</label>
-                    <select class="form-control" @onchange="@OnBrandChanged">
-                        @foreach (var brand in _brands)
+<EditForm Model="@_deployVersion" OnValidSubmit="@(async() => await SaveAsync())">
+    <DataAnnotationsValidator />
+    <div class="form-group col-md-4">
+        <div class="row">
+            <div class="col">
+                <label>แบรนด์</label>
+                <select class="form-control" @onchange="@OnBrandChanged">
+                    @foreach (var brand in _brands)
+                    {
+                        @if (brand.BrandId == @BrandId)
                         {
-                            @if (brand.BrandId == @BrandId)
-                            {
-                                <option selected value="@brand.BrandId">@brand.BrandName</option>
-                            }
-                            else
-                            {
-                                <option value="@brand.BrandId">@brand.BrandName</option>
-                            }
+                            <option selected value="@brand.BrandId">@brand.BrandName</option>
                         }
-                    </select>
-                </div>
+                        else
+                        {
+                            <option value="@brand.BrandId">@brand.BrandName</option>
+                        }
+                    }
+                </select>
             </div>
         </div>
-        <div class="form-group row">
-                <div class="col">
-                    @if (_shopCats.Count > 0)
+    </div>
+    <div class="form-group row">
+        <div class="col">
+            @if (_shopCats.Count > 0)
+            {
+                <label>เลือกประเภทร้าน</label>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="chkAllShopCat" @onchange="@OnCheckAllShopCat" />
+                            <label for="chkAllShopCat" class="custom-control-label">เลือกทั้งหมด</label>
+                        </div>
+                    </li>
+                </ul>
+                <ul class="list-group list-group-flush" style="height:300px; width:500px; overflow:auto;">
+                    @foreach (var shopCat in _shopCats)
                     {
-                        <label>Select shop type</label>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="chkAllShopCat" @onchange="@OnCheckAllShopCat" />
-                                    <label for="chkAllShopCat" class="custom-control-label">Check all</label>
-                                </div>
-                            </li>
-                        </ul>
-                        <ul class="list-group list-group-flush" style="height:300px; width:500px; overflow:auto;">
-                            @foreach (var shopCat in _shopCats)
-                            {
-                                <li class="list-group-item">
-                                    <div class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="@shopCat.ShopCateId" @onchange="(e) => OnShopCatCheck(shopCat, e)"/>
-                                        <label for="@shopCat.ShopCateId" class="custom-control-label">@shopCat.ShopCateName</label>
-                                    </div>
-                                </li>
-                            }
-                        </ul>
-                    }
-                </div>
-                <div class="col">
-                    <label>Apply to shops</label>
-                    <ul class="list-group list-group-flush">
                         <li class="list-group-item">
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="chkAllShop" @onchange="@OnCheckAllShop" />
-                                <label for="chkAllShop" class="custom-control-label">Check all</label>
+                                <input type="checkbox" class="custom-control-input" id="@shopCat.ShopCateId" @onchange="(e) => OnShopCatCheck(shopCat, e)" />
+                                <label for="@shopCat.ShopCateId" class="custom-control-label">@shopCat.ShopCateName</label>
                             </div>
                         </li>
-                    </ul>
-                    <ul class="list-group list-group-flush" style="height:300px; width:500px; overflow:auto;">
-                        @foreach (var shop in _shops)
-                        {
-                            <li class="list-group-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="@shop.ShopId" @bind="@shop.Selected" />
-                                    <label for="@shop.ShopId" class="custom-control-label">@shop.ShopCode : @shop.ShopName</label>
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                </div>
+                    }
+                </ul>
+            }
         </div>
-
-        <div class="form-group col-md-4">
-            <label>Program types</label>
-            <select class="form-control" @bind="@_deployVersion.ProgramId">
-                @foreach (var programType in _deployVersion.ProgramTypes)
+        <div class="col">
+            <label>เลือกสาขา</label>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="chkAllShop" @onchange="@OnCheckAllShop" />
+                        <label for="chkAllShop" class="custom-control-label">เลือกทั้งหมด</label>
+                    </div>
+                </li>
+            </ul>
+            <ul class="list-group list-group-flush" style="height:300px; width:500px; overflow:auto;">
+                @foreach (var shop in _shops)
                 {
-                    var programId = programType.ProgramTypeId;
-                    var programName = programType.ProgramName;
-                    <option value="@programId">@programName</option>
+                    <li class="list-group-item">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="@shop.ShopId" @bind="@shop.Selected" />
+                            <label for="@shop.ShopId" class="custom-control-label">@shop.ShopCode : @shop.ShopName</label>
+                        </div>
+                    </li>
                 }
-            </select>
+            </ul>
         </div>
+    </div>
 
-        <div class="form-group col-md-4">
-            <label>Version</label>
-            <input type="text" class="form-control" @bind="@_deployVersion.ProgramVersion">
-        </div>
+    <div class="form-group col-md-4">
+        <label>เลือกประเภทโปรแกรม</label>
+        <select class="form-control" @bind="@_deployVersion.ProgramId">
+            @foreach (var programType in _deployVersion.ProgramTypes)
+            {
+                var programId = programType.ProgramTypeId;
+                var programName = programType.ProgramName;
+                <option value="@programId">@programName</option>
+            }
+        </select>
+    </div>
 
-        <div class="form-group col-md-4">
-            <label>Upload Patch (Support only .zip)</label>
-            <DxUpload Name="file" na UploadUrl="@GetUploadUrl("api/Resource/UploadPatch")"
-                      AllowMultiFileUpload="false"
-                      AllowedFileExtensions="@(new List<string> { ".zip" })"
-                      ShowFileList="false"
-                      FileUploaded="OnFileUploaded">
-            </DxUpload>
-        </div>
+    <div class="form-group col-md-4">
+        <label>เวอร์ชั่น</label>
+        <input type="text" class="form-control" @bind="@_deployVersion.ProgramVersion">
+    </div>
 
-        <div class="form-group col-md-4">
-            <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="chkAutoBackup" @bind="@_deployVersion.AutoBackup" />
-                <label for="chkAutoBackup" class="custom-control-label">Auto backup when download file success</label>
-            </div>
-        </div>
-        <ValidationSummary />
+    <div class="form-group col-md-4">
+        <label>อัพโหลดไฟล์ (รองรับเฉพาะ .zip)</label>
+        <DxUpload Name="file" na UploadUrl="@GetUploadUrl("api/Resource/UploadPatch")"
+                  AllowMultiFileUpload="false"
+                  AllowedFileExtensions="@(new List<string> { ".zip" })"
+                  ShowFileList="false"
+                  FileUploaded="OnFileUploaded">
+        </DxUpload>
+    </div>
 
-        <div class="form-row m-4">
-            <button type="submit" class="btn btn-primary">Ok</button> &nbsp; <button type="button" @onclick="@Cancel" class="btn btn-secondary">Cancel</button>
+    <div class="form-group col-md-4">
+        <div class="custom-control custom-checkbox">
+            <input type="checkbox" class="custom-control-input" id="chkAutoBackup" @bind="@_deployVersion.AutoBackup" />
+            <label for="chkAutoBackup" class="custom-control-label">แบ็คอัพอัตโนมัติหลังจากโหลดไฟล์สำเร็จ</label>
         </div>
-    </EditForm>
+    </div>
+
+    <div class="form-group col-md-4">
+        <div class="custom-control custom-checkbox">
+            <input type="checkbox" class="custom-control-input" id="chkActivateUpdate" checked="@(_deployVersion.BatchStatus)" />
+            <label for="chkActivateUpdate" class="custom-control-label">เปิดการอัพเดต</label>
+        </div>
+    </div>
+    <ValidationSummary />
+
+    <div class="form-row m-4">
+        <button type="submit" class="btn btn-primary">ตกลง</button> &nbsp; <button type="button" @onclick="@Cancel" class="btn btn-secondary">ยกเลิก</button>
+    </div>
+</EditForm>
 }
 
 @code {
@@ -260,11 +267,17 @@ else
 
             try
             {
-
-                await LiveUpdateContext.AddOrUpdateVersionDeploy(conn, versionDeploy, sqlTransaction);
-
                 var cmd = DbContext.CreateCommand(conn);
+                cmd = DbContext.CreateCommand(conn);
                 cmd.Transaction = sqlTransaction;
+
+                if (_deployVersion.BatchStatus != (VersionDeployBatchStatus.Done | VersionDeployBatchStatus.Canceled))
+                {
+                    cmd.CommandText = "update Version_Deploy set BatchStatus=0 where BrandID=@brandId and BatchStatus not in(2,99)";
+                    cmd.Parameters.Add(DbContext.CreateParameter("@brandId", BrandId));
+                    await DbContext.ExecuteNonQueryAsync(cmd);
+                }
+                await LiveUpdateContext.AddOrUpdateVersionDeploy(conn, versionDeploy, sqlTransaction);
 
                 cmd.CommandText = "delete from Version_LiveUpdate where BatchID=@batchId";
                 cmd.Parameters.Add(DbContext.CreateParameter("@batchId", BatchId));
@@ -317,6 +330,37 @@ else
             }
         }
     }
+
+    //async Task OnDeployCheckAsync()
+    //{
+    //    var batchStatus = versionDeploy.BatchStatus;
+    //    if (batchStatus == VersionDeployBatchStatus.Actived)
+    //        batchStatus = VersionDeployBatchStatus.InActivate;
+    //    else if (batchStatus == VersionDeployBatchStatus.InActivate)
+    //        batchStatus = VersionDeployBatchStatus.Actived;
+
+    //    using (var conn = await DbContext.ConnectAsync())
+    //    {
+    //        var cmd = DbContext.CreateCommand(conn);
+    //        cmd.CommandText = "update Version_Deploy set BatchStatus=0 where BrandID=@brandId and BatchStatus not in(2,99)";
+    //        cmd.Parameters.Add(DbContext.CreateParameter("@brandId", selectedBrandId));
+    //        await DbContext.ExecuteNonQueryAsync(cmd);
+
+    //        cmd.CommandText = "update Version_Deploy set BatchStatus=@batchStatus where BrandID=@brandId and BatchID=@batchId";
+    //        cmd.Parameters.Add(DbContext.CreateParameter("@batchStatus", batchStatus));
+    //        cmd.Parameters.Add(DbContext.CreateParameter("@batchId", versionDeploy.BatchId));
+    //        await DbContext.ExecuteNonQueryAsync(cmd);
+
+    //        if (batchStatus == VersionDeployBatchStatus.InActivate)
+    //        {
+    //            cmd.CommandText = "update version_liveupdate set FileReceiveStatus=0, BackupStatus=0, UpdateStatus=0, ReadyToUpdate=0 where batchId=@batchId";
+    //            await DbContext.ExecuteNonQueryAsync(cmd);
+    //        }
+    //    }
+
+    //    await LoadVersionDeployAsync();
+    //}
+
 
     void Cancel()
     {

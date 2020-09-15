@@ -17,9 +17,9 @@
 
 <div class="form-row">
     <div class="form-group col-md-6">
-        <h3>Versions</h3>
+        <h3>รายการเวอร์ชั่น</h3>
         <div class="col-md-6">
-            <label>Brands</label>
+            <label>แบรนด์</label>
             <select class="form-control" @onchange="@OnBrandChanged">
                 @foreach (var brand in brands)
                 {
@@ -47,25 +47,33 @@
 else
 {
 <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
-    <DxDataGridColumn Width="70px" Caption="Deploy" TextAlignment="@DataGridTextAlign.Center">
+    <DxDataGridColumn Width="70px" Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center">
         <DisplayTemplate>
             @{
                 var data = context as VersionDeploy;
-                <input type="checkbox" @onclick="(async() => await OnDeployCheckAsync(data))" checked="@(data.BatchStatus == VersionDeployBatchStatus.Actived)" />
-            }
+                if (data.BatchStatus == VersionDeployBatchStatus.Actived)
+                {
+                        <span><i class="oi oi-check" style="color:green;"></i></span>
+                }
+                else
+                {
+                    <span><i class="oi oi-circle-x"></i></span>
+                }
+                //<input type="checkbox" @onclick="(async() => await OnDeployCheckAsync(data))" checked="@(data.BatchStatus == VersionDeployBatchStatus.Actived)" />
+                }
         </DisplayTemplate>
     </DxDataGridColumn>
-    <DxDataGridColumn Caption="Name" Field="@nameof(VersionDeploy.ProgramName)" />
-    <DxDataGridColumn Caption="Version" Field="@nameof(VersionDeploy.ProgramVersion)"/>
-    <DxDataGridColumn Caption="Create Date">
+    <DxDataGridColumn Caption="ประเภทการอัพเดต" Field="@nameof(VersionDeploy.ProgramName)" />
+    <DxDataGridColumn Caption="เวอร์ชั่น" Field="@nameof(VersionDeploy.ProgramVersion)"/>
+    <DxDataGridColumn Caption="สร้างเมื่อ">
         <DisplayTemplate></DisplayTemplate>
         </DxDataGridColumn>
-    <DxDataGridColumn Caption="Create By">
+    <DxDataGridColumn Caption="สร้างโดย">
         <DisplayTemplate></DisplayTemplate>
     </DxDataGridColumn>
-    <DxDataGridColumn Caption="Shop List">
+    @*<DxDataGridColumn Caption="Shop List">
         <DisplayTemplate></DisplayTemplate>
-    </DxDataGridColumn>
+    </DxDataGridColumn>*@
     <DxDataGridColumn Width="40px">
         <DisplayTemplate>
             @{

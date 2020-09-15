@@ -4,6 +4,7 @@
 @using VerticalTec.POS.Database
 @using VerticalTec.POS.LiveUpdateConsole.Services
 @using VerticalTec.POS.LiveUpdateConsole.Models
+@using System.Threading;
 
 @inject IDatabase DbContext
 @inject LiveUpdateDbContext LiveupdateContext
@@ -12,13 +13,13 @@
 
 @if (clients == null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>กำลังโหลด...</em></p>
 }
 else
 {
     <div class="form-row">
         <div class="form-group col-md-6">
-            <h3>Connected clients</h3>
+            <h3>เครื่อง POS สาขา</h3>
             <div class="col-md-6">
                 <label>Brands</label>
                 <select class="form-control" @onchange="@OnBrandChanged">
@@ -51,7 +52,7 @@ else
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
-                    <span>@client.ShopCode : @client.ShopName</span>
+                    <span>@client.ShopCode (@client.ShopId) : @client.ShopName</span>
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
@@ -63,7 +64,7 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="Current Version" TextAlignment="DataGridTextAlign.Center" />
+        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="Current Version"/>
         <DxDataGridColumn Caption="Status message">
             <DisplayTemplate>
                 @{
@@ -106,6 +107,8 @@ else
 
     int selectedBrandId;
 
+    CancellationTokenSource _connectionTokenSource;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadBrandAsync();
@@ -118,25 +121,35 @@ else
         {
             var url = NavigationManager.BaseUri + "console";
             connection = new HubConnectionBuilder().WithUrl(url)
-                .WithAutomaticReconnect()
                 .Build();
 
+            connection.Closed += async (arg) => await StartConnection();
             connection.On<VersionInfo>("ClientUpdateInfo", ClientUpdateInfo);
             connection.On<string>("ClientDisconnect", ClientDisconnect);
             connection.On<VersionLiveUpdate>("ClientUpdateVersionState", ClientUpdateVersionState);
 
-            while (true)
+            await StartConnection();
+        }
+    }
+
+    async Task StartConnection()
+    {
+        _connectionTokenSource?.Cancel();
+        _connectionTokenSource = new CancellationTokenSource();
+
+        while (true)
+        {
+            if (_connectionTokenSource.IsCancellationRequested)
+                break;
+            try
             {
-                try
-                {
-                    await connection.StartAsync();
-                    await connection.InvokeAsync("GetClientInfo", "");
-                    break;
-                }
-                catch
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(3));
-                }
+                await connection.StartAsync(_connectionTokenSource.Token);
+                await connection.InvokeAsync("GetClientInfo", "");
+                break;
+            }
+            catch
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
             }
         }
     }

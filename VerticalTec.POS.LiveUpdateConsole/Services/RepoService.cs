@@ -72,11 +72,6 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
         public async Task<List<ShopCategory>> GetShopCategoryAsync()
         {
             List<ShopCategory> items = new List<ShopCategory>();
-            items.Add(new ShopCategory()
-            {
-                ShopCateId = 0,
-                ShopCateName = "-- All Shop Type--"
-            }); ;
             using (var conn = await _db.ConnectAsync())
             {
                 var cmd = _db.CreateCommand(conn);

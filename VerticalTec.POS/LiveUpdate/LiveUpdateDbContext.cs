@@ -88,7 +88,8 @@ namespace VerticalTec.POS.LiveUpdate
                EndTime DATETIME NULL,
                LogMessage VARCHAR(2000) NULL,
                PRIMARY KEY (LogUUID)
-            );"};
+            );"
+            };
 
             foreach (var sql in tbs)
             {

@@ -22,19 +22,19 @@ namespace VerticalTec.POS.Service.LiveUpdate
         static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
         IDatabase _db;
-        IConfiguration _config;
         IClientConnectionService _connectionService;
+        IDbstructureUpdateService _dbStructureUpdateService;
         LiveUpdateDbContext _liveUpdateCtx;
         FrontConfigManager _frontConfigManager;
         VtecPOSEnv _vtecEnv;
         BackupService _backupService;
 
-        public LiveUpdateService(IDatabase db, IConfiguration config, IClientConnectionService clientConnectionService,
+        public LiveUpdateService(IDatabase db, IClientConnectionService clientConnectionService, IDbstructureUpdateService dbStrucUpdateService,
             LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager, VtecPOSEnv posEnv, BackupService backupService)
         {
             _db = db;
-            _config = config;
             _connectionService = clientConnectionService;
+            _dbStructureUpdateService = dbStrucUpdateService;
             _liveUpdateCtx = liveUpdateCtx;
             _frontConfigManager = frontConfigManager;
 
@@ -183,28 +183,21 @@ namespace VerticalTec.POS.Service.LiveUpdate
             {
                 try
                 {
+                    var cmd = _db.CreateCommand("delete from version_deploy", conn);
+                    await _db.ExecuteNonQueryAsync(cmd);
+
+                    cmd = _db.CreateCommand("delete from Version_LiveUpdate", conn);
+                    await _db.ExecuteNonQueryAsync(cmd);
+
                     if (versionDeploy != null)
                     {
-                        var cmd = _db.CreateCommand("delete from version_deploy", conn);
-                        await _db.ExecuteNonQueryAsync(cmd);
-
                         await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
-                    }
-                    else
-                    {
-                        var cmd = _db.CreateCommand("delete from Version_Deploy", conn);
-                        await _db.ExecuteNonQueryAsync(cmd);
                     }
 
                     if (versionLiveUpdate != null)
                     {
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
                         await SendVersionInfo();
-                    }
-                    else
-                    {
-                        var cmd = _db.CreateCommand("delete from Version_LiveUpdate", conn);
-                        await _db.ExecuteNonQueryAsync(cmd);
                     }
                 }
                 catch (Exception ex)
@@ -325,7 +318,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 if (downloadState == FileReceiveStatus.Downloading)
                     return;
 
-                var downloadService = new DownloadService(_config.GetValue<string>("GoogleDriveApiKey"));
+                var downloadService = new DownloadService();
                 var updateStateLog = new VersionLiveUpdateLog()
                 {
                     ShopId = posSetting.ShopID,
@@ -370,6 +363,8 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                         if (versionDeploy.AutoBackup)
                             await BackupFile();
+
+                        Task.Run(() =>_dbStructureUpdateService.UpdateStructureAsync());
                     }
                     else
                     {

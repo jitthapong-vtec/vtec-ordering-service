@@ -4,6 +4,7 @@ using System.Text;
 
 namespace VerticalTec.POS.LiveUpdate
 {
+    [Flags]
     public enum VersionDeployBatchStatus
     {
         InActivate = 0,
