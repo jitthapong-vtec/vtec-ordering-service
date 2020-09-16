@@ -7,6 +7,6 @@ namespace VerticalTec.POS.Service.LiveUpdate
 {
     public interface IDbstructureUpdateService
     {
-        Task UpdateStructureAsync();
+        Task UpdateStructureAsync(string downloadPath);
     }
 }

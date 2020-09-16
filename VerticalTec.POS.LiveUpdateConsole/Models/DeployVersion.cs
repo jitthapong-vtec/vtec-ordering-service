@@ -19,7 +19,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Models
 
         [Required(ErrorMessage = "Please input program version")]
         public string ProgramVersion { get; set; }
-        [Required(ErrorMessage = "Please input google share file url")]
+        [Required(ErrorMessage = "Please upload patch")]
         public string FileUrl { get; set; }
         public bool AutoBackup { get; set; }
 

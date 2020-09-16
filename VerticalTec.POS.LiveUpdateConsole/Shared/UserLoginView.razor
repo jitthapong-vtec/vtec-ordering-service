@@ -1,14 +1,20 @@
 ﻿
+@using CurrieTechnologies.Razor.SweetAlert2
+
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject SweetAlertService Swal
+
 <ul class="navbar-nav ml-auto">
     <!-- Nav Item - User Information -->
     <li class="nav-item dropdown no-arrow show">
         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-            
+
             <span class="mr-2 d-none d-lg-inline text-gray-600">@userName</span>
         </a>
         <!-- Dropdown - User Information -->
         <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal" @onclick="(async() => await OnLogoutClick())">
                 <i class="oi oi-account-login"></i>
                 ออกจากระบบ
             </a>
@@ -18,5 +24,28 @@
 </ul>
 
 @code {
-    string userName = "Jitthapong";
+    string userName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        userName = authState.User.FindFirst(c => c.Type == "name")?.Value;
+    }
+
+    async Task OnLogoutClick()
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "ออกจากระบบ",
+            Html = $"ต้องการออกจากระบบใช่ไหม?",
+            ShowCancelButton = true,
+            ConfirmButtonText = "ใช่",
+            CancelButtonText = "ไม่ใช่"
+        });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            Navigation.NavigateTo("Logout", true);
+        }
+    }
 }

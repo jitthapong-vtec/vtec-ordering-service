@@ -19,9 +19,9 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
         public async Task GetClientInfo(string connectionId)
         {
             if (string.IsNullOrEmpty(connectionId))
-                await _hubContext.Clients.All.ReceiveCmd(LiveUpdateCommands.ReceiveVersionDeploy);
+                await _hubContext.Clients.All.ReceiveCmd(LiveUpdateCommands.SendVersionInfo);
             else
-                await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.ReceiveVersionDeploy, connectionId);
+                await _hubContext.Clients.Client(connectionId).ReceiveCmd(LiveUpdateCommands.SendVersionInfo, connectionId);
         }
 
         public async Task SendDownloadFileCommand(string connectionId)

@@ -17,30 +17,29 @@ namespace VerticalTec.POS.LiveUpdateConsole.Models
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             var loginData = await _sessionStorage.GetItemAsync<LoginData>("LoginData");
-            ClaimsIdentity identity;
-            if (loginData != null)
-            {
-                identity = new ClaimsIdentity(new[]
-                {
-                        new Claim(ClaimTypes.Name, loginData.UserName),
-                }, "user_auth_type");
-            }
-            else
-            {
-                identity = new ClaimsIdentity();
-            }
-            var user = new ClaimsPrincipal(identity);
+            var user = GetClaimsPrincipal(loginData);
             return await Task.FromResult(new AuthenticationState(user));
         }
 
         public void MarkUserAsAuthenticated(LoginData loginData)
         {
-            var identity = new ClaimsIdentity(new[]
-                { new Claim(ClaimTypes.Name, loginData.UserName),
-                }, "user_auth_type");
-            var user = new ClaimsPrincipal(identity);
-
+            var user = GetClaimsPrincipal(loginData);
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+        }
+
+        ClaimsPrincipal GetClaimsPrincipal(LoginData loginData)
+        {
+            if (loginData == null)
+                return new ClaimsPrincipal();
+
+            var identity = new ClaimsIdentity(new[]
+            {
+                new Claim("id", loginData.StaffId.ToString()),
+                new Claim("role_id", loginData.StaffRoleId.ToString()),
+                new Claim("name", $"{loginData.StaffFirstName} {loginData.StaffLastName}")
+            }, "basic");
+            var user = new ClaimsPrincipal(identity);
+            return user;
         }
 
         public async Task MarkUserAsLoggedOut()

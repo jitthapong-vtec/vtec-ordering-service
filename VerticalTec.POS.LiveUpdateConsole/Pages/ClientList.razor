@@ -21,7 +21,7 @@ else
         <div class="form-group col-md-6">
             <h3>เครื่อง POS สาขา</h3>
             <div class="col-md-6">
-                <label>Brands</label>
+                <label>แบรนด์</label>
                 <select class="form-control" @onchange="@OnBrandChanged">
                     @foreach (var brand in brands)
                     {
@@ -40,7 +40,7 @@ else
     </div>
 
     <DxDataGrid Data="@clients" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
-        <DxDataGridColumn Caption="Online" TextAlignment="@DataGridTextAlign.Center">
+        <DxDataGridColumn Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -48,15 +48,15 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Caption="Shop">
+        <DxDataGridColumn Caption="สาขา">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
-                    <span>@client.ShopCode (@client.ShopId) : @client.ShopName</span>
+                    <span>@client.ShopCode : @client.ShopName</span>
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Caption="Computer Name">
+        <DxDataGridColumn Caption="ชื่อเครื่อง">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -64,8 +64,8 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="Current Version"/>
-        <DxDataGridColumn Caption="Status message">
+        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="โปรแกรมเวอร์ชั่น"/>
+        <DxDataGridColumn Caption="สถานะการทำงาน">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);

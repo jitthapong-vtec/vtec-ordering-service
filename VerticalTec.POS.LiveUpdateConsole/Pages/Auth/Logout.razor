@@ -1,0 +1,16 @@
+﻿@page "/Logout"
+
+@using VerticalTec.POS.LiveUpdateConsole.Models
+
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code
+{ 
+    protected override async Task OnInitializedAsync()
+    {
+        await ((AuthenStateProvider)AuthenticationStateProvider).MarkUserAsLoggedOut();
+
+        Navigation.NavigateTo("login", true);
+    }
+}

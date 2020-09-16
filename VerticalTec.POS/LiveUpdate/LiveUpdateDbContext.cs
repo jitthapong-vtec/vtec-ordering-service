@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Utils;
@@ -30,6 +31,8 @@ namespace VerticalTec.POS.LiveUpdate
                FileUrl VARCHAR(255),
                BatchStatus TINYINT NOT NULL DEFAULT '0',
                AutoBackup TINYINT NOT NULL DEFAULT '0',
+               CreateBy INT NOT NULL,
+               UpdateBy INT NOT NULL,
                ScheduleUpdate DATETIME NULL,
                InsertDate DATETIME NULL,
                UpdateDate DATETIME NULL,
@@ -177,7 +180,11 @@ namespace VerticalTec.POS.LiveUpdate
         public async Task<List<VersionDeploy>> GetVersionDeploy(IDbConnection conn, string batchId = "")
         {
             var cmd = _db.CreateCommand(conn);
-            cmd.CommandText = "select * from Version_Deploy where BatchStatus != 99";
+            cmd.CommandText = "select a.*, b.StaffFirstName as CreateByFirstName, b.StaffLastName as CreateByLastName, " +
+                "c.StaffFirstName as UpdateByFirstName, c.StaffLastName as UpdateByLastName from Version_Deploy a " +
+                "left join (select StaffID, StaffFirstName, StaffLastName from staffs where Deleted = 0) b " +
+                "on a.CreateBy = b.StaffID left join(select StaffID, StaffFirstName, StaffLastName from staffs where Deleted= 0) c " +
+                "on a.UpdateBy = c.StaffID where a.BatchStatus != 99";
 
             if (!string.IsNullOrWhiteSpace(batchId))
             {
@@ -200,6 +207,10 @@ namespace VerticalTec.POS.LiveUpdate
                         FileUrl = reader.GetValue<string>("FileUrl"),
                         BatchStatus = (VersionDeployBatchStatus)reader.GetValue<int>("BatchStatus"),
                         AutoBackup = reader.GetValue<bool>("AutoBackup"),
+                        CreateBy = reader.GetValue<int>("CreateBy"),
+                        UpdateBy = reader.GetValue<int>("UpdateBy"),
+                        CreateName = $"{reader.GetValue<string>("CreateByFirstName")} {reader.GetValue<string>("CreateByLastName")}",
+                        UpdateName = $"{reader.GetValue<string>("UpdateByFirstName")} {reader.GetValue<string>("UpdateByLastName")}",
                         ScheduleUpdate = reader.GetValue<DateTime>("ScheduleUpdate"),
                         InsertDate = reader.GetValue<DateTime>("InsertDate"),
                         UpdateDate = reader.GetValue<DateTime>("UpdateDate")
@@ -278,6 +289,8 @@ namespace VerticalTec.POS.LiveUpdate
             cmd.Parameters.Add(_db.CreateParameter("@fileUrl", versionDeploy.FileUrl));
             cmd.Parameters.Add(_db.CreateParameter("@batchStatus", versionDeploy.BatchStatus));
             cmd.Parameters.Add(_db.CreateParameter("@autoBackup", versionDeploy.AutoBackup));
+            cmd.Parameters.Add(_db.CreateParameter("@createBy", versionDeploy.CreateBy));
+            cmd.Parameters.Add(_db.CreateParameter("@updateBy", versionDeploy.UpdateBy));
             cmd.Parameters.Add(_db.CreateParameter("@scheduleUpdate", versionDeploy.ScheduleUpdate.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@insertDate", versionDeploy.InsertDate.MinValueToDBNull()));
             cmd.Parameters.Add(_db.CreateParameter("@updateDate", versionDeploy.UpdateDate.MinValueToDBNull()));
@@ -291,14 +304,24 @@ namespace VerticalTec.POS.LiveUpdate
             if (isHaveRecord)
             {
                 cmd.CommandText = "update Version_Deploy set BatchID=@batchId, BrandID=@brandId, ProgramID=@programId," +
-                    "ProgramName=@programName, ProgramVersion=@programVersion, FileUrl=@fileUrl, BatchStatus=@batchStatus, AutoBackup=@autoBackup, ScheduleUpdate=@scheduleUpdate," +
+                    "ProgramName=@programName, ProgramVersion=@programVersion, FileUrl=@fileUrl, BatchStatus=@batchStatus, " +
+                    "CreateBy=@createBy, UpdateBy=@updateBy, AutoBackup=@autoBackup, ScheduleUpdate=@scheduleUpdate," +
                     "InsertDate=@insertDate, UpdateDate=@updateDate where BatchID=@batchId";
             }
             else
             {
-                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ProgramID, ProgramName, ProgramVersion, FileUrl, BatchStatus, AutoBackup," +
+                cmd.CommandText = "select ProgramVersion from Version_Deploy where ProgramVersion=@programVersion";
+                using(var reader = await _db.ExecuteReaderAsync(cmd))
+                {
+                    if (reader.Read())
+                    {
+                        if (!string.IsNullOrEmpty(reader.GetValue<string>("ProgramVersion")))
+                            throw new InvalidDataContractException($"This version {versionDeploy.ProgramVersion} is already in database");
+                    }
+                }
+                cmd.CommandText = "insert into Version_Deploy(BatchID, BrandID, ProgramID, ProgramName, ProgramVersion, FileUrl, BatchStatus, CreateBy, UpdateBy, AutoBackup," +
                     "ScheduleUpdate, InsertDate, UpdateDate) values (@batchId, @brandId, @programId, @programName, @programVersion," +
-                    "@fileUrl, @batchStatus, @autoBackup, @scheduleUpdate, @insertDate, @updateDate)";
+                    "@fileUrl, @batchStatus, @createBy, @updateBy, @autoBackup, @scheduleUpdate, @insertDate, @updateDate)";
             }
             await _db.ExecuteNonQueryAsync(cmd);
         }

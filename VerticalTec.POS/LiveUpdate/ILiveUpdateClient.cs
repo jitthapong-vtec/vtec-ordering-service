@@ -7,13 +7,13 @@ namespace VerticalTec.POS.LiveUpdate
 {
     public interface ILiveUpdateClient
     {
-        Task ReceiveConnectionEstablished();
+        Task OnConnected();
 
-        Task ReceiveVersionDeploy(VersionDeploy versionDeploy, VersionLiveUpdate versionLiveUpdates);
+        Task ReceiveVersionDeploy(VersionDeploy versionDeploy);
 
-        Task ReceiveSyncVersion(VersionInfo versionInfo);
+        Task ReceiveVersionInfo(VersionInfo versionInfo);
 
-        Task ReceiveSyncUpdateVersionState(VersionLiveUpdate state);
+        Task ReceiveVersionLiveUpdate(VersionLiveUpdate versionLiveUpdate);
 
         Task ReceiveCmd(LiveUpdateCommands cmd, object param = default);
     }

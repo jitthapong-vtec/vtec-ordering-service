@@ -28,20 +28,18 @@ namespace VerticalTec.POS.Service.LiveUpdate
             _frontConfigManager = configManager;
         }
 
-        public async Task UpdateStructureAsync()
+        public async Task UpdateStructureAsync(string downloadPath)
         {
-            var sqlPath = "";
-            using (var conn = await _db.ConnectAsync())
+            try
             {
-                var posSetting = _frontConfigManager.POSDataSetting;
-                var versionDeploy = await _liveUpdateContext.GetActiveVersionDeploy(conn);
-                var _versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.Front);
-
-                var downloadPath = _versionLiveUpdate.DownloadFilePath;
-                var extractPath = Path.Combine(Path.GetTempPath(), $"Scripts");
-
-                try
+                var sqlPath = "";
+                using (var conn = await _db.ConnectAsync())
                 {
+                    var posSetting = _frontConfigManager.POSDataSetting;
+                    var versionDeploy = await _liveUpdateContext.GetActiveVersionDeploy(conn);
+                    
+                    var extractPath = Path.Combine(Path.GetTempPath(), $"Scripts");
+
                     if (!Directory.Exists(extractPath))
                         Directory.CreateDirectory(extractPath);
 
@@ -57,30 +55,32 @@ namespace VerticalTec.POS.Service.LiveUpdate
                             _logger.LogInfo($"extract success ready for execute");
                         }
                     }
-                }
-                catch { }
 
-                if (string.IsNullOrEmpty(sqlPath))
-                    return;
+                    if (string.IsNullOrEmpty(sqlPath))
+                        return;
 
-                var content = File.ReadAllText(sqlPath);
-                var cmd = new MySqlCommand("", conn as MySqlConnection);
-                foreach (var line in content.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    if (string.IsNullOrEmpty(line))
-                        continue;
-                    try
+                    var content = File.ReadAllText(sqlPath);
+                    var cmd = new MySqlCommand("", conn as MySqlConnection);
+                    foreach (var line in content.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries))
                     {
-                        _logger.LogInfo($"exec {line}");
-                        cmd.CommandText = line;
-                        cmd.ExecuteNonQuery();
-                        _logger.LogInfo($"exec success");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError($"Error exec sql {ex.Message}", ex);
+                        if (string.IsNullOrEmpty(line))
+                            continue;
+                        try
+                        {
+                            _logger.LogInfo($"exec {line}");
+                            cmd.CommandText = line;
+                            cmd.ExecuteNonQuery();
+                            _logger.LogInfo($"exec success");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error exec sql {ex.Message}", ex);
+                        }
                     }
                 }
+            }catch(Exception ex)
+            {
+                _logger.LogError("Error UpdateStructureAsync", ex);
             }
         }
     }

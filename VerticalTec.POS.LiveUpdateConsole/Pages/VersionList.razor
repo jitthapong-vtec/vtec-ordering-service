@@ -63,14 +63,10 @@ else
                 }
         </DisplayTemplate>
     </DxDataGridColumn>
-    <DxDataGridColumn Caption="ประเภทการอัพเดต" Field="@nameof(VersionDeploy.ProgramName)" />
+    @*<DxDataGridColumn Caption="ประเภทการอัพเดต" Field="@nameof(VersionDeploy.ProgramName)" />*@
     <DxDataGridColumn Caption="เวอร์ชั่น" Field="@nameof(VersionDeploy.ProgramVersion)"/>
-    <DxDataGridColumn Caption="สร้างเมื่อ">
-        <DisplayTemplate></DisplayTemplate>
-        </DxDataGridColumn>
-    <DxDataGridColumn Caption="สร้างโดย">
-        <DisplayTemplate></DisplayTemplate>
-    </DxDataGridColumn>
+    <DxDataGridColumn Caption="สร้างเมื่อ" Field="@nameof(VersionDeploy.InsertDate)" />
+    <DxDataGridColumn Caption="สร้างโดย" Field="@nameof(VersionDeploy.CreateName)"/>
     @*<DxDataGridColumn Caption="Shop List">
         <DisplayTemplate></DisplayTemplate>
     </DxDataGridColumn>*@
@@ -132,36 +128,6 @@ else
     {
         brands = await RepoService.GetBrandAsync();
         selectedBrandId = brands.FirstOrDefault().BrandId;
-    }
-
-    async Task OnDeployCheckAsync(VersionDeploy versionDeploy)
-    {
-        var batchStatus = versionDeploy.BatchStatus;
-        if (batchStatus == VersionDeployBatchStatus.Actived)
-            batchStatus = VersionDeployBatchStatus.InActivate;
-        else if (batchStatus == VersionDeployBatchStatus.InActivate)
-            batchStatus = VersionDeployBatchStatus.Actived;
-
-        using (var conn = await DbContext.ConnectAsync())
-        {
-            var cmd = DbContext.CreateCommand(conn);
-            cmd.CommandText = "update Version_Deploy set BatchStatus=0 where BrandID=@brandId and BatchStatus not in(2,99)";
-            cmd.Parameters.Add(DbContext.CreateParameter("@brandId", selectedBrandId));
-            await DbContext.ExecuteNonQueryAsync(cmd);
-
-            cmd.CommandText = "update Version_Deploy set BatchStatus=@batchStatus where BrandID=@brandId and BatchID=@batchId";
-            cmd.Parameters.Add(DbContext.CreateParameter("@batchStatus", batchStatus));
-            cmd.Parameters.Add(DbContext.CreateParameter("@batchId", versionDeploy.BatchId));
-            await DbContext.ExecuteNonQueryAsync(cmd);
-
-            if(batchStatus == VersionDeployBatchStatus.InActivate)
-            {
-                cmd.CommandText = "update version_liveupdate set FileReceiveStatus=0, BackupStatus=0, UpdateStatus=0, ReadyToUpdate=0 where batchId=@batchId";
-                await DbContext.ExecuteNonQueryAsync(cmd);
-            }
-        }
-
-        await LoadVersionDeployAsync();
     }
 
     void EditVersion(VersionDeploy versionDeploy)
