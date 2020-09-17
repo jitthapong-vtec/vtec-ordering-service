@@ -8,12 +8,14 @@
 @using VerticalTec.POS.LiveUpdateConsole.Models
 @using CurrieTechnologies.Razor.SweetAlert2
 @using System.Data;
+@using Microsoft.AspNetCore.SignalR.Client
 
 @inject SweetAlertService Swal
 @inject IDatabase DbContext
 @inject LiveUpdateDbContext LiveupdateContext
 @inject NavigationManager NavigationManager
 @inject RepoService RepoService;
+@inject IClientConnectionService ClientConnectionService;
 
 <div class="form-row">
     <div class="form-group col-md-6">
@@ -23,13 +25,13 @@
             <select class="form-control" @onchange="@OnBrandChanged">
                 @foreach (var brand in brands)
                 {
-                @if (brand.BrandId == selectedBrandId)
+                    @if (brand.BrandId == selectedBrandId)
                     {
-                <option selected value="@brand.BrandId">@brand.BrandName</option>
+                        <option selected value="@brand.BrandId">@brand.BrandName</option>
                     }
                     else
                     {
-                <option value="@brand.BrandId">@brand.BrandName</option>
+                        <option value="@brand.BrandId">@brand.BrandName</option>
                     }
                 }
             </select>
@@ -42,51 +44,51 @@
 
 @if (versionDeploys == null)
 {
-<p><em>Loading...</em></p>
+    <p><em>Loading...</em></p>
 }
 else
 {
-<DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
-    <DxDataGridColumn Width="70px" Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center">
-        <DisplayTemplate>
-            @{
-                var data = context as VersionDeploy;
-                if (data.BatchStatus == VersionDeployBatchStatus.Actived)
-                {
+    <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
+        <DxDataGridColumn Width="70px" Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center">
+            <DisplayTemplate>
+                @{
+                    var data = context as VersionDeploy;
+                    if (data.BatchStatus == VersionDeployBatchStatus.Actived)
+                    {
                         <span><i class="oi oi-check" style="color:green;"></i></span>
+                    }
+                    else
+                    {
+                        <span><i class="oi oi-circle-x"></i></span>
+                    }
+                    //<input type="checkbox" @onclick="(async() => await OnDeployCheckAsync(data))" checked="@(data.BatchStatus == VersionDeployBatchStatus.Actived)" />
                 }
-                else
-                {
-                    <span><i class="oi oi-circle-x"></i></span>
+            </DisplayTemplate>
+        </DxDataGridColumn>
+        @*<DxDataGridColumn Caption="ประเภทการอัพเดต" Field="@nameof(VersionDeploy.ProgramName)" />*@
+        <DxDataGridColumn Caption="เวอร์ชั่น" Field="@nameof(VersionDeploy.ProgramVersion)" />
+        <DxDataGridColumn Caption="สร้างเมื่อ" Field="@nameof(VersionDeploy.InsertDate)" />
+        <DxDataGridColumn Caption="สร้างโดย" Field="@nameof(VersionDeploy.CreateName)" />
+        @*<DxDataGridColumn Caption="Shop List">
+                <DisplayTemplate></DisplayTemplate>
+            </DxDataGridColumn>*@
+        <DxDataGridColumn Width="40px">
+            <DisplayTemplate>
+                @{
+                    var data = context as VersionDeploy;
+                    <button class="btn btn-light btn-sm" @onclick="(()=>EditVersion(data))"><i class="oi oi-pencil"></i></button>
                 }
-                //<input type="checkbox" @onclick="(async() => await OnDeployCheckAsync(data))" checked="@(data.BatchStatus == VersionDeployBatchStatus.Actived)" />
+            </DisplayTemplate>
+        </DxDataGridColumn>
+        <DxDataGridColumn Width="40px">
+            <DisplayTemplate>
+                @{
+                    var data = context as VersionDeploy;
+                    <button class="btn btn-light btn-sm" @onclick="@(async () => await DeleteVersionAsync(data))"><i class="oi oi-trash"></i></button>
                 }
-        </DisplayTemplate>
-    </DxDataGridColumn>
-    @*<DxDataGridColumn Caption="ประเภทการอัพเดต" Field="@nameof(VersionDeploy.ProgramName)" />*@
-    <DxDataGridColumn Caption="เวอร์ชั่น" Field="@nameof(VersionDeploy.ProgramVersion)"/>
-    <DxDataGridColumn Caption="สร้างเมื่อ" Field="@nameof(VersionDeploy.InsertDate)" />
-    <DxDataGridColumn Caption="สร้างโดย" Field="@nameof(VersionDeploy.CreateName)"/>
-    @*<DxDataGridColumn Caption="Shop List">
-        <DisplayTemplate></DisplayTemplate>
-    </DxDataGridColumn>*@
-    <DxDataGridColumn Width="40px">
-        <DisplayTemplate>
-            @{
-                var data = context as VersionDeploy;
-                <button class="btn btn-light btn-sm" @onclick="(()=>EditVersion(data))"><i class="oi oi-pencil"></i></button>
-            }
-        </DisplayTemplate>
-    </DxDataGridColumn>
-    <DxDataGridColumn Width="40px">
-        <DisplayTemplate>
-            @{
-                var data = context as VersionDeploy;
-                <button class="btn btn-light btn-sm" @onclick="@(async () => await DeleteVersionAsync(data))"><i class="oi oi-trash"></i></button>
-            }
-        </DisplayTemplate>
-    </DxDataGridColumn>
-</DxDataGrid>
+            </DisplayTemplate>
+        </DxDataGridColumn>
+    </DxDataGrid>
 }
 
 @code {
@@ -100,6 +102,23 @@ else
     {
         await LoadBrandAsync();
         await LoadVersionDeployAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var url = NavigationManager.BaseUri + "console";
+            ClientConnectionService.InitConnection(url);
+
+            await StartConnection();
+        }
+    }
+
+    async Task StartConnection()
+    {
+        await ClientConnectionService.StartConnectionAsync();
+        await ClientConnectionService.HubConnection.InvokeAsync("GetClientInfo", "");
     }
 
     async Task OnBrandChanged(ChangeEventArgs e)

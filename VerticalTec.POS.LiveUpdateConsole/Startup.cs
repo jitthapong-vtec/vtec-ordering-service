@@ -43,6 +43,7 @@ namespace VerticalTec.POS.LiveUpdateConsole
             services.AddSingleton<LiveUpdateDbContext>();
             services.AddSingleton<RepoService>();
             services.AddScoped<AuthenticationStateProvider, AuthenStateProvider>();
+            services.AddSingleton<IClientConnectionService, ClientConnectionService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

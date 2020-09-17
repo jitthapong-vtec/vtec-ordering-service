@@ -10,6 +10,7 @@
 @inject LiveUpdateDbContext LiveupdateContext
 @inject NavigationManager NavigationManager
 @inject RepoService RepoService
+@inject IClientConnectionService ClientConnectionService; 
 
 @if (clients == null)
 {
@@ -98,8 +99,6 @@ else
 
     DxDataGrid<VersionInfo> gridRef;
 
-    HubConnection connection;
-
     List<VersionInfo> clients;
 
     List<BrandData> brands = new List<BrandData>();
@@ -120,14 +119,11 @@ else
         if (firstRender)
         {
             var url = NavigationManager.BaseUri + "console";
-            connection = new HubConnectionBuilder().WithUrl(url)
-                .WithAutomaticReconnect()
-                .Build();
+            ClientConnectionService.InitConnection(url);
 
-            //connection.Closed += async (arg) => await StartConnection();
-            connection.On<VersionInfo>("ClientUpdateInfo", ClientUpdateInfo);
-            connection.On<string>("ClientDisconnect", ClientDisconnect);
-            connection.On<VersionLiveUpdate>("ClientUpdateVersionState", ClientUpdateVersionState);
+            ClientConnectionService.Subscribe<VersionInfo>("ClientUpdateInfo", ClientUpdateInfo);
+            ClientConnectionService.Subscribe<string>("ClientDisconnect", ClientDisconnect);
+            ClientConnectionService.Subscribe<VersionLiveUpdate>("ClientUpdateVersionState", ClientUpdateVersionState);
 
             await StartConnection();
         }
@@ -135,24 +131,8 @@ else
 
     async Task StartConnection()
     {
-        _connectionTokenSource?.Cancel();
-        _connectionTokenSource = new CancellationTokenSource();
-
-        while (true)
-        {
-            if (_connectionTokenSource.IsCancellationRequested)
-                break;
-            try
-            {
-                await connection.StartAsync(_connectionTokenSource.Token);
-                await connection.InvokeAsync("GetClientInfo", "");
-                break;
-            }
-            catch
-            {
-                await Task.Delay(TimeSpan.FromSeconds(3));
-            }
-        }
+        await ClientConnectionService.StartConnectionAsync();
+        await ClientConnectionService.HubConnection.InvokeAsync("GetClientInfo", "");
     }
 
     async Task LoadBrandAsync()
@@ -193,14 +173,14 @@ else
 
     public async Task GetClientInfo(VersionInfo client)
     {
-        await connection.InvokeAsync("GetClientInfo", client.ConnectionId);
+        await ClientConnectionService.HubConnection.InvokeAsync("GetClientInfo", client.ConnectionId);
     }
 
     public async Task SendDownloadFileCommand(VersionInfo client)
     {
         using (var conn = await DbContext.ConnectAsync())
         {
-            await connection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId);
+            await ClientConnectionService.HubConnection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId);
             client.CanExecute = false;
             await gridRef.Refresh();
         }
@@ -210,7 +190,7 @@ else
     {
         using (var conn = await DbContext.ConnectAsync())
         {
-            await connection.InvokeAsync("SendBackupCommand", client.ConnectionId);
+            await ClientConnectionService.HubConnection.InvokeAsync("SendBackupCommand", client.ConnectionId);
             client.CanExecute = false;
             await gridRef.Refresh();
         }

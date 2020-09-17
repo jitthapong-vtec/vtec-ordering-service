@@ -120,18 +120,21 @@ else
             <label>อัพโหลดไฟล์ (รองรับเฉพาะ .zip)</label>
             <DxUpload Name="file" na UploadUrl="@GetUploadUrl("api/Resource/UploadPatch")"
                       AllowMultiFileUpload="false"
+                      ChunkSize="1000000"
                       AllowedFileExtensions="@(new List<string> { ".zip" })"
                       ShowFileList="false"
-                      FileUploaded="OnFileUploaded">
+                      FileUploadStarted="OnStartUpload"
+                      FileUploaded="OnFileUploaded"
+                      FileUploadError="OnErrorUpload">
             </DxUpload>
         </div>
 
         @*<div class="form-group col-md-4">
-            <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="chkAutoBackup" @bind="@_deployVersion.AutoBackup" />
-                <label for="chkAutoBackup" class="custom-control-label">แบ็คอัพอัตโนมัติหลังจากโหลดไฟล์สำเร็จ</label>
-            </div>
-        </div>*@
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="chkAutoBackup" @bind="@_deployVersion.AutoBackup" />
+                    <label for="chkAutoBackup" class="custom-control-label">แบ็คอัพอัตโนมัติหลังจากโหลดไฟล์สำเร็จ</label>
+                </div>
+            </div>*@
 
         <div class="form-group col-md-4">
             <div class="custom-control custom-checkbox">
@@ -142,7 +145,7 @@ else
         <ValidationSummary />
 
         <div class="form-row m-4">
-            <button type="submit" class="btn btn-primary">ตกลง</button> &nbsp; <button type="button" @onclick="@Cancel" class="btn btn-secondary">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary" disabled="@IsBusy">ตกลง</button> &nbsp; <button type="button" @onclick="@Cancel" class="btn btn-secondary">ยกเลิก</button>
         </div>
     </EditForm>
 }
@@ -155,6 +158,7 @@ else
     [Parameter]
     public int BrandId { get; set; }
 
+    bool IsBusy { get; set; }
     private DeployVersion _deployVersion = new DeployVersion();
 
     List<BrandData> _brands = new List<BrandData>();
@@ -167,7 +171,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var staffId = authState.User.FindFirst(c=>c.Type=="id")?.Value;
+        var staffId = authState.User.FindFirst(c => c.Type == "id")?.Value;
 
         _staffId = Convert.ToInt32(staffId);
 
@@ -255,10 +259,24 @@ else
         }
     }
 
+    void OnStartUpload(FileUploadEventArgs e)
+    {
+        IsBusy = true;
+        StateHasChanged();
+    }
+
+    void OnErrorUpload(FileUploadErrorEventArgs e)
+    {
+        IsBusy = false;
+        StateHasChanged();
+    }
+
     void OnFileUploaded(FileUploadEventArgs e)
     {
+        IsBusy = false;
+
         _deployVersion.FileUrl = GetUploadUrl($"Patch/{e.FileInfo.Name}");
-        this.StateHasChanged();
+        StateHasChanged();
     }
 
     string GetUploadUrl(string url)
@@ -322,18 +340,18 @@ else
                     dtComputers.Load(reader);
                 }
 
-                var selectedShops = _shops.Where(s => s.Selected).ToList();
+                var selectedShops = _shops.Where(s => s.Selected).Select(s => s.ShopId).ToList();
                 StringBuilder stringBuilder = new StringBuilder("insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion, InsertDate, UpdateDate) values ");
                 List<string> rows = new List<string>();
-                foreach (var shop in selectedShops)
-                {
-                    var computerIds = dtComputers.AsEnumerable().Where(r => r.GetValue<int>("ShopID") == shop.ShopId).Select(c => c.GetValue<int>("ComputerID")).ToList();
 
-                    foreach (var computerId in computerIds)
-                    {
-                        rows.Add($"('{versionDeploy.BatchId}', {shop.ShopId}, {computerId}, {(int)versionDeploy.ProgramId}, '{versionDeploy.ProgramName}', '{versionDeploy.ProgramVersion}', GETDATE(), GETDATE())");
-                    }
+                var computersShop = dtComputers.AsEnumerable().Where(r => selectedShops.Contains(r.GetValue<int>("ShopID")))
+                    .Select(c => new { ShopId = c.GetValue<int>("ShopID"), ComputerId = c.GetValue<int>("ComputerID") }).ToList();
+
+                foreach (var comp in computersShop)
+                {
+                    rows.Add($"('{versionDeploy.BatchId}', {comp.ShopId}, {comp.ComputerId}, {(int)versionDeploy.ProgramId}, '{versionDeploy.ProgramName}', '{versionDeploy.ProgramVersion}', GETDATE(), GETDATE())");
                 }
+
                 if (rows.Count > 0)
                 {
                     stringBuilder.Append(string.Join(",", rows));
@@ -394,7 +412,7 @@ else
         {
             _shopCats = await RepoService.GetShopCategoryAsync();
 
-            var shopCatIds = _shops.Where(s=>s.Selected).Select(s => s.ShopCatId).ToArray();
+            var shopCatIds = _shops.Where(s => s.Selected).Select(s => s.ShopCatId).ToArray();
             var shopCatByShopIds = _shopCats.Where(s => shopCatIds.Contains(s.ShopCateId)).ToList();
             shopCatByShopIds.ForEach(s => s.Selected = true);
         }

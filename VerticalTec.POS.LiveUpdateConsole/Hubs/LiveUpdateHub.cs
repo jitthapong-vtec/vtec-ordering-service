@@ -56,7 +56,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
                     }
 
                     var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn);
-                    var versionDeploy = versionsDeploy.Where(v => v.BatchStatus == VersionDeployBatchStatus.Actived && v.BrandId == brandId).FirstOrDefault();
+                    var versionDeploy = versionsDeploy.Where(v => v.BrandId == brandId).FirstOrDefault();
 
                     await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy);
                 }
@@ -75,10 +75,29 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
                 {
                     if (versionLiveUpdate != null)
                     {
-                        versionLiveUpdate.SyncStatus = 1;
-                        versionLiveUpdate.UpdateDate = DateTime.Now;
+                        var versionDeploy = await _liveUpdateCtx.GetActiveVersionDeploy(conn);
+                        if (versionDeploy != null)
+                        {
+                            var cmd = _db.CreateCommand("select ShopID from version_liveupdate where BatchID=@batchId", conn);
+                            cmd.Parameters.Add(_db.CreateParameter("@batchId", versionDeploy.BatchId));
 
-                        await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
+                            var availableShops = new List<int>();
+                            using(var reader = await _db.ExecuteReaderAsync(cmd))
+                            {
+                                while (reader.Read())
+                                {
+                                    availableShops.Add(reader.GetInt32(0));
+                                }
+                            }
+
+                            if (availableShops.Contains(versionLiveUpdate.ShopId))
+                            {
+                                versionLiveUpdate.SyncStatus = 1;
+                                versionLiveUpdate.UpdateDate = DateTime.Now;
+
+                                await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, versionLiveUpdate);
+                            }
+                        }
                     }
 
                     await Clients.Client(Context.ConnectionId).ReceiveVersionLiveUpdate(versionLiveUpdate);

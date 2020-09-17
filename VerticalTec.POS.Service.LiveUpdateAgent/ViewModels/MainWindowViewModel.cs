@@ -87,7 +87,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 using (var conn = await _db.ConnectAsync())
                 {
                     var versionDeploy = await _liveUpdateContext.GetActiveVersionDeploy(conn);
-                    var versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.Front);
+                    var versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, versionDeploy?.BatchId, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.Front);
                     if (versionLiveUpdate != null)
                     {
                         var newVersionAvailable = versionLiveUpdate.UpdateStatus < 2 && versionLiveUpdate.ReadyToUpdate == 1;
@@ -100,6 +100,10 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                         {
                             _regionManager.RequestNavigate("ContentRegion", "NoUpdateView");
                         }
+                    }
+                    else
+                    {
+                        _regionManager.RequestNavigate("ContentRegion", "NoUpdateView");
                     }
                 }
             }
