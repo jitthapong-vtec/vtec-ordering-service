@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	
-	<?define ProductCode = "{715EB601-BCE6-40BF-A7E6-658638687754}"?>
-	<?define UpgradeCode = "{57D57FF9-F8AB-428F-A940-604BA8A6523D}"?>
-	<?define BuildVersion = 1.0.0.1?>
+	<!--{715EB601-BCE6-40BF-A7E6-658638687754}-->
+	<?define ProductCode = "{11A98B6A-511F-4067-A72C-E58582A7E3EB}"?>
+	<?define UpgradeCode = "{10B10A98-1846-43EE-BB64-EF9FF4151F99}"?>
+	<?define BuildVersion = 1.0.1?>
 	
 	<Product Id="$(var.ProductCode)" 
 			 Name="!(loc.ProductName)" 
