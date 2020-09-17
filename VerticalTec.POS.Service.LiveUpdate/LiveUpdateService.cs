@@ -362,7 +362,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         _logger.LogInfo(stepLog);
 
                         updateState.MessageLog = stepLog;
-                        updateState.FileReceiveStatus = FileReceiveStatus.NoReceivedFile;
+                        updateState.FileReceiveStatus = FileReceiveStatus.DownloadError;
                         updateState.CommandStatus = CommandStatus.Finish;
                         await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, updateState);
 

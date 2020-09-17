@@ -8,6 +8,7 @@ namespace VerticalTec.POS.LiveUpdate
     {
         NoReceivedFile = 0,
         Downloading = 1,
-        Downloaded = 2
+        Downloaded = 2,
+        DownloadError = 99
     }
 }
