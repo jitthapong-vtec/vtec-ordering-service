@@ -27,6 +27,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent
 
             containerRegistry.RegisterDialog<Dialog, DialogViewModel>();
             containerRegistry.RegisterForNavigation<AskForUpdateView>();
+            containerRegistry.RegisterForNavigation<NoUpdateView>();
             containerRegistry.RegisterForNavigation<MainView>();
         }
     }

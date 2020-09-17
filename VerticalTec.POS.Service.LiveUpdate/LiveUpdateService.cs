@@ -249,6 +249,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         }
                         else
                         {
+                            var liveUpdate = CreateLiveUpdateObject(versionDeploy, posSetting);
+                            await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, liveUpdate);
+
                             await DownloadFile();
                         }
                     }
@@ -302,13 +305,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 var updateState = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
                 if (updateState == null)
                 {
-                    updateState = new VersionLiveUpdate()
-                    {
-                        BatchId = versionDeploy.BatchId,
-                        ShopId = posSetting.ShopID,
-                        ComputerId = posSetting.ComputerID,
-                        ProgramId = ProgramTypes.Front
-                    };
+                    updateState = CreateLiveUpdateObject(versionDeploy, posSetting);
                 }
                 updateState.ReadyToUpdate = 0;
 
@@ -358,9 +355,6 @@ namespace VerticalTec.POS.Service.LiveUpdate
 
                         if (versionDeploy.AutoBackup)
                             await BackupFile();
-
-                        if (!string.IsNullOrEmpty(updateState.DownloadFilePath))
-                            await _dbStructureUpdateService.UpdateStructureAsync(updateState.DownloadFilePath);
                     }
                     else
                     {
@@ -414,11 +408,6 @@ namespace VerticalTec.POS.Service.LiveUpdate
                 }
 
                 var state = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
-                if (state.BackupStatus == BackupStatus.BackingUp)
-                {
-                    await _connectionService.HubConnection.InvokeAsync("ReceiveVersionLiveUpdate", state);
-                    return;
-                }
 
                 var stateLog = new VersionLiveUpdateLog()
                 {
@@ -486,6 +475,19 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     await _connectionService.HubConnection.InvokeAsync("ReceiveVersionLiveUpdate", state);
                 }
             }
+        }
+
+        private VersionLiveUpdate CreateLiveUpdateObject(VersionDeploy versionDeploy, POSDataSetting posSetting)
+        {
+            return new VersionLiveUpdate()
+            {
+                BatchId = versionDeploy.BatchId,
+                ShopId = posSetting.ShopID,
+                ComputerId = posSetting.ComputerID,
+                ProgramId = ProgramTypes.Front,
+                ProgramName = versionDeploy?.ProgramName,
+                UpdateVersion = versionDeploy?.ProgramVersion
+            };
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Prism.Commands;
+﻿using MySql.Data.MySqlClient;
+using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
 using Prism.Regions;
@@ -92,6 +93,9 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
         {
             if (_versionLiveUpdate?.UpdateStatus == 2)
             {
+                var frontPath = Path.Combine(_posEnv.FrontCashierPath, "vtec-ResPOS.exe");
+                Process.Start(frontPath);
+
                 App.Current.Shutdown();
                 return;
             }
@@ -106,19 +110,65 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 var updateFilePath = _versionLiveUpdate.DownloadFilePath;
                 var posPath = _posEnv.FrontCashierPath;
                 var extractPath = Path.Combine(Path.GetTempPath(), $"vTec-ResPOS-{DateTime.Now.ToString("yyyyMMdd")}");
+                var sqlPath = "";
+
+                if (!Directory.Exists(extractPath))
+                    Directory.CreateDirectory(extractPath);
 
                 try
                 {
-                    if (!Directory.Exists(extractPath))
-                        Directory.CreateDirectory(extractPath);
+                    using (var archive = ZipFile.Open(updateFilePath, ZipArchiveMode.Update))
+                    {
+                        var entry = archive.Entries.Where(a => a.FullName.EndsWith("scripts.sql", StringComparison.OrdinalIgnoreCase)).SingleOrDefault();
+                        if (entry != null)
+                        {
+                            UpdateInfoMessage($"found sql file {entry.Name}");
+                            sqlPath = Path.GetFullPath(Path.Combine(extractPath, entry.Name));
+                            entry.ExtractToFile(sqlPath, true);
+                        }
+                    }
 
+                    if (!string.IsNullOrEmpty(sqlPath))
+                    {
+                        using (var conn = await _db.ConnectAsync())
+                        {
+                            var content = File.ReadAllText(sqlPath);
+                            var cmd = new MySqlCommand("", conn as MySqlConnection);
+                            foreach (var line in content.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                if (string.IsNullOrEmpty(line))
+                                    continue;
+                                try
+                                {
+                                    UpdateInfoMessage($"exec {line}");
+                                    cmd.CommandText = line;
+                                    cmd.ExecuteNonQuery();
+                                    UpdateInfoMessage($"exec success");
+                                }
+                                catch (Exception ex)
+                                {
+                                    UpdateInfoMessage($"Error exec sql {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    UpdateInfoMessage($"Extract script error {ex.Message}");
+                }
+
+                try
+                {
                     var totalFile = 0;
-                    using (var archive = ZipFile.OpenRead(updateFilePath))
+                    using (var archive = ZipFile.Open(updateFilePath, ZipArchiveMode.Update))
                     {
                         totalFile = archive.Entries.Count();
                         foreach (var entry in archive.Entries)
                         {
-                            if (entry.FullName.Equals("vTec-ResPOS.config", StringComparison.OrdinalIgnoreCase))
+                            if (entry.FullName.EndsWith(".config"))
+                                continue;
+                            if (entry.FullName.EndsWith(".sql"))
                                 continue;
 
                             var destinationPath = Path.GetFullPath(Path.Combine(extractPath, entry.FullName));
@@ -185,18 +235,15 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                         await _liveUpdateContext.AddOrUpdateVersionLiveUpdate(conn, _versionLiveUpdate);
                     }
 
-                    ButtonText = "Done!";
+                    ButtonText = "สำเร็จ!";
                     UpdateButtonEnable = true;
 
                     UpdateInfoMessage($"Successfully");
                     _eventAggregator.GetEvent<VersionUpdateEvent>().Publish(UpdateEvents.UpdateSuccess);
-
-                    var frontPath = Path.Combine(_posEnv.FrontCashierPath, "vtec-ResPOS.exe");
-                    Process.Start(frontPath);
                 }
                 else
                 {
-                    ButtonText = "Start Update";
+                    ButtonText = "เริ่มอัพเดต";
                     UpdateButtonEnable = true;
                 }
             });

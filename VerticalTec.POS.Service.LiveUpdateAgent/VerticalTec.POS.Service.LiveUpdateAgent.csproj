@@ -17,4 +17,16 @@
     <ProjectReference Include="..\VerticalTec.POS\VerticalTec.POS.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Views\NoUpdateView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Views\NoUpdateView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
 </Project>

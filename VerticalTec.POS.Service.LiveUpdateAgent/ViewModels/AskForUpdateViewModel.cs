@@ -40,10 +40,12 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 bool doneCloseProcess = false;
                 var frontRes = Process.GetProcessesByName("vtec-ResPOS");
                 var syncClientProcess = Process.GetProcessesByName("vTec-SyncClient");
+                var secondDspProcess = Process.GetProcessesByName("vTec-SecDisplay");
                 try
                 {
-                    syncClientProcess.ForEach(sync => sync.Kill());
-                    frontRes.ForEach(front => front.Kill());
+                    syncClientProcess.ForEach(p => p.Kill());
+                    frontRes.ForEach(p => p.Kill());
+                    secondDspProcess.ForEach(p => p.Kill());
                     doneCloseProcess = true;
                 }
                 catch (Exception ex)

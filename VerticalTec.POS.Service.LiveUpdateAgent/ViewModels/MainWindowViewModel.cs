@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.LiveUpdate;
 using VerticalTec.POS.Service.LiveUpdateAgent.Events;
 
 namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
@@ -37,15 +38,17 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
 
         IDatabase _db;
         FrontConfigManager _frontConfig;
+        LiveUpdateDbContext _liveUpdateContext;
         VtecPOSEnv _posEnv;
 
         public MainWindowViewModel(IDatabase db, FrontConfigManager frontConfig, VtecPOSEnv posEnv,
-            IDialogService dialogService, IRegionManager regionManager, IEventAggregator ea)
+            LiveUpdateDbContext liveUpdateDbContext, IDialogService dialogService, IRegionManager regionManager, IEventAggregator ea)
         {
             _db = db;
             _frontConfig = frontConfig;
             _posEnv = posEnv;
             _regionManager = regionManager;
+            _liveUpdateContext = liveUpdateDbContext;
             _dialogService = dialogService;
 
             ea.GetEvent<VersionUpdateEvent>().Subscribe((val) =>
@@ -81,7 +84,24 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 var posSetting = _frontConfig.POSDataSetting;
                 _db.SetConnectionString($"Port={posSetting.DBPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={posSetting.DBIPServer};DATABASE={posSetting.DBName};old guids=true;");
 
-                _regionManager.RequestNavigate("ContentRegion", "AskForUpdateView");
+                using (var conn = await _db.ConnectAsync())
+                {
+                    var versionDeploy = await _liveUpdateContext.GetActiveVersionDeploy(conn);
+                    var versionLiveUpdate = await _liveUpdateContext.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID, ProgramTypes.Front);
+                    if (versionLiveUpdate != null)
+                    {
+                        var newVersionAvailable = versionLiveUpdate.UpdateStatus < 2 && versionLiveUpdate.ReadyToUpdate == 1;
+
+                        if (newVersionAvailable)
+                        {
+                            _regionManager.RequestNavigate("ContentRegion", "AskForUpdateView");
+                        }
+                        else
+                        {
+                            _regionManager.RequestNavigate("ContentRegion", "NoUpdateView");
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
