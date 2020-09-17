@@ -65,7 +65,7 @@ else
             </DisplayTemplate>
         </DxDataGridColumn>
         <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="โปรแกรมเวอร์ชั่น"/>
-        <DxDataGridColumn Caption="สถานะการทำงาน">
+        <DxDataGridColumn Caption="สถานะการอัพเดต">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -121,9 +121,10 @@ else
         {
             var url = NavigationManager.BaseUri + "console";
             connection = new HubConnectionBuilder().WithUrl(url)
+                .WithAutomaticReconnect()
                 .Build();
 
-            connection.Closed += async (arg) => await StartConnection();
+            //connection.Closed += async (arg) => await StartConnection();
             connection.On<VersionInfo>("ClientUpdateInfo", ClientUpdateInfo);
             connection.On<string>("ClientDisconnect", ClientDisconnect);
             connection.On<VersionLiveUpdate>("ClientUpdateVersionState", ClientUpdateVersionState);

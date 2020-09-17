@@ -33,12 +33,6 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            using (var conn = await _db.ConnectAsync())
-            {
-                var cmd = _db.CreateCommand("update versioninfo set IsOnline=0 where ConnectionId=@connectionId", conn);
-                cmd.Parameters.Add(_db.CreateParameter("@connectionId", Context.ConnectionId));
-                await _db.ExecuteNonQueryAsync(cmd);
-            }
             await _consoleHub.Clients.All.ClientDisconnect(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception);
         }

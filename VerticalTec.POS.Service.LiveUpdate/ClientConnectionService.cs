@@ -19,10 +19,10 @@ namespace VerticalTec.POS.Service.LiveUpdate
         {
             HubConnection = new HubConnectionBuilder()
                    .WithUrl(hubUrl)
-                   //.WithAutomaticReconnect()
+                   .WithAutomaticReconnect()
                    .Build();
-            //HubConnection.Reconnecting += Reconnecting;
-            //HubConnection.Reconnected += Reconnected;
+            HubConnection.Reconnecting += Reconnecting;
+            HubConnection.Reconnected += Reconnected;
             HubConnection.Closed += Closed;
         }
 

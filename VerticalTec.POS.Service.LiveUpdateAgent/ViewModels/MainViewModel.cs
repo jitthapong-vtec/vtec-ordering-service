@@ -118,8 +118,6 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                         totalFile = archive.Entries.Count();
                         foreach (var entry in archive.Entries)
                         {
-                            if (entry.FullName.EndsWith(@"SqlScripts/") || entry.FullName.EndsWith(@"SqlScripts\"))
-                                continue;
                             if (entry.FullName.Equals("vTec-ResPOS.config", StringComparison.OrdinalIgnoreCase))
                                 continue;
 

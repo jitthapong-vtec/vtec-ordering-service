@@ -67,9 +67,17 @@
                         login.StaffFirstName = reader.GetValue<string>("StaffFirstName");
                         login.StaffLastName = reader.GetValue<string>("StaffLastName");
 
-                        await sessionStorage.SetItemAsync("LoginData", login);
-                        ((AuthenStateProvider)AuthenticationStateProvider).MarkUserAsAuthenticated(login);
-                        navigation.NavigateTo("versions", true);
+                        var acceptedRoles = new int[] { 1, 2 };
+                        if (acceptedRoles.Contains(login.StaffRoleId))
+                        {
+                            await sessionStorage.SetItemAsync("LoginData", login);
+                            ((AuthenStateProvider)AuthenticationStateProvider).MarkUserAsAuthenticated(login);
+                            navigation.NavigateTo("versions", true);
+                        }
+                        else
+                        {
+                            await Swal.FireAsync("", "คุณไม่มีสิทธิ์เข้าใช้ระบบ", "error");
+                        }
                     }
                     else
                     {

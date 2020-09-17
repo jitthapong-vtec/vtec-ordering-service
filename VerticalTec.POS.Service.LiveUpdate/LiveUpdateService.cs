@@ -360,7 +360,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                             await BackupFile();
 
                         if (!string.IsNullOrEmpty(updateState.DownloadFilePath))
-                            Task.Run(() => _dbStructureUpdateService.UpdateStructureAsync(updateState.DownloadFilePath));
+                            await _dbStructureUpdateService.UpdateStructureAsync(updateState.DownloadFilePath);
                     }
                     else
                     {

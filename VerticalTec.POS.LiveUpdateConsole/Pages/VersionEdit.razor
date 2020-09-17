@@ -172,10 +172,10 @@ else
         _staffId = Convert.ToInt32(staffId);
 
         await LoadBrandAsync();
-        await LoadShopCategoryAsync();
         await LoadVersionDeploy();
 
         RefreshShop();
+        await LoadShopCategoryAsync();
     }
 
     void OnDeployStatusChanged(ChangeEventArgs e)
@@ -393,6 +393,10 @@ else
         try
         {
             _shopCats = await RepoService.GetShopCategoryAsync();
+
+            var shopCatIds = _shops.Where(s=>s.Selected).Select(s => s.ShopCatId).ToArray();
+            var shopCatByShopIds = _shopCats.Where(s => shopCatIds.Contains(s.ShopCateId)).ToList();
+            shopCatByShopIds.ForEach(s => s.Selected = true);
         }
         catch { }
     }
