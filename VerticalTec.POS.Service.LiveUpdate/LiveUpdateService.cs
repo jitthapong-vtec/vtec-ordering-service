@@ -240,6 +240,10 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     if (versionDeploy != null)
                     {
                         await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
+                        
+                        cmd.CommandText = "delete from version_liveupdate where BatchId != @batchId and UpdateStatus != 2";
+                        cmd.Parameters.Add(_db.CreateParameter("@batchId", versionDeploy.BatchId));
+                        await _db.ExecuteNonQueryAsync(cmd);
 
                         var posSetting = _frontConfigManager.POSDataSetting;
                         var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy?.BatchId, posSetting.ShopID, posSetting.ComputerID);
@@ -249,11 +253,19 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         }
                         else
                         {
+                            cmd.CommandText = "delete from version_liveupdate";
+                            await _db.ExecuteNonQueryAsync(cmd);
+
                             var liveUpdate = CreateLiveUpdateObject(versionDeploy, posSetting);
                             await _liveUpdateCtx.AddOrUpdateVersionLiveUpdate(conn, liveUpdate);
 
                             await DownloadFile();
                         }
+                    }
+                    else
+                    {
+                        cmd.CommandText = "delete from version_liveupdate where UpdateStatus != 2";
+                        await _db.ExecuteNonQueryAsync(cmd);
                     }
                 }
                 catch (Exception ex)

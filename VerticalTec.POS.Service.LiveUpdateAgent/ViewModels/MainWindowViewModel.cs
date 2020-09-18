@@ -98,12 +98,14 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                         }
                         else
                         {
-                            _regionManager.RequestNavigate("ContentRegion", "NoUpdateView");
+                            //_regionManager.RequestNavigate("ContentRegion", "NoUpdateView");
+                            App.Current.Shutdown();
                         }
                     }
                     else
                     {
-                        _regionManager.RequestNavigate("ContentRegion", "NoUpdateView");
+                        //_regionManager.RequestNavigate("ContentRegion", "NoUpdateView");
+                        App.Current.Shutdown();
                     }
                 }
             }
