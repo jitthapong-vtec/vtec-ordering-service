@@ -714,11 +714,18 @@ namespace VerticalTec.POS
             string sqlQuery = "select a.PGroupID, a.MaterialAmount, a.QtyRatio, " +
                 " a.SaleMode, b.ProductID, b.ProductCode, b.ProductName, " +
                 " b.ProductName1, b.ProductName2, b.ProductName3, b.ProductTypeID," +
-                " a.FlexibleProductPrice as ProductPrice," +
+                " case when c.ProductPrice is not null then c.ProductPrice else" +
+                " case when d.ProductPrice is not null then d.ProductPrice else null end end as ProductPrice, " +
                 " concat(@imageUrlBase, replace(case when b.ProductPictureServer is null then '' else b.ProductPictureServer end, 'UploadImage/Products/', '')) as ProductImage" +
                 " from productcomponent a " +
                 " inner join products b" +
                 " on a.MaterialID=b.ProductID" +
+                " left join " +
+                " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@saleMode) c" +
+                " on b.ProductID = c.ProductID" +
+                " left join" +
+                " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) d" +
+                " on b.ProductID = d.ProductID" +
                 " where a.ProductID=@parentProductId and b.Deleted=0";
 
             var saleDate = await GetSaleDateAsync(conn, shopId, false, true);
