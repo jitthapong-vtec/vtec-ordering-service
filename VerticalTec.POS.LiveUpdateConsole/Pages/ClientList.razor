@@ -40,7 +40,7 @@ else
         </div>
     </div>
 
-    <DxDataGrid Data="@clients" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
+    <DxDataGrid Data="@clients" ShowFilterRow="false" ShowPager="true" @ref="@gridRef">
         <DxDataGridColumn Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center">
             <DisplayTemplate>
                 @{

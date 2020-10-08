@@ -48,7 +48,7 @@
 }
 else
 {
-    <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="false" @ref="@gridRef">
+    <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="true" @ref="@gridRef">
         <DxDataGridColumn Width="70px" Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center">
             <DisplayTemplate>
                 @{
@@ -134,7 +134,7 @@ else
         {
             versionDeploys = await LiveupdateContext.GetVersionDeploy(conn);
             var filter = new VersionDeployBatchStatus[] { VersionDeployBatchStatus.InActivate, VersionDeployBatchStatus.Actived };
-            versionDeploys = versionDeploys.Where(v => v.BrandId == selectedBrandId && filter.Contains(v.BatchStatus)).ToList();
+            versionDeploys = versionDeploys.Where(v => v.BrandId == selectedBrandId && filter.Contains(v.BatchStatus)).OrderBy((v) => v.ProgramVersion).ToList();
         }
     }
 
