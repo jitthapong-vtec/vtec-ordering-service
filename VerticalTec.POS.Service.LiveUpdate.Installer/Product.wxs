@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<?define ProductCode = "{11A98B6A-511F-4067-A72C-E58582A7E3EB}"?>
 	<?define UpgradeCode = "{375C242C-A2C4-4D5D-B14A-CB95EEA40BF4}"?>
-	<?define BuildVersion = 1.0.3?>
+	<?define BuildVersion = 1.0.4?>
 	
 	<Product Id="$(var.ProductCode)" 
 			 Name="!(loc.ProductName)" 

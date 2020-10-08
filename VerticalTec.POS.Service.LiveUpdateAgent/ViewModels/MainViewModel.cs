@@ -119,7 +119,7 @@ namespace VerticalTec.POS.Service.LiveUpdateAgent.ViewModels
                 {
                     using (var archive = ZipFile.Open(updateFilePath, ZipArchiveMode.Update))
                     {
-                        var entry = archive.Entries.Where(a => a.FullName.EndsWith("scripts.sql", StringComparison.OrdinalIgnoreCase)).SingleOrDefault();
+                        var entry = archive.Entries.Where(a => a.FullName.EndsWith(".sql", StringComparison.OrdinalIgnoreCase)).SingleOrDefault();
                         if (entry != null)
                         {
                             UpdateInfoMessage($"found sql file {entry.Name}");

@@ -15,8 +15,12 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
 
         public HubConnection HubConnection { get; private set; }
 
+        string _hubUrl;
+
         public void InitConnection(string hubUrl)
         {
+            _hubUrl = hubUrl;
+
             HubConnection = new HubConnectionBuilder()
                    .WithUrl(hubUrl)
                    .WithAutomaticReconnect()
@@ -30,7 +34,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
         {
             _logger.Info("The connection was closed and retry to connect");
             _retryConnectionTokenSource?.Cancel();
-            _retryConnectionTokenSource ??= new CancellationTokenSource();
+            _retryConnectionTokenSource = new CancellationTokenSource();
 
             var token = _retryConnectionTokenSource.Token;
             await StartConnectionAsync(token);
@@ -79,6 +83,9 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
                 catch (Exception ex)
                 {
                     _logger.Info($"Could not connect to live update server! {ex.Message}");
+
+                    if (ex is ObjectDisposedException)
+                        InitConnection(_hubUrl);
                     await Task.Delay(1000);
                 }
             }

@@ -56,9 +56,9 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
                     }
 
                     var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn);
-                    var versionDeploy = versionsDeploy.Where(v => v.BrandId == brandId).FirstOrDefault();
-
-                    await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy);
+                    var versionDeploy = versionsDeploy.Where(v => v.BrandId == brandId && v.BatchStatus == VersionDeployBatchStatus.Actived).SingleOrDefault();
+                    if(versionDeploy != null)
+                        await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy);
                 }
             }
             catch (Exception ex)

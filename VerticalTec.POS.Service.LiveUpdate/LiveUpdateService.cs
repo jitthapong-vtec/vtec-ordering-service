@@ -30,7 +30,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
         VtecPOSEnv _vtecEnv;
         BackupService _backupService;
 
-        public LiveUpdateService(IDatabase db, IClientConnectionService clientConnectionService, 
+        public LiveUpdateService(IDatabase db, IClientConnectionService clientConnectionService,
             IDbstructureUpdateService dbStrucUpdateService, IDownloadService downloadService,
             LiveUpdateDbContext liveUpdateCtx, FrontConfigManager frontConfigManager, VtecPOSEnv posEnv, BackupService backupService)
         {
@@ -240,7 +240,7 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     if (versionDeploy != null)
                     {
                         await _liveUpdateCtx.AddOrUpdateVersionDeploy(conn, versionDeploy);
-                        
+
                         cmd.CommandText = "delete from version_liveupdate where BatchId != @batchId and UpdateStatus != 2";
                         cmd.Parameters.Add(_db.CreateParameter("@batchId", versionDeploy.BatchId));
                         await _db.ExecuteNonQueryAsync(cmd);
@@ -344,11 +344,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
                     await _liveUpdateCtx.AddOrUpdateVersionLiveUpdateLog(conn, updateStateLog);
                     await _connectionService.HubConnection.InvokeAsync("ReceiveVersionLiveUpdate", updateState);
 
-                    _downloadService.Cancel();
-                    _downloadService.DownloadFile(versionDeploy.FileUrl, _vtecEnv.PatchDownloadPath);
-
-                    if (_downloadService.IsComplete)
+                    try
                     {
+                        _downloadService.DownloadFile(versionDeploy.FileUrl, _vtecEnv.PatchDownloadPath);
                         stepLog = "Download complete";
                         _logger.LogInfo(stepLog);
 
@@ -368,9 +366,9 @@ namespace VerticalTec.POS.Service.LiveUpdate
                         if (versionDeploy.AutoBackup)
                             await BackupFile();
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        stepLog = "Download failed";
+                        stepLog = $"Download failed {ex.Message}";
                         _logger.LogInfo(stepLog);
 
                         updateState.MessageLog = stepLog;
