@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using System;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -33,6 +34,48 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _messenger = messenger;
             _printService = printService;
             _posRepo = new VtecPOSRepo(database);
+        }
+
+        [HttpGet]
+        [Route("v1/tables/pincode")]
+        public async Task<object> GetTablePincodeAsync(string tranKey, int shopId, int tableId)
+        {
+            var pinData = new
+            {
+                responseCode = "",
+                responseText = "",
+                responseObj = new
+                {
+                    mobileNumber = "",
+                    smsHeader = "",
+                    smsNumber = "",
+                    validateType = 0
+                }
+            };
+
+            using (var conn = await _database.ConnectAsync())
+            {
+                var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
+
+                var cmd = _database.CreateCommand(
+                    "select ShopKey from shop_data where Deleted=0;" +
+                    "select * from weborder_token where SaleDate=@saleDate;", conn);
+
+                cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
+
+                var ds = new DataSet();
+                var adapter = _database.CreateDataAdapter(cmd);
+                adapter.TableMappings.Add("Table", "ShopData");
+                adapter.TableMappings.Add("Table1", "WebOrderToken");
+                adapter.Fill(ds);
+
+                var reqId = ds.Tables["WebOrderToken"].AsEnumerable().FirstOrDefault()?.GetValue<string>("MerchantReqId");
+                if (string.IsNullOrEmpty(reqId))
+                    reqId = Guid.NewGuid().ToString();
+
+
+            }
+            return pinData;
         }
 
         [HttpPost]
