@@ -73,7 +73,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 if (string.IsNullOrEmpty(reqId))
                     reqId = Guid.NewGuid().ToString();
 
+                var posPlatformApi = await _posRepo.GetPropertyValueAsync(conn, 1130, "ApiBaseServerUrl");
+                if (string.IsNullOrEmpty(posPlatformApi))
+                    return BadRequest("Not found ApiBaseServerUrl of property 1130");
 
+                var url = new UriBuilder($"{posPlatformApi}");
             }
             return pinData;
         }
