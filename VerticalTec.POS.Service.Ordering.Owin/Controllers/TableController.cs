@@ -6,6 +6,8 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
@@ -38,29 +40,19 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpGet]
         [Route("v1/tables/pincode")]
-        public async Task<object> GetTablePincodeAsync(string tranKey, int shopId, int tableId)
+        public async Task<IHttpActionResult> GetTablePincodeAsync(string tranKey, int shopId, int tableId, string saleDate = "")
         {
-            var pinData = new
-            {
-                responseCode = "",
-                responseText = "",
-                responseObj = new
-                {
-                    mobileNumber = "",
-                    smsHeader = "",
-                    smsNumber = "",
-                    validateType = 0
-                }
-            };
-
+            var pinCode = "";
             using (var conn = await _database.ConnectAsync())
             {
-                var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
+                if (string.IsNullOrEmpty(saleDate))
+                    saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
 
                 var cmd = _database.CreateCommand(
-                    "select ShopKey from shop_data where Deleted=0;" +
+                    "select a.ShopKey, b.MerchantKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID where a.ShopID=@shopId and a.Deleted=0;" +
                     "select * from weborder_token where SaleDate=@saleDate;", conn);
 
+                cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
                 cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
 
                 var ds = new DataSet();
@@ -69,17 +61,123 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 adapter.TableMappings.Add("Table1", "WebOrderToken");
                 adapter.Fill(ds);
 
-                var reqId = ds.Tables["WebOrderToken"].AsEnumerable().FirstOrDefault()?.GetValue<string>("MerchantReqId");
+                var dtShopData = ds.Tables["ShopData"];
+                var dtWebOrderToken = ds.Tables["WebOrderToken"];
+
+                if (dtShopData.Rows.Count == 0)
+                    return BadRequest($"Not found shop data {shopId}");
+
+                var merchantKey = dtShopData.AsEnumerable().FirstOrDefault()?.GetValue<string>("MerchantKey");
+                var shopKey = dtShopData.AsEnumerable().FirstOrDefault()?.GetValue<string>("ShopKey");
+                var reqId = "";
+                var reqToken = "";
+
+                if (dtWebOrderToken?.Rows.Count > 0)
+                {
+                    var row = dtWebOrderToken.AsEnumerable().FirstOrDefault();
+                    reqId = row.GetValue<string>("MerchantReqId");
+                    reqToken = row.GetValue<string>("AuthenToken");
+                }
+
                 if (string.IsNullOrEmpty(reqId))
+                {
                     reqId = Guid.NewGuid().ToString();
+                }
 
                 var posPlatformApi = await _posRepo.GetPropertyValueAsync(conn, 1130, "ApiBaseServerUrl");
                 if (string.IsNullOrEmpty(posPlatformApi))
                     return BadRequest("Not found ApiBaseServerUrl of property 1130");
 
-                var url = new UriBuilder($"{posPlatformApi}");
+                if (!posPlatformApi.EndsWith("/"))
+                    posPlatformApi = posPlatformApi + "/";
+
+                var merchantUrl = $"api/MerchantInfo/MerchantInfo?reqId={reqId}&WebUrl={merchantKey}";
+                var propertyUrl = $"api/POSModule/PropertyData?reqId={reqId}";
+                var pinUrl = $"api/POSModule/Table_GetPINCode?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}";
+
+                var httpClient = new HttpClient();
+                httpClient.BaseAddress = new UriBuilder(posPlatformApi).Uri;
+
+                if (string.IsNullOrEmpty(reqToken))
+                {
+                    try
+                    {
+                        reqToken = await GetTokenAsync(httpClient);
+                    }
+                    catch (Exception ex)
+                    {
+                        return BadRequest(ex.Message);
+                    }
+                }
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {reqToken}");
+
+                var merchantResponse = await httpClient.GetAsync(merchantUrl);
+                if (!merchantResponse.IsSuccessStatusCode)
+                    return BadRequest($"GetMerchant {merchantResponse.ReasonPhrase}");
+
+                var propertyResponse = await httpClient.PostAsync(propertyUrl, null);
+
+                if (!propertyResponse.IsSuccessStatusCode)
+                    return BadRequest($"GetProperty {propertyResponse.ReasonPhrase}");
+
+                var pinData = new
+                {
+                    responseCode = "",
+                    responseText = "",
+                    responseObj = new
+                    {
+                        mobileNumber = "",
+                        smsHeader = "",
+                        smsNumber = "",
+                        validateType = 0
+                    }
+                };
+
+                var pinResponse = await httpClient.PostAsync(pinUrl, null);
+                if (pinResponse.IsSuccessStatusCode)
+                {
+                    var pinJson = await pinResponse.Content.ReadAsStringAsync();
+                    pinData = JsonConvert.DeserializeAnonymousType(pinJson, pinData);
+                    if (!string.IsNullOrEmpty(pinData.responseCode))
+                        return BadRequest(pinData.responseText);
+
+                    pinCode = pinData.responseObj.smsNumber;
+                }
+                else
+                {
+                    return BadRequest($"Response from posplatform api {pinResponse.ReasonPhrase}");
+                }
             }
-            return pinData;
+            return Ok(pinCode);
+        }
+
+        async Task<string> GetTokenAsync(HttpClient httpClient)
+        {
+            var accessToken = new
+            {
+                userId = 0,
+                userName = "",
+                token = ""
+            };
+            var authUrl = $"api/MerchantInfo/authenticate";
+            var authPayload = new
+            {
+                username = "mobileUser",
+                password = "mB1975VTEC"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(authPayload), System.Text.Encoding.UTF8, "application/json");
+
+            var authResponse = await httpClient.PostAsync(authUrl, content);
+            if (authResponse.IsSuccessStatusCode)
+            {
+                var json = await authResponse.Content.ReadAsStringAsync();
+                accessToken = JsonConvert.DeserializeAnonymousType(json, accessToken);
+            }
+            else
+            {
+                throw new HttpRequestException($"Response from authen {authResponse.ReasonPhrase}");
+            }
+            return accessToken.token;
         }
 
         [HttpPost]
