@@ -1,35 +1,34 @@
-﻿using System;
+﻿using RestSharp;
+using System;
 using System.Threading.Tasks;
 using VerticalTec.POS.Database;
+using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Test
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            IDatabase db = new MySqlDatabase("127.0.0.1", "major_para", "3308");
-            Task.Run(async () =>
-            {
-                await GetKioskPageAsync(db);
-            });
-            Console.ReadLine();
-        }
+            var restClient = new RestClient();
 
-        private static async Task GetKioskPageAsync(IDatabase db)
-        {
-            try
+            // order object
+            var order = new POSObject.OrderObj();
+
+            // create request 
+            var request = new RestRequest("http://127.0.0.1:9500/v1/orders/online", Method.POST);
+            request.AddJsonBody(order);
+
+            // execute request
+            var response = await restClient.ExecuteAsync(request);
+            if (response.IsSuccessful)
             {
-                using (var conn = await db.ConnectAsync())
-                {
-                    VtecRepo repo = new VtecRepo(db);
-                    var kioskPage = await repo.GetKioskPageAsync(conn, 3);
-                }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine(ex.Message);
+                var errMsg = response.Content;
             }
+            Console.ReadLine();
         }
     }
 }

@@ -36,6 +36,95 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _posRepo = new VtecPOSRepo(database);
         }
 
+        [HttpPost]
+        [Route("v1/orders/online")]
+        public async Task<IHttpActionResult> OnlineOrderAsync(POSObject.OrderObj payload)
+        {
+            var posModule = new POSModule();
+            var responseMsg = "";
+            var transactionId = 0;
+            var computerId = 0;
+            var staffId = 2;
+            var tranKey = "";
+            var isPrint = false;
+            var jsonData = JsonConvert.SerializeObject(payload);
+
+            using (var conn = await _database.ConnectAsync()) {
+                var dtShop = await _posRepo.GetShopDataAsync(conn);
+                var shopId = dtShop.AsEnumerable().FirstOrDefault()?.GetValue<int>("ShopID") ?? 0;
+                if (shopId == 0)
+                    return BadRequest("Not found shop");
+
+                var saleDate = "";
+                try
+                {
+                    saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false);
+                }
+                catch
+                {
+                    return BadRequest("Store is not open");
+                }
+                var sessionId = 0;
+                var terminalId = 0;
+                var cmd = _database.CreateCommand("select SessionID, ComputerID from session where CloseStaffId=0 order by SessionDate desc limit 1", conn);
+                using (var reader = await _database.ExecuteReaderAsync(cmd))
+                {
+                    if (reader.Read()) {
+                        sessionId = reader.GetValue<int>("SessionID");
+                        terminalId = reader.GetValue<int>("ComputerID");
+                    }
+                }
+                if (sessionId == 0)
+                    return BadRequest("There is no open session");
+
+                var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
+                var success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, saleDate, sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+                if (success)
+                {
+                    if (isPrint)
+                    {
+                        var tableId = 0;
+                        cmd.CommandText = "select TableID from order_tablefront where TransactionID=@transId and ComputerID=@compId and SaleDate=@saleDate and ShopID=@shopId";
+                        cmd.Parameters.Add(_database.CreateParameter("@transId", transactionId));
+                        cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
+                        cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate)); 
+                        cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+
+                        using(var reader = await _database.ExecuteReaderAsync(cmd))
+                        {
+                            if (reader.Read())
+                            {
+                                tableId = reader.GetValue<int>("TableID");
+                            }
+                        }
+
+                        if (tableId == 0)
+                            return BadRequest($"Not found tableId of TranKey {transactionId}:{computerId}");
+
+                        var transPayload = new TransactionPayload()
+                        {
+                            TransactionID = transactionId,
+                            ComputerID = computerId,
+                            ShopID = shopId,
+                            TerminalID = terminalId,
+                            TableID = tableId,
+                            StaffID = staffId
+                        };
+
+                        await _orderingService.SubmitOrderAsync(conn, transactionId, computerId, shopId, tableId);
+
+                        await _printService.PrintOrder(transPayload);
+                        _messengerService.SendMessage($"102|101|{transPayload.TableID}");
+                    }
+                }
+                else
+                {
+                    BadRequest(responseMsg);
+                }        
+            }
+            return Ok();
+        }
+
         [HttpGet]
         [Route("v1/orders")]
         public async Task<IHttpActionResult> GetOrdersDetailAsync(int transactionId, int computerId, int shopId, int langId = 1)

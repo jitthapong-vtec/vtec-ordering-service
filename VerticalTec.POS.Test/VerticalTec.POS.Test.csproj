@@ -1,12 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>netcoreapp2.1</TargetFramework>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\VerticalTec.POS\VerticalTec.POS.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="RestSharp" Version="106.11.7" />
+		<PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="106.11.7" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\VerticalTec.POS\VerticalTec.POS.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Reference Include="vtecPOS">
+	    <HintPath>..\DLLs\vtecPOS.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
 
 </Project>
