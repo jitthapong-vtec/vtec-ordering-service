@@ -238,6 +238,7 @@
     <Compile Include="Models\GlobalExceptionHandler.cs" />
     <Compile Include="Models\GrcPayload.cs" />
     <Compile Include="Models\GrcPaymentData.cs" />
+    <Compile Include="Models\SimpleHttpActionResult.cs" />
     <Compile Include="Models\HttpActionResult.cs" />
     <Compile Include="Models\LoyaltyApiResult.cs" />
     <Compile Include="Models\OrderPromotion.cs" />

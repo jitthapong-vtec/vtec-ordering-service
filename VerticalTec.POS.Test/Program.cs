@@ -16,8 +16,7 @@ namespace VerticalTec.POS.Test
             var order = new POSObject.OrderObj();
 
             // create request 
-            var request = new RestRequest("http://127.0.0.1:9500/v1/orders/online", Method.POST);
-            request.AddJsonBody(order);
+            var request = new RestRequest("http://127.0.0.1:9500/v1/orders/online", Method.POST).AddJsonBody(order);
 
             // execute request
             var response = await restClient.ExecuteAsync(request);

@@ -7,6 +7,7 @@ using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
@@ -40,6 +41,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/orders/online")]
         public async Task<IHttpActionResult> OnlineOrderAsync(POSObject.OrderObj payload)
         {
+            var result = new SimpleHttpActionResult(Request);
+
             var posModule = new POSModule();
             var responseMsg = "";
             var transactionId = 0;
@@ -49,11 +52,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             var isPrint = false;
             var jsonData = JsonConvert.SerializeObject(payload);
 
-            using (var conn = await _database.ConnectAsync()) {
+            using (var conn = await _database.ConnectAsync())
+            {
                 var dtShop = await _posRepo.GetShopDataAsync(conn);
                 var shopId = dtShop.AsEnumerable().FirstOrDefault()?.GetValue<int>("ShopID") ?? 0;
                 if (shopId == 0)
-                    return BadRequest("Not found shop");
+                {
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = "Not found shop";
+                    return result;
+                }
 
                 var saleDate = "";
                 try
@@ -62,23 +70,31 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
                 catch
                 {
-                    return BadRequest("Store is not open");
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = "Store is not open";
+                    return result;
                 }
+
                 var sessionId = 0;
                 var terminalId = 0;
                 var cmd = _database.CreateCommand("select SessionID, ComputerID from session where CloseStaffId=0 order by SessionDate desc limit 1", conn);
                 using (var reader = await _database.ExecuteReaderAsync(cmd))
                 {
-                    if (reader.Read()) {
+                    if (reader.Read())
+                    {
                         sessionId = reader.GetValue<int>("SessionID");
                         terminalId = reader.GetValue<int>("ComputerID");
                     }
                 }
                 if (sessionId == 0)
-                    return BadRequest("There is no open session");
+                {
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = "There is no open session";
+                    return result;
+                }
 
                 var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
-                var success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, saleDate, sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+                var success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
                 if (success)
                 {
                     if (isPrint)
@@ -87,10 +103,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         cmd.CommandText = "select TableID from order_tablefront where TransactionID=@transId and ComputerID=@compId and SaleDate=@saleDate and ShopID=@shopId";
                         cmd.Parameters.Add(_database.CreateParameter("@transId", transactionId));
                         cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
-                        cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate)); 
+                        cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
                         cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
 
-                        using(var reader = await _database.ExecuteReaderAsync(cmd))
+                        using (var reader = await _database.ExecuteReaderAsync(cmd))
                         {
                             if (reader.Read())
                             {
@@ -99,7 +115,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         }
 
                         if (tableId == 0)
-                            return BadRequest($"Not found tableId of TranKey {transactionId}:{computerId}");
+                        {
+                            result.StatusCode = HttpStatusCode.BadRequest;
+                            result.Message = $"Not found tableId of TranKey {transactionId}:{computerId}";
+                            return result;
+                        }
 
                         var transPayload = new TransactionPayload()
                         {
@@ -111,18 +131,28 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             StaffID = staffId
                         };
 
-                        await _orderingService.SubmitOrderAsync(conn, transactionId, computerId, shopId, tableId);
-
-                        await _printService.PrintOrder(transPayload);
-                        _messengerService.SendMessage($"102|101|{transPayload.TableID}");
+                        try
+                        {
+                            await _orderingService.SubmitOrderAsync(conn, transactionId, computerId, shopId, tableId);
+                            await _printService.PrintOrder(transPayload);
+                            _messengerService.SendMessage($"102|101|{transPayload.TableID}");
+                        }
+                        catch (Exception ex)
+                        {
+                            result.StatusCode = HttpStatusCode.BadRequest;
+                            result.Message = ex.Message;
+                            return result;
+                        }
                     }
                 }
                 else
                 {
-                    BadRequest(responseMsg);
-                }        
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = responseMsg;
+                    return result;
+                }
             }
-            return Ok();
+            return result;
         }
 
         [HttpGet]
