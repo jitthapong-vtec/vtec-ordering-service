@@ -20,6 +20,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class OrderingController : ApiController
     {
+        public static readonly object owner = new object();
+
         static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("logordering");
 
         IDatabase _database;
@@ -94,7 +96,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
 
                 var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
-                var success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+
+                var success = false;
+
+                lock (owner)
+                {
+                    success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+                }
+
                 if (success)
                 {
                     if (isPrint)
