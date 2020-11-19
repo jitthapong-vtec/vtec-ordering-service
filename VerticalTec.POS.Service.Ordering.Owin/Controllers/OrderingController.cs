@@ -8,6 +8,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
@@ -20,7 +21,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class OrderingController : ApiController
     {
-        public static readonly object owner = new object();
+        public static readonly object Owner = new object();
 
         static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("logordering");
 
@@ -41,127 +42,132 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/orders/online")]
-        public async Task<IHttpActionResult> OnlineOrderAsync(POSObject.OrderObj payload)
+        public IHttpActionResult OnlineOrder(POSObject.OrderObj payload)
         {
-            var result = new SimpleHttpActionResult(Request);
-
-            var posModule = new POSModule();
-            var responseMsg = "";
-            var transactionId = 0;
-            var computerId = 0;
-            var staffId = 2;
-            var tranKey = "";
-            var isPrint = false;
-            var jsonData = JsonConvert.SerializeObject(payload);
-
-            using (var conn = await _database.ConnectAsync())
+            lock (Owner)
             {
-                var dtShop = await _posRepo.GetShopDataAsync(conn);
-                var shopId = dtShop.AsEnumerable().FirstOrDefault()?.GetValue<int>("ShopID") ?? 0;
-                if (shopId == 0)
-                {
-                    result.StatusCode = HttpStatusCode.BadRequest;
-                    result.Message = "Not found shop";
-                    return result;
-                }
-
-                var saleDate = "";
+                var result = new SimpleHttpActionResult(Request);
                 try
                 {
-                    saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false);
-                }
-                catch
-                {
-                    result.StatusCode = HttpStatusCode.BadRequest;
-                    result.Message = "Store is not open";
-                    return result;
-                }
+                    var posModule = new POSModule();
+                    var responseMsg = "";
+                    var transactionId = 0;
+                    var computerId = 0;
+                    var staffId = 2;
+                    var tranKey = "";
+                    var isPrint = false;
+                    var jsonData = JsonConvert.SerializeObject(payload);
 
-                var sessionId = 0;
-                var terminalId = 0;
-                var cmd = _database.CreateCommand("select SessionID, ComputerID from session where CloseStaffId=0 order by SessionDate desc limit 1", conn);
-                using (var reader = await _database.ExecuteReaderAsync(cmd))
-                {
-                    if (reader.Read())
+                    using (var conn = _database.Connect())
                     {
-                        sessionId = reader.GetValue<int>("SessionID");
-                        terminalId = reader.GetValue<int>("ComputerID");
-                    }
-                }
-                if (sessionId == 0)
-                {
-                    result.StatusCode = HttpStatusCode.BadRequest;
-                    result.Message = "There is no open session";
-                    return result;
-                }
+                        var dtShop = _posRepo.GetShopDataAsync(conn).Result;
+                        var shopId = dtShop.AsEnumerable().FirstOrDefault()?.GetValue<int>("ShopID") ?? 0;
+                        if (shopId == 0)
+                        {
+                            result.StatusCode = HttpStatusCode.BadRequest;
+                            result.Message = "Not found shop";
+                            return result;
+                        }
 
-                var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
+                        var saleDate = "";
+                        try
+                        {
+                            saleDate = _posRepo.GetSaleDateAsync(conn, shopId, false).Result;
+                        }
+                        catch
+                        {
+                            result.StatusCode = HttpStatusCode.BadRequest;
+                            result.Message = "Store is not open";
+                            return result;
+                        }
 
-                var success = false;
-
-                lock (owner)
-                {
-                    success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
-                }
-
-                if (success)
-                {
-                    if (isPrint)
-                    {
-                        var tableId = 0;
-                        cmd.CommandText = "select TableID from order_tablefront where TransactionID=@transId and ComputerID=@compId and SaleDate=@saleDate and ShopID=@shopId";
-                        cmd.Parameters.Add(_database.CreateParameter("@transId", transactionId));
-                        cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
-                        cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
-                        cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-
-                        using (var reader = await _database.ExecuteReaderAsync(cmd))
+                        var sessionId = 0;
+                        var terminalId = 0;
+                        var cmd = _database.CreateCommand("select SessionID, ComputerID from session where CloseStaffId=0 order by SessionDate desc limit 1", conn);
+                        using (var reader = _database.ExecuteReaderAsync(cmd).Result)
                         {
                             if (reader.Read())
                             {
-                                tableId = reader.GetValue<int>("TableID");
+                                sessionId = reader.GetValue<int>("SessionID");
+                                terminalId = reader.GetValue<int>("ComputerID");
                             }
                         }
-
-                        if (tableId == 0)
+                        if (sessionId == 0)
                         {
                             result.StatusCode = HttpStatusCode.BadRequest;
-                            result.Message = $"Not found tableId of TranKey {transactionId}:{computerId}";
+                            result.Message = "There is no open session";
                             return result;
                         }
 
-                        var transPayload = new TransactionPayload()
-                        {
-                            TransactionID = transactionId,
-                            ComputerID = computerId,
-                            ShopID = shopId,
-                            TerminalID = terminalId,
-                            TableID = tableId,
-                            StaffID = staffId
-                        };
+                        var decimalDigit = _posRepo.GetDefaultDecimalDigitAsync(conn).Result;
 
-                        try
+                        var success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+
+                        if (success)
                         {
-                            await _orderingService.SubmitOrderAsync(conn, transactionId, computerId, shopId, tableId);
-                            await _printService.PrintOrder(transPayload);
-                            _messengerService.SendMessage($"102|101|{transPayload.TableID}");
+                            if (isPrint)
+                            {
+                                var tableId = 0;
+                                cmd.CommandText = "select TableID from order_tablefront where TransactionID=@transId and ComputerID=@compId and SaleDate=@saleDate and ShopID=@shopId";
+                                cmd.Parameters.Add(_database.CreateParameter("@transId", transactionId));
+                                cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
+                                cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
+                                cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+
+                                using (var reader = _database.ExecuteReaderAsync(cmd).Result)
+                                {
+                                    if (reader.Read())
+                                    {
+                                        tableId = reader.GetValue<int>("TableID");
+                                    }
+                                }
+
+                                if (tableId == 0)
+                                {
+                                    result.StatusCode = HttpStatusCode.BadRequest;
+                                    result.Message = $"Not found tableId of TranKey {transactionId}:{computerId}";
+                                    return result;
+                                }
+
+                                var transPayload = new TransactionPayload()
+                                {
+                                    TransactionID = transactionId,
+                                    ComputerID = computerId,
+                                    ShopID = shopId,
+                                    TerminalID = terminalId,
+                                    TableID = tableId,
+                                    StaffID = staffId
+                                };
+
+                                try
+                                {
+                                    _orderingService.SubmitOrderAsync(conn, transactionId, computerId, shopId, tableId).ConfigureAwait(false);
+                                    _printService.PrintOrder(transPayload).ConfigureAwait(false);
+                                    _messengerService.SendMessage($"102|101|{transPayload.TableID}");
+                                }
+                                catch (Exception ex)
+                                {
+                                    result.StatusCode = HttpStatusCode.BadRequest;
+                                    result.Message = ex.Message;
+                                    return result;
+                                }
+                            }
                         }
-                        catch (Exception ex)
+                        else
                         {
                             result.StatusCode = HttpStatusCode.BadRequest;
-                            result.Message = ex.Message;
+                            result.Message = responseMsg;
                             return result;
                         }
                     }
                 }
-                else
+                catch (Exception ex)
                 {
                     result.StatusCode = HttpStatusCode.BadRequest;
-                    result.Message = responseMsg;
-                    return result;
+                    result.Message = ex.Message;
                 }
+                return result;
             }
-            return result;
         }
 
         [HttpGet]
