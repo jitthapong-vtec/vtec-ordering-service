@@ -20,6 +20,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class TableController : ApiController
     {
+        public static object lockObj = new object();
+
         static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logtable");
 
         IDatabase _database;
@@ -275,32 +277,44 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/tables/open")]
-        public async Task<IHttpActionResult> OpenTableAsync(OrderTransaction tranData)
+        public IHttpActionResult OpenTableAsync(OrderTransaction tranData)
         {
-            var result = new HttpActionResult<OrderTransaction>(Request);
-            using (var conn = await _database.ConnectAsync())
+            lock (lockObj)
             {
-                try
+                var result = new HttpActionResult<OrderTransaction>(Request);
+                using (var conn = _database.Connect())
                 {
-                    await _orderingService.OpenTransactionAsync(conn, tranData);
-                    await _orderingService.OpenTransactionProcessAsync(conn, tranData);
-                    await _orderingService.UpdateTableStatusAsync(conn, tranData.TransactionID, tranData.ComputerID, tranData.ShopID);
+                    try
+                    {
+                        var openTableTask = _orderingService.OpenTransactionAsync(conn, tranData);
+                        var openTranTask = _orderingService.OpenTransactionProcessAsync(conn, tranData);
+                        var updateTableStatusTask = _orderingService.UpdateTableStatusAsync(conn, tranData.TransactionID, tranData.ComputerID, tranData.ShopID);
 
-                    await _posRepo.SetComputerAccessAsync(conn, tranData.TableID, tranData.TerminalID);
-                    _messenger.SendMessage();
+                        var setComputerAccessTask = _posRepo.SetComputerAccessAsync(conn, tranData.TableID, tranData.TerminalID);
+                        _messenger.SendMessage();
 
-                    _log.Info($"OPEN_TABLE {JsonConvert.SerializeObject(tranData)}");
-                    result.StatusCode = HttpStatusCode.OK;
-                    result.Body = tranData;
+                        _log.Info($"OPEN_TABLE {JsonConvert.SerializeObject(tranData)}");
 
+                        var tasks = new Task[]
+                        {
+                            openTableTask,
+                            openTranTask,
+                            updateTableStatusTask,
+                            setComputerAccessTask
+                        };
+                        Task.WaitAll(tasks);
+
+                        result.StatusCode = HttpStatusCode.OK;
+                        result.Body = tranData;
+                    }
+                    catch (VtecPOSException ex)
+                    {
+                        result.StatusCode = HttpStatusCode.InternalServerError;
+                        result.Message = ex.Message;
+                    }
                 }
-                catch (VtecPOSException ex)
-                {
-                    result.StatusCode = HttpStatusCode.InternalServerError;
-                    result.Message = ex.Message;
-                }
+                return result;
             }
-            return result;
         }
 
         [HttpPost]
