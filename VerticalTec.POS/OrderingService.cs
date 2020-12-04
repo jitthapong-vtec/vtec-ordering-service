@@ -8,6 +8,8 @@ using VerticalTec.POS.Database;
 using vtecPOS.GlobalFunctions;
 using vtecPOS.POSControl;
 using VerticalTec.POS.Utils;
+using System.Net.Http;
+using Newtonsoft.Json;
 
 namespace VerticalTec.POS
 {
@@ -605,6 +607,146 @@ namespace VerticalTec.POS
             if (!success)
                 throw new VtecPOSException(responseText);
             tranData.ProcessType = processType;
+        }
+
+        public async Task<string> GetOrRegenPincodeAsync(IDbConnection conn, string tranKey, int shopId, int tableId, int mode = 1, string saleDate = "")
+        {
+            var pinCode = "";
+            if (string.IsNullOrEmpty(saleDate))
+                saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
+
+            var cmd = _database.CreateCommand(
+                "select a.ShopKey, b.MerchantKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID where a.ShopID=@shopId and a.Deleted=0;" +
+                "select * from weborder_token where SaleDate=@saleDate;", conn);
+
+            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+            cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
+
+            var ds = new DataSet();
+            var adapter = _database.CreateDataAdapter(cmd);
+            adapter.TableMappings.Add("Table", "ShopData");
+            adapter.TableMappings.Add("Table1", "WebOrderToken");
+            adapter.Fill(ds);
+
+            var dtShopData = ds.Tables["ShopData"];
+            var dtWebOrderToken = ds.Tables["WebOrderToken"];
+
+            if (dtShopData.Rows.Count == 0)
+                throw new VtecPOSException($"Not found shop data {shopId}");
+
+            var merchantKey = dtShopData.ToEnumerable().FirstOrDefault()?.GetValue<string>("MerchantKey");
+            var shopKey = dtShopData.ToEnumerable().FirstOrDefault()?.GetValue<string>("ShopKey");
+            var reqId = "";
+            var reqToken = "";
+
+            if (dtWebOrderToken?.Rows.Count > 0)
+            {
+                var row = dtWebOrderToken.ToEnumerable().FirstOrDefault();
+                reqId = row.GetValue<string>("MerchantReqId");
+                reqToken = row.GetValue<string>("AuthenToken");
+            }
+
+            if (string.IsNullOrEmpty(reqId))
+            {
+                reqId = Guid.NewGuid().ToString();
+            }
+
+            var posPlatformApi = await _posRepo.GetPropertyValueAsync(conn, 1130, "ApiBaseServerUrl");
+            if (string.IsNullOrEmpty(posPlatformApi))
+                throw new VtecPOSException("Not found ApiBaseServerUrl of property 1130");
+
+            if (!posPlatformApi.EndsWith("/"))
+                posPlatformApi = posPlatformApi + "/";
+
+            var merchantUrl = $"api/MerchantInfo/MerchantInfo?reqId={reqId}&WebUrl={merchantKey}";
+            var propertyUrl = $"api/POSModule/PropertyData?reqId={reqId}";
+
+            var pinUrl = $"api/POSModule/Table_GetPINCode?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}";
+            if (mode == 2)
+                pinUrl = $"api/POSModule/Table_ReGenPINCode?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}";
+
+            var httpClient = new HttpClient();
+            httpClient.BaseAddress = new UriBuilder(posPlatformApi).Uri;
+
+            if (string.IsNullOrEmpty(reqToken))
+            {
+                try
+                {
+                    reqToken = await GetTokenAsync(httpClient);
+                }
+                catch (Exception ex)
+                {
+                    throw new VtecPOSException(ex.Message);
+                }
+            }
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {reqToken}");
+
+            var merchantResponse = await httpClient.GetAsync(merchantUrl);
+            if (!merchantResponse.IsSuccessStatusCode)
+                throw new VtecPOSException($"GetMerchant {merchantResponse.ReasonPhrase}");
+
+            var propertyResponse = await httpClient.PostAsync(propertyUrl, null);
+
+            if (!propertyResponse.IsSuccessStatusCode)
+                throw new VtecPOSException($"GetProperty {propertyResponse.ReasonPhrase}");
+
+            var pinData = new
+            {
+                responseCode = "",
+                responseText = "",
+                responseObj = new
+                {
+                    mobileNumber = "",
+                    smsHeader = "",
+                    smsNumber = "",
+                    validateType = 0
+                }
+            };
+
+            var pinResponse = await httpClient.PostAsync(pinUrl, null);
+            if (pinResponse.IsSuccessStatusCode)
+            {
+                var pinJson = await pinResponse.Content.ReadAsStringAsync();
+                pinData = JsonConvert.DeserializeAnonymousType(pinJson, pinData);
+                if (!string.IsNullOrEmpty(pinData.responseCode))
+                    throw new VtecPOSException(pinData.responseText);
+
+                pinCode = pinData.responseObj.smsNumber;
+            }
+            else
+            {
+                throw new VtecPOSException($"Response from posplatform api {pinResponse.ReasonPhrase}");
+            }
+            return pinCode;
+        }
+
+        async Task<string> GetTokenAsync(HttpClient httpClient)
+        {
+            var accessToken = new
+            {
+                userId = 0,
+                userName = "",
+                token = ""
+            };
+            var authUrl = $"api/MerchantInfo/authenticate";
+            var authPayload = new
+            {
+                username = "mobileUser",
+                password = "mB1975VTEC"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(authPayload), System.Text.Encoding.UTF8, "application/json");
+
+            var authResponse = await httpClient.PostAsync(authUrl, content);
+            if (authResponse.IsSuccessStatusCode)
+            {
+                var json = await authResponse.Content.ReadAsStringAsync();
+                accessToken = JsonConvert.DeserializeAnonymousType(json, accessToken);
+            }
+            else
+            {
+                throw new HttpRequestException($"Response from authen {authResponse.ReasonPhrase}");
+            }
+            return accessToken.token;
         }
     }
 }

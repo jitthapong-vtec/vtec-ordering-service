@@ -29,5 +29,6 @@ namespace VerticalTec.POS
         Task<bool> SubmitSaleModeOrderAsync(IDbConnection conn, int transactionId, int computerId, string transactionName, int totalCustomer, TransactionStatus status);
         Task<bool> CancelTransactionAsync(IDbConnection conn, int transactionId, int computerId);
         Task<bool> SubmitOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int tableId);
+        Task<string> GetOrRegenPincodeAsync(IDbConnection conn, string tranKey, int shopId, int tableId, int mode = 1, string saleDate = "");
     }
 }

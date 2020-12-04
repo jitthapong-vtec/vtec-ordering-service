@@ -47,139 +47,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             var pinCode = "";
             using (var conn = await _database.ConnectAsync())
             {
-                if (string.IsNullOrEmpty(saleDate))
-                    saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
-
-                var cmd = _database.CreateCommand(
-                    "select a.ShopKey, b.MerchantKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID where a.ShopID=@shopId and a.Deleted=0;" +
-                    "select * from weborder_token where SaleDate=@saleDate;", conn);
-
-                cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-                cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
-
-                var ds = new DataSet();
-                var adapter = _database.CreateDataAdapter(cmd);
-                adapter.TableMappings.Add("Table", "ShopData");
-                adapter.TableMappings.Add("Table1", "WebOrderToken");
-                adapter.Fill(ds);
-
-                var dtShopData = ds.Tables["ShopData"];
-                var dtWebOrderToken = ds.Tables["WebOrderToken"];
-
-                if (dtShopData.Rows.Count == 0)
-                    return BadRequest($"Not found shop data {shopId}");
-
-                var merchantKey = dtShopData.AsEnumerable().FirstOrDefault()?.GetValue<string>("MerchantKey");
-                var shopKey = dtShopData.AsEnumerable().FirstOrDefault()?.GetValue<string>("ShopKey");
-                var reqId = "";
-                var reqToken = "";
-
-                if (dtWebOrderToken?.Rows.Count > 0)
+                try
                 {
-                    var row = dtWebOrderToken.AsEnumerable().FirstOrDefault();
-                    reqId = row.GetValue<string>("MerchantReqId");
-                    reqToken = row.GetValue<string>("AuthenToken");
+                    pinCode = await _orderingService.GetOrRegenPincodeAsync(conn, tranKey, shopId, tableId, saleDate: saleDate);
                 }
-
-                if (string.IsNullOrEmpty(reqId))
+                catch(Exception ex)
                 {
-                    reqId = Guid.NewGuid().ToString();
-                }
-
-                var posPlatformApi = await _posRepo.GetPropertyValueAsync(conn, 1130, "ApiBaseServerUrl");
-                if (string.IsNullOrEmpty(posPlatformApi))
-                    return BadRequest("Not found ApiBaseServerUrl of property 1130");
-
-                if (!posPlatformApi.EndsWith("/"))
-                    posPlatformApi = posPlatformApi + "/";
-
-                var merchantUrl = $"api/MerchantInfo/MerchantInfo?reqId={reqId}&WebUrl={merchantKey}";
-                var propertyUrl = $"api/POSModule/PropertyData?reqId={reqId}";
-                var pinUrl = $"api/POSModule/Table_GetPINCode?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}";
-
-                var httpClient = new HttpClient();
-                httpClient.BaseAddress = new UriBuilder(posPlatformApi).Uri;
-
-                if (string.IsNullOrEmpty(reqToken))
-                {
-                    try
-                    {
-                        reqToken = await GetTokenAsync(httpClient);
-                    }
-                    catch (Exception ex)
-                    {
-                        return BadRequest(ex.Message);
-                    }
-                }
-                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {reqToken}");
-
-                var merchantResponse = await httpClient.GetAsync(merchantUrl);
-                if (!merchantResponse.IsSuccessStatusCode)
-                    return BadRequest($"GetMerchant {merchantResponse.ReasonPhrase}");
-
-                var propertyResponse = await httpClient.PostAsync(propertyUrl, null);
-
-                if (!propertyResponse.IsSuccessStatusCode)
-                    return BadRequest($"GetProperty {propertyResponse.ReasonPhrase}");
-
-                var pinData = new
-                {
-                    responseCode = "",
-                    responseText = "",
-                    responseObj = new
-                    {
-                        mobileNumber = "",
-                        smsHeader = "",
-                        smsNumber = "",
-                        validateType = 0
-                    }
-                };
-
-                var pinResponse = await httpClient.PostAsync(pinUrl, null);
-                if (pinResponse.IsSuccessStatusCode)
-                {
-                    var pinJson = await pinResponse.Content.ReadAsStringAsync();
-                    pinData = JsonConvert.DeserializeAnonymousType(pinJson, pinData);
-                    if (!string.IsNullOrEmpty(pinData.responseCode))
-                        return BadRequest(pinData.responseText);
-
-                    pinCode = pinData.responseObj.smsNumber;
-                }
-                else
-                {
-                    return BadRequest($"Response from posplatform api {pinResponse.ReasonPhrase}");
+                    return BadRequest(ex.Message);
                 }
             }
             return Ok(pinCode);
-        }
-
-        async Task<string> GetTokenAsync(HttpClient httpClient)
-        {
-            var accessToken = new
-            {
-                userId = 0,
-                userName = "",
-                token = ""
-            };
-            var authUrl = $"api/MerchantInfo/authenticate";
-            var authPayload = new
-            {
-                username = "mobileUser",
-                password = "mB1975VTEC"
-            };
-            var content = new StringContent(JsonConvert.SerializeObject(authPayload), System.Text.Encoding.UTF8, "application/json");
-
-            var authResponse = await httpClient.PostAsync(authUrl, content);
-            if (authResponse.IsSuccessStatusCode)
-            {
-                var json = await authResponse.Content.ReadAsStringAsync();
-                accessToken = JsonConvert.DeserializeAnonymousType(json, accessToken);
-            }
-            else
-            {
-                throw new HttpRequestException($"Response from authen {authResponse.ReasonPhrase}");
-            }
-            return accessToken.token;
         }
 
         [HttpPost]
@@ -196,6 +73,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     await _printService.PrintAsync(table.ShopID, table.ComputerID, dsPrintData);
                     _messenger.SendMessage();
+
+                    try
+                    {
+                        var param = await _posRepo.GetPropertyValueAsync(conn, 1130, "TableRequestPinCode");
+                        if (param == "1")
+                            await _orderingService.GetOrRegenPincodeAsync(conn, $"{table.TransactionID}:{table.ComputerID}", table.ShopID, table.ToTableID, 2);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error($"Regen pin code {ex.Message}");
+                    }
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
@@ -228,6 +116,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     await _printService.PrintAsync(table.ShopID, table.ComputerID, dsPrintData);
                     _messenger.SendMessage();
 
+                    try
+                    {
+                        var param = await _posRepo.GetPropertyValueAsync(conn, 1130, "TableRequestPinCode");
+                        if (param == "1")
+                            await _orderingService.GetOrRegenPincodeAsync(conn, $"{table.TransactionID}:{table.ComputerID}", table.ShopID, table.FromTableID, 2);
+                    }
+                    catch(Exception ex) 
+                    {
+                        _log.Error($"Regen pin code {ex.Message}");
+                    }
+
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
 
@@ -258,6 +157,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     await _printService.PrintAsync(table.ShopID, table.ComputerID, dsPrintData);
                     _messenger.SendMessage();
+
+                    try
+                    {
+                        var param = await _posRepo.GetPropertyValueAsync(conn, 1130, "TableRequestPinCode");
+                        if (param == "1")
+                            await _orderingService.GetOrRegenPincodeAsync(conn, $"{table.TransactionID}:{table.ComputerID}", table.ShopID, table.FromTableID, 2);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error($"Regen pin code {ex.Message}");
+                    }
 
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = table;
