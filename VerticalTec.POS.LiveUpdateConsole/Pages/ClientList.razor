@@ -40,8 +40,8 @@ else
         </div>
     </div>
 
-    <DxDataGrid Data="@clients" ShowFilterRow="false" ShowPager="true" @ref="@gridRef">
-        <DxDataGridColumn Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center">
+    <DxDataGrid Data="@clients" ShowPager="true" @ref="@gridRef" PageSize="200" ShowFilterRow="true">
+        <DxDataGridColumn Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center" AllowFilter="false">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -49,7 +49,7 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Caption="สาขา">
+        <DxDataGridColumn Caption="สาขา" Field="@nameof(VersionInfo.ShopName)" AllowFilter="true">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -57,7 +57,7 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Caption="ชื่อเครื่อง">
+        <DxDataGridColumn Caption="ชื่อเครื่อง" AllowFilter="false">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -65,8 +65,8 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="โปรแกรมเวอร์ชั่น"/>
-        <DxDataGridColumn Caption="สถานะการอัพเดต">
+        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="โปรแกรมเวอร์ชั่น" AllowFilter="false"/>
+        <DxDataGridColumn Caption="สถานะการอัพเดต" AllowFilter="false">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -76,7 +76,7 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn TextAlignment="@DataGridTextAlign.Center">
+        <DxDataGridColumn TextAlignment="@DataGridTextAlign.Center" AllowFilter="false">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);

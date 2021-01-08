@@ -48,7 +48,7 @@
 }
 else
 {
-    <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="true" @ref="@gridRef">
+    <DxDataGrid Data="@versionDeploys" ShowFilterRow="false" ShowPager="true" @ref="@gridRef" PageSize="100">
         <DxDataGridColumn Width="70px" Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center">
             <DisplayTemplate>
                 @{

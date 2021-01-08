@@ -57,8 +57,12 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
 
                     var versionsDeploy = await _liveUpdateCtx.GetVersionDeploy(conn);
                     var versionDeploy = versionsDeploy.Where(v => v.BrandId == brandId && v.BatchStatus == VersionDeployBatchStatus.Actived).SingleOrDefault();
-                    if(versionDeploy != null)
-                        await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy);
+                    if (versionDeploy != null)
+                    {
+                        var versionLiveUpdate = _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
+                        if (versionLiveUpdate != null)
+                            await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy);
+                    }
                 }
             }
             catch (Exception ex)
@@ -82,7 +86,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
                             cmd.Parameters.Add(_db.CreateParameter("@batchId", versionDeploy.BatchId));
 
                             var availableShops = new List<int>();
-                            using(var reader = await _db.ExecuteReaderAsync(cmd))
+                            using (var reader = await _db.ExecuteReaderAsync(cmd))
                             {
                                 while (reader.Read())
                                 {

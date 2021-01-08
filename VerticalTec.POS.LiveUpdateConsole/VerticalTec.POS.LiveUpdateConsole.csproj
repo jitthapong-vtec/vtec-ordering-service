@@ -13,7 +13,7 @@
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.2" />
 		<PackageReference Include="NLog" Version="4.7.0" />
 		<PackageReference Include="NLog.Web.AspNetCore" Version="4.9.2" />
-		<PackageReference Include="DevExpress.Blazor" Version="19.2.4" />
+		<PackageReference Include="DevExpress.Blazor" Version="20.2.4" />
 	</ItemGroup>
 
 	<ItemGroup>
