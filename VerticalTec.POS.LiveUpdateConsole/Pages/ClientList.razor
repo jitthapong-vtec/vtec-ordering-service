@@ -40,7 +40,7 @@ else
         </div>
     </div>
 
-    <DxDataGrid Data="@clients" ShowPager="true" @ref="@gridRef" PageSize="200" ShowFilterRow="true">
+    <DxDataGrid Data="@clients" @ref="_gridView" ShowPager="true" PageSize="100" ShowFilterRow="true">
         <DxDataGridColumn Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center" AllowFilter="false">
             <DisplayTemplate>
                 @{
@@ -57,7 +57,7 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Caption="ชื่อเครื่อง" AllowFilter="false">
+        <DxDataGridColumn Caption="ชื่อเครื่อง" Field="@nameof(VersionInfo.ComputerName)" AllowFilter="true">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -65,8 +65,8 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="โปรแกรมเวอร์ชั่น" AllowFilter="false"/>
-        <DxDataGridColumn Caption="สถานะการอัพเดต" AllowFilter="false">
+        <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="โปรแกรมเวอร์ชั่น" AllowFilter="true"/>
+        <DxDataGridColumn Caption="สถานะการอัพเดตล่าสุด" AllowFilter="false">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -96,8 +96,7 @@ else
 }
 
 @code{
-
-    DxDataGrid<VersionInfo> gridRef;
+    DxDataGrid<VersionInfo> _gridView;
 
     List<VersionInfo> clients;
 
@@ -158,17 +157,17 @@ else
         }
     }
 
-    public Task ClientDisconnect(string connectionId)
+    public async Task ClientDisconnect(string connectionId)
     {
         try
         {
             var client = clients.Where(c => c.ConnectionId == connectionId).FirstOrDefault();
             client.IsOnline = false;
             clients[clients.IndexOf(client)] = client;
-            gridRef.Refresh();
+
+            await _gridView.Refresh();
         }
         catch { }
-        return Task.FromResult(true);
     }
 
     public async Task GetClientInfo(VersionInfo client)
@@ -182,7 +181,8 @@ else
         {
             await ClientConnectionService.HubConnection.InvokeAsync("SendDownloadFileCommand", client.ConnectionId);
             client.CanExecute = false;
-            await gridRef.Refresh();
+
+            await _gridView.Refresh();
         }
     }
 
@@ -192,7 +192,8 @@ else
         {
             await ClientConnectionService.HubConnection.InvokeAsync("SendBackupCommand", client.ConnectionId);
             client.CanExecute = false;
-            await gridRef.Refresh();
+
+            await _gridView.Refresh();
         }
     }
 
@@ -205,11 +206,12 @@ else
             client.IsOnline = versionInfo.IsOnline;
             client.ProgramVersion = versionInfo.ProgramVersion;
             clients[clients.IndexOf(client)] = client;
-            await gridRef.Refresh();
         }
-        catch
+        catch { }
+        finally
         {
-            await LoadClient();
+
+            await _gridView.Refresh();
         }
     }
 
@@ -218,11 +220,12 @@ else
         try
         {
             var client = clients.Where(c => c.ShopId == state.ShopId && c.ComputerId == state.ComputerId).FirstOrDefault();
+            var updateDate = client.UpdateDate != DateTime.MinValue ? string.Format("({0:dd/MM/yy HH:mm:ss})", client.UpdateDate) : "";
             if (state.ReadyToUpdate == 1)
             {
-                client.ProcessMessage = "Ready to update";
+                client.ProcessMessage = $"Ready to update {updateDate}";
                 if (state.UpdateStatus == 2)
-                    client.ProcessMessage = "Update successfully";
+                    client.ProcessMessage = $"Update successfully {updateDate}";
             }
             else
             {
@@ -231,11 +234,11 @@ else
             if (state.CommandStatus == CommandStatus.Finish || state.CommandStatus == CommandStatus.Error)
                 client.CanExecute = true;
             clients[clients.IndexOf(client)] = client;
-            await gridRef.Refresh();
         }
-        catch
+        catch { }
+        finally
         {
-            await LoadClient();
+            await _gridView.Refresh();
         }
     }
 }
