@@ -59,9 +59,12 @@ namespace VerticalTec.POS.LiveUpdateConsole.Hubs
                     var versionDeploy = versionsDeploy.Where(v => v.BrandId == brandId && v.BatchStatus == VersionDeployBatchStatus.Actived).SingleOrDefault();
                     if (versionDeploy != null)
                     {
-                        var versionLiveUpdate = _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
+                        var versionLiveUpdate = await _liveUpdateCtx.GetVersionLiveUpdate(conn, versionDeploy.BatchId, posSetting.ShopID, posSetting.ComputerID);
                         if (versionLiveUpdate != null)
+                        {
+                            _logger.Debug($"Send version deploy to {JsonConvert.SerializeObject(versionLiveUpdate)}");
                             await Clients.Client(Context.ConnectionId).ReceiveVersionDeploy(versionDeploy);
+                        }
                     }
                 }
             }

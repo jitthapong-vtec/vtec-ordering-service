@@ -40,8 +40,10 @@ else
         </div>
     </div>
 
-    <DxDataGrid Data="@clients" @ref="_gridView" ShowPager="true" PageSize="100" ShowFilterRow="true">
-        <DxDataGridColumn Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center" AllowFilter="false">
+    <DxDataGrid Data="@clients" @ref="_gridView" ShowPager="true" PageSize="100" ShowFilterRow="true" 
+                AllowColumnDragDrop="false" AllowSort="false"
+                ColumnResizeMode="DataGridColumnResizeMode.NextColumn">
+        <DxDataGridColumn Caption="สถานะ" TextAlignment="@DataGridTextAlign.Center" AllowFilter="false" Width="100px">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -49,22 +51,8 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn Caption="สาขา" Field="@nameof(VersionInfo.ShopName)" AllowFilter="true">
-            <DisplayTemplate>
-                @{
-                    var client = (context as VersionInfo);
-                    <span>@client.ShopCode : @client.ShopName</span>
-                }
-            </DisplayTemplate>
-        </DxDataGridColumn>
-        <DxDataGridColumn Caption="ชื่อเครื่อง" Field="@nameof(VersionInfo.ComputerName)" AllowFilter="true">
-            <DisplayTemplate>
-                @{
-                    var client = (context as VersionInfo);
-                    @client.ComputerName
-                }
-            </DisplayTemplate>
-        </DxDataGridColumn>
+        <DxDataGridColumn Caption="สาขา" Field="@nameof(VersionInfo.ShopNameWithCode)" AllowFilter="true"/>
+        <DxDataGridColumn Caption="ชื่อเครื่อง" Field="@nameof(VersionInfo.ComputerName)" AllowFilter="true"/>
         <DxDataGridColumn Field="@nameof(VersionInfo.ProgramVersion)" Caption="โปรแกรมเวอร์ชั่น" AllowFilter="true"/>
         <DxDataGridColumn Caption="สถานะการอัพเดตล่าสุด" AllowFilter="false">
             <DisplayTemplate>
@@ -76,7 +64,7 @@ else
                 }
             </DisplayTemplate>
         </DxDataGridColumn>
-        <DxDataGridColumn TextAlignment="@DataGridTextAlign.Center" AllowFilter="false">
+        @*<DxDataGridColumn TextAlignment="@DataGridTextAlign.Center" AllowFilter="false">
             <DisplayTemplate>
                 @{
                     var client = (context as VersionInfo);
@@ -91,7 +79,7 @@ else
                     </div>
                 }
             </DisplayTemplate>
-        </DxDataGridColumn>
+        </DxDataGridColumn>*@
     </DxDataGrid>
 }
 

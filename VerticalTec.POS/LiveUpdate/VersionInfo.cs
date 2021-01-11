@@ -7,6 +7,7 @@ namespace VerticalTec.POS.LiveUpdate
     public class VersionInfo
     {
         bool _isOnline;
+
         public int ShopId { get; set; }
         public int ComputerId { get; set; }
         public string ConnectionId { get; set; } = "";
@@ -30,5 +31,7 @@ namespace VerticalTec.POS.LiveUpdate
                 CanExecute = _isOnline;
             }
         }
+
+        public string ShopNameWithCode { get => $"{ShopCode}: {ShopName}"; }
     }
 }
