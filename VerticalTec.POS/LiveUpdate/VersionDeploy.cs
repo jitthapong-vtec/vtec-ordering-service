@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel.DataAnnotations;
 
 namespace VerticalTec.POS.LiveUpdate
 {
@@ -10,7 +9,9 @@ namespace VerticalTec.POS.LiveUpdate
         public int BrandId { get; set; }
         public ProgramTypes ProgramId { get; set; }
         public string ProgramName { get; set; } = "";
+        [Required(ErrorMessage = "Version is required")]
         public string ProgramVersion { get; set; } = "";
+        [Required(ErrorMessage = "Please upload file")]
         public string FileUrl { get; set; } = "";
         public VersionDeployBatchStatus BatchStatus { get; set; }
         public bool AutoBackup { get; set; }

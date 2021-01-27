@@ -1,0 +1,159 @@
+﻿@page "{batchId?}"
+@model FormVersionDeployModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+
+@using (Html.BeginForm("Post", "", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+
+    @using (Html.DevExtreme().ValidationGroup())
+    {
+        @*<div class="col">
+                <div>
+                    @(Html.DevExtreme().Form<VersionDeploy>()
+                    .ID("frmVersionDeploy")
+                    .FormData(Model.VersionDeploy)
+                    .Items(item =>
+                    {
+                        item.AddGroup().Caption("ข้อมูลเวอร์ชัน")
+                        .Items(item =>
+                        {
+                            item.AddSimpleFor(m => m.ProgramVersion).Editor(e => e.TextBox().Width(200)).Label(l => l.Text("ชื่อเวอร์ชัน"));
+
+                        });
+                        item.AddGroup().Caption("สาขาที่จะทำการอัพเดต")
+                        .ColCount(2)
+                            .Items(
+                                item => {
+                                    item.AddSimpleFor(m => m.BrandId)
+                                    .Label(l => l.Text("แบรนด์"))
+                                    .Editor(
+                                        e => e.SelectBox().ID("slBrand").DataSource(
+                                            d => d.Mvc().Controller("Branch").LoadAction("GetBrands"))
+                                        .DisplayExpr("BrandName").ValueExpr("BrandId").Placeholder("-- กรุณาเลือกแบรนด์ --"));
+
+                                    item.AddSimple()
+                                    .Label(l => l.Text("สาขา"))
+                                    .Editor(e => e.DropDownBox()
+                                    .DataSource(d => d.Mvc().Controller("Branch").LoadAction("GetShops").LoadParams(new { BrandId = new JS("getBrandId") })
+                                    .LoadMode(DataSourceLoadMode.Raw).Key("ShopId"))
+                                    .ShowClearButton(true)
+                                    .DisplayExpr("ShopFullName")
+                                    .OnValueChanged("gridBox_valueChanged")
+                                    .ContentTemplate(new TemplateName("ShopDataGridTemplate")).Placeholder("-- กรุณาเลือกสาขา --"));
+                                });
+
+                    })
+                    .LabelLocation(FormLabelLocation.Top)
+                    .MinColWidth(300)
+                    .ReadOnly(false)
+                    .ShowColonAfterLabel(true)
+                    )
+                </div>
+                <div class="mt-4">
+                    @(Html.DevExtreme().Button().Text("บันทึก").UseSubmitBehavior(true))
+                </div>
+            </div>*@
+
+        <form>
+            <h3>ข้อมูลเวอร์ชั่น</h3>
+            <div class="form-group">
+                <label for="inputVersion">เวอร์ชั่น</label>
+                @(Html.DevExtreme().TextBox().ID("inputVersion").Value(Model.VersionDeploy.ProgramVersion))
+            </div>
+            <div class="form-group">
+                <label for="inputFileUrl">อัพโหลด</label>
+                @(Html.DevExtreme().TextBox().ID("inputFileUrl").Value(Model.VersionDeploy.FileUrl))
+                @*@(Html.DevExtreme().FileUploader()
+                        .ID("fileUpload")
+                        .Name("file")
+                        .ChunkSize(1000000)
+                        .AllowedFileExtensions(new[] { ".zip"})
+                        .OnUploadStarted("onUploadStarted")
+                        .OnUploadError("onUploadError")
+                        .OnFilesUploaded("onUploaded")
+                        .UploadUrl(Url.Action("UploadPatch", "Resource"))
+                    )*@
+
+                @(Html.DevExtreme().FileUploader()
+                    .ID("fileUpload")
+                    .Name("file")
+                    .ChunkSize(1000000)
+                    .AllowedFileExtensions(new[] { ".zip"})
+                    .OnUploadStarted("onUploadStarted")
+                    .OnUploadError("onUploadError")
+                    .OnFilesUploaded("onUploaded")
+                    .OnBeforeSend("beforeSend")
+                    .UploadUrl(Url.Page(null, "UploadPatch"))
+                )
+            </div>
+            <div class="form-group">
+
+            </div>
+            <button type="submit" class="btn btn-primary">Sign in</button>
+        </form>
+    }
+}
+
+@using (Html.DevExtreme().NamedTemplate("ShopDataGridTemplate"))
+{
+    @(Html.DevExtreme().DataGrid()
+        .ID("shop-datagrid")
+        .DataSource(new JS(@"component.getDataSource()"))
+        .Columns(columns => {
+            columns.Add().DataField("ShopCode");
+            columns.Add().DataField("ShopName");
+        })
+        .HoverStateEnabled(true)
+        .Paging(p => p.PageSize(10))
+        .FilterRow(f => f.Visible(true))
+        .Scrolling(s => s.Mode(GridScrollingMode.Infinite))
+        .Height(345)
+        .Selection(s => s.Mode(SelectionMode.Multiple))
+        .SelectedRowKeys(new JS(@"component.option(""value"")"))
+        .OnSelectionChanged(@<text>
+            function(selectedItems) {
+                var keys = selectedItems.selectedRowKeys;
+                component.option("value", keys);
+            }
+        </text>)
+    )
+}
+
+<script>
+    var isUploadFinish = false;
+    var uploadFileName = '';
+
+    function beforeSend(e) {
+        e.request.setRequestHeader('RequestVerificationToken', "@Xsrf.GetAndStoreTokens(Model.HttpContext).RequestToken");
+    }
+
+    function getBrandId() {
+        return $("#slBrand").dxSelectBox('instance').option('value');
+    }
+
+    function gridBox_valueChanged(e) {
+        var $dataGrid = $("#shop-datagrid");
+
+        if ($dataGrid.length) {
+            var dataGrid = $dataGrid.dxDataGrid("instance");
+            dataGrid.selectRows(e.value, false);
+        }
+    }
+
+    function onUploadStarted(e) {
+        isUploadFinish = false;
+        uploadFileName = e.file.name;
+    }
+
+    function onUploaded(e) {
+        isUploadFinish = true;
+        var fileUrl = '@($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Patch/")' + uploadFileName;
+        $('#inputFileUrl').dxTextBox("instance").option('value', fileUrl);
+    }
+
+    function onUploadError() {
+        isUploadFinish = false;
+        DevExpress.ui.dialog.alert("File is too large or not allowed file extension", "Error");
+    }
+</script>

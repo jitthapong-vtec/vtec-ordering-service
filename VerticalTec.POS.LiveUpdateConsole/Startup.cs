@@ -1,21 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Blazored.SessionStorage;
-using CurrieTechnologies.Razor.SweetAlert2;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
-using VerticalTec.POS.LiveUpdateConsole.Hubs;
-using VerticalTec.POS.LiveUpdateConsole.Models;
 using VerticalTec.POS.LiveUpdateConsole.Services;
 
 namespace VerticalTec.POS.LiveUpdateConsole
@@ -29,33 +19,47 @@ namespace VerticalTec.POS.LiveUpdateConsole
 
         public IConfiguration Configuration { get; }
 
+        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var connStr = Configuration.GetConnectionString("VtecPOS");
+            services.AddRazorPages()
+                .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 
-            services.Configure<ForwardedHeadersOptions>(options =>
+            services.AddControllers();
+
+            services.AddSwaggerGen(c =>
             {
-                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Live update console api", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please insert JWT with Bearer into field",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] { }
+                    }
+                });
             });
 
-            services.AddDevExpressBlazor();
-            services.AddRazorPages();
-            services.AddSignalR();
-            services.AddServerSideBlazor();
-            services.AddSweetAlert2();
-            services.AddBlazoredSessionStorage();
-
-            services.AddSingleton<IDatabase>(db => new SqlServerDatabase(connStr));
-            services.AddSingleton<LiveUpdateDbContext>();
-            services.AddSingleton<RepoService>();
-            services.AddScoped<AuthenticationStateProvider, AuthenStateProvider>();
-            services.AddSingleton<IClientConnectionService, ClientConnectionService>();
+            services.AddScoped<IDatabase>(db => new SqlServerDatabase(Configuration["ConnectionStrings:VtecPOS"]));
+            services.AddScoped<LiveUpdateDbContext>();
+            services.AddScoped<RepoService>();
         }
 
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseForwardedHeaders();
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -63,22 +67,27 @@ namespace VerticalTec.POS.LiveUpdateConsole
             else
             {
                 app.UseExceptionHandler("/Error");
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
             }
 
+            app.UseHttpsRedirection();
             app.UseStaticFiles();
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Live update console api v1");
+            });
 
             app.UseRouting();
 
-            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapBlazorHub();
-                endpoints.MapFallbackToPage("/_Host");
-                endpoints.MapHub<ConsoleHub>("/console");
-                endpoints.MapHub<LiveUpdateHub>("/liveupdate");
+                endpoints.MapRazorPages();
             });
         }
     }

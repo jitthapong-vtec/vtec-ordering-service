@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using VerticalTec.Device.Printer.Epson;
 
 namespace VerticalTec.POS.Printer.Epson
 {

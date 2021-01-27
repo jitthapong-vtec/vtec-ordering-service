@@ -1,0 +1,100 @@
+﻿@page
+@model IndexModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<script>
+    function grid_dataSource_beforeSend(op, ajax) {
+        ajax.headers = {
+            RequestVerificationToken: "@Xsrf.GetAndStoreTokens(Model.HttpContext).RequestToken"
+        };
+    }
+</script>
+
+@(Html.DevExtreme().DataGrid<VersionDeploy>()
+        .ID("gridContainer")
+    .DataSource(ds => ds.RemoteController()
+        .LoadUrl(Url.Page(null, "VersionDeploy"))
+        .Key("BatchId")
+        .OnBeforeSend("grid_dataSource_beforeSend") // passes an antiforgery token
+    )
+    .ShowBorders(true)
+    .SearchPanel(s => s.Visible(true))
+    //.Editing(editing =>
+    //{
+    //    editing.Mode(GridEditMode.Cell);
+    //    editing.AllowUpdating(true);
+    //    editing.AllowAdding(true);
+    //})
+    .Columns(columns => {
+    columns.AddFor(m => m.BatchStatus).Width(100).Caption("สถานะ").Alignment(HorizontalAlignment.Center);
+    columns.AddFor(m => m.ProgramVersion).Caption("เวอร์ชัน");
+    columns.AddFor(m => m.InsertDate).Caption("สร้างเมื่อ");
+    columns.AddFor(m => m.CreateName).Caption("สร้างโดย");
+    columns.Add().Width(100).Alignment(HorizontalAlignment.Center).CellTemplate(@<text><a href='#'>แก้ไข</a></text>);
+    columns.Add().Width(100).Alignment(HorizontalAlignment.Center).CellTemplate(@<text><a href='#'>ลบ</a></text>);
+    })
+    .Paging(p => p.PageSize(10))
+    .Pager(p => p
+        .ShowPageSizeSelector(true)
+        .AllowedPageSizes(new[] { 5, 10, 20 })
+        .ShowInfo(true)
+    )
+    .OnToolbarPreparing("toolbarPreparing")
+    .OnCellPrepared("cellPrepared")
+)
+
+@(Html.DevExtreme().Popup()
+        .ID("property-popup")
+        .Width(660)
+        .Height(540)
+        .ShowTitle(true)
+        .Title("")
+        .Visible(false)
+        .DragEnabled(false)
+        .CloseOnOutsideClick(true)
+    )
+<script>
+    function cellPrepared(options) {
+        var isDataRow = options.rowType === 'data';
+        var colIdx = options.columnIndex;
+        var fieldHtml = "";
+        console.log('option', options);
+
+        if (isDataRow && colIdx === 0) {
+            var status = options.value;
+            //if (fieldData.) {
+            //    fieldHtml += "<div class='current-value'>" +
+            //        formatCurrency(fieldData.Value) +
+            //        "</div> <div class='diff'>" +
+            //        Math.abs(fieldData.Diff).toFixed(2) +
+            //        "  </div>";
+            //} else {
+            //    fieldHtml = fieldData.Value;
+            //}
+            if (status == 0)
+                fieldHtml = '<span class="text-secondary">ปิด</span>';
+            else if (status == 1)
+                fieldHtml = '<span class="text-success">เปิดใช้อยู่</span>';
+            options.cellElement.html(fieldHtml);
+        }
+    }
+
+    function toolbarPreparing(e) {
+        var dataGrid = e.component;
+
+        e.toolbarOptions.items.unshift({
+            location: "after",
+            widget: "dxButton",
+            options: {
+                icon: "add",
+                onClick: function () {
+                    dataGrid.refresh();
+                }
+            }
+        });
+    }
+</script>

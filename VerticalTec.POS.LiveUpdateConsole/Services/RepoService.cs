@@ -98,7 +98,7 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
             using (var conn = await _db.ConnectAsync())
             {
                 var cmd = _db.CreateCommand(conn);
-                cmd.CommandText = "select ShopID, BrandID, ShopName from shop_data " +
+                cmd.CommandText = "select ShopID, ShopCode, BrandID, ShopName from shop_data " +
                         " where Deleted=0 and IsShop=1 and MasterShop = 0 ";
 
                 if(brandId > 0)
@@ -120,7 +120,9 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
                         shops.Add(new ShopData()
                         {
                             ShopId = reader.GetValue<int>("ShopID"),
+                            ShopCode = reader.GetValue<string>("ShopCode"),
                             ShopName = reader.GetValue<string>("ShopName"),
+                            ShopFullName = $"{reader.GetValue<string>("ShopCode")}: {reader.GetValue<string>("ShopName")}",
                             BrandId = reader.GetValue<int>("BrandID")
                         });
                     }
