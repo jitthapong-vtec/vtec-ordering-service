@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.LiveUpdate;
+using VerticalTec.POS.LiveUpdateConsole.Models;
+using VerticalTec.POS.LiveUpdateConsole.Services;
 
 namespace VerticalTec.POS.LiveUpdateConsole.Pages
 {
@@ -19,33 +21,44 @@ namespace VerticalTec.POS.LiveUpdateConsole.Pages
 
         private readonly IDatabase _db;
         private LiveUpdateDbContext _liveUpdateCtx;
+        private RepoService _repoService;
 
+        [BindProperty]
         public VersionDeploy VersionDeploy { get; set; }
 
-        public FormVersionDeployModel(IDatabase db, LiveUpdateDbContext ctx, IWebHostEnvironment hostEnvironment)
+        public FormVersionDeployModel(IDatabase db, LiveUpdateDbContext ctx, RepoService repoService, IWebHostEnvironment hostEnvironment)
         {
             _db = db;
             _liveUpdateCtx = ctx;
+            _repoService = repoService;
             _hostingEnvironment = hostEnvironment;
 
             VersionDeploy = new VersionDeploy();
         }
 
-        public void OnGet(string batchId)
+        public async Task<IActionResult> OnGetAsync(string batchId)
         {
-            if (!string.IsNullOrEmpty(batchId))
-                VersionDeploy.BatchId = batchId;
+            using (var conn = await _db.ConnectAsync())
+            {
+                if (!string.IsNullOrEmpty(batchId))
+                {
+                    var versionDeploys = await _liveUpdateCtx.GetVersionDeploy(conn, batchId: batchId);
+                    VersionDeploy = versionDeploys.FirstOrDefault();
+                }
+            }
+            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
                 return Page();
-            using(var conn = await _db.ConnectAsync())
+
+            using (var conn = await _db.ConnectAsync())
             {
 
             }
-            return RedirectToPage("./index");
+            return Page();
         }
 
         public ActionResult OnPostUploadPatch()

@@ -4,7 +4,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<!-- extends watching group to include *.js files -->
-		<Watch Include="**\*.cs;**\*.cshtml;**\*.js;**\*.json" Exclude="node_modules\**\*;**\*.js.map;obj\**\*;bin\**\*" />
+		<Watch Include="**\*.cshtml;**\*.js" Exclude="node_modules\**\*;**\*.js.map;obj\**\*;bin\**\*" />
 	</ItemGroup>
 	<ItemGroup>
 	  <Watch Remove="Controllers\BranchController.cs" />

@@ -2,80 +2,16 @@
 @model FormVersionDeployModel
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
 
-@using (Html.BeginForm("Post", "", FormMethod.Post))
-{
-    @Html.AntiForgeryToken()
-
-    @using (Html.DevExtreme().ValidationGroup())
-    {
-        @*<div class="col">
-                <div>
-                    @(Html.DevExtreme().Form<VersionDeploy>()
-                    .ID("frmVersionDeploy")
-                    .FormData(Model.VersionDeploy)
-                    .Items(item =>
-                    {
-                        item.AddGroup().Caption("ข้อมูลเวอร์ชัน")
-                        .Items(item =>
-                        {
-                            item.AddSimpleFor(m => m.ProgramVersion).Editor(e => e.TextBox().Width(200)).Label(l => l.Text("ชื่อเวอร์ชัน"));
-
-                        });
-                        item.AddGroup().Caption("สาขาที่จะทำการอัพเดต")
-                        .ColCount(2)
-                            .Items(
-                                item => {
-                                    item.AddSimpleFor(m => m.BrandId)
-                                    .Label(l => l.Text("แบรนด์"))
-                                    .Editor(
-                                        e => e.SelectBox().ID("slBrand").DataSource(
-                                            d => d.Mvc().Controller("Branch").LoadAction("GetBrands"))
-                                        .DisplayExpr("BrandName").ValueExpr("BrandId").Placeholder("-- กรุณาเลือกแบรนด์ --"));
-
-                                    item.AddSimple()
-                                    .Label(l => l.Text("สาขา"))
-                                    .Editor(e => e.DropDownBox()
-                                    .DataSource(d => d.Mvc().Controller("Branch").LoadAction("GetShops").LoadParams(new { BrandId = new JS("getBrandId") })
-                                    .LoadMode(DataSourceLoadMode.Raw).Key("ShopId"))
-                                    .ShowClearButton(true)
-                                    .DisplayExpr("ShopFullName")
-                                    .OnValueChanged("gridBox_valueChanged")
-                                    .ContentTemplate(new TemplateName("ShopDataGridTemplate")).Placeholder("-- กรุณาเลือกสาขา --"));
-                                });
-
-                    })
-                    .LabelLocation(FormLabelLocation.Top)
-                    .MinColWidth(300)
-                    .ReadOnly(false)
-                    .ShowColonAfterLabel(true)
-                    )
-                </div>
-                <div class="mt-4">
-                    @(Html.DevExtreme().Button().Text("บันทึก").UseSubmitBehavior(true))
-                </div>
-            </div>*@
-
-        <form>
-            <h3>ข้อมูลเวอร์ชั่น</h3>
-            <div class="form-group">
-                <label for="inputVersion">เวอร์ชั่น</label>
-                @(Html.DevExtreme().TextBox().ID("inputVersion").Value(Model.VersionDeploy.ProgramVersion))
-            </div>
-            <div class="form-group">
-                <label for="inputFileUrl">อัพโหลด</label>
-                @(Html.DevExtreme().TextBox().ID("inputFileUrl").Value(Model.VersionDeploy.FileUrl))
-                @*@(Html.DevExtreme().FileUploader()
-                        .ID("fileUpload")
-                        .Name("file")
-                        .ChunkSize(1000000)
-                        .AllowedFileExtensions(new[] { ".zip"})
-                        .OnUploadStarted("onUploadStarted")
-                        .OnUploadError("onUploadError")
-                        .OnFilesUploaded("onUploaded")
-                        .UploadUrl(Url.Action("UploadPatch", "Resource"))
-                    )*@
-
-                @(Html.DevExtreme().FileUploader()
+<form method="post">
+    <h3>ข้อมูลเวอร์ชั่น</h3>
+    <div class="form-group">
+        <label for="inputVersion">เวอร์ชั่น</label>
+        @(Html.DevExtreme().TextBoxFor(m => m.VersionDeploy.ProgramVersion).ID("inputVersion").Width(500))
+    </div>
+    <div class="form-group">
+        <label for="inputFileUrl">อัพโหลด</label>
+        @(Html.DevExtreme().TextBoxFor(m => m.VersionDeploy.FileUrl).ID("inputFileUrl").Width(500).ReadOnly(true))
+        @(Html.DevExtreme().FileUploader()
                     .ID("fileUpload")
                     .Name("file")
                     .ChunkSize(1000000)
@@ -86,74 +22,103 @@
                     .OnBeforeSend("beforeSend")
                     .UploadUrl(Url.Page(null, "UploadPatch"))
                 )
+    </div>
+    <h3>ข้อมูลสาขา</h3>
+    <div class="form-group">
+        <div class="form-row">
+            <div class="form-group col-md-4 mr-4">
+                <label for="slBrand">แบรนด์</label>
+                @(Html.DevExtreme()
+                        .SelectBox()
+                        .ID("slBrand")
+                        .DataSource(d => d.Mvc()
+                        .Controller("Branch")
+                        .LoadAction("GetBrands"))
+                        .DisplayExpr("BrandName")
+                        .ValueExpr("BrandId")
+                        .Placeholder("-- กรุณาเลือกแบรนด์ --"))
             </div>
             <div class="form-group">
-
+                <label for="slBrand">ประเภทสาขา</label>
+                @(Html.DevExtreme()
+                        .SelectBox()
+                        .ID("slShopCat")
+                        .Width(500)
+                        .DataSource(d => d.Mvc().Controller("Branch").LoadAction("GetShopsCat").Key("ShopId"))
+                        .SearchEnabled(true).ShowClearButton(true)
+                        .DisplayExpr("ShopCateName")
+                        .ValueExpr("ShopCateId")
+                        .OnSelectionChanged("onShopCateSelectionChange").Placeholder("-- แสดงทั้งหมด --"))
             </div>
-            <button type="submit" class="btn btn-primary">Sign in</button>
-        </form>
-    }
-}
-
-@using (Html.DevExtreme().NamedTemplate("ShopDataGridTemplate"))
-{
-    @(Html.DevExtreme().DataGrid()
-        .ID("shop-datagrid")
-        .DataSource(new JS(@"component.getDataSource()"))
-        .Columns(columns => {
-            columns.Add().DataField("ShopCode");
-            columns.Add().DataField("ShopName");
-        })
-        .HoverStateEnabled(true)
-        .Paging(p => p.PageSize(10))
-        .FilterRow(f => f.Visible(true))
-        .Scrolling(s => s.Mode(GridScrollingMode.Infinite))
-        .Height(345)
-        .Selection(s => s.Mode(SelectionMode.Multiple))
-        .SelectedRowKeys(new JS(@"component.option(""value"")"))
-        .OnSelectionChanged(@<text>
-            function(selectedItems) {
-                var keys = selectedItems.selectedRowKeys;
-                component.option("value", keys);
-            }
-        </text>)
-    )
-}
+        </div>
+        <div class="form-group">
+            @(Html.DevExtreme().DataGrid<ShopData>()
+                        .ID("shop-datagrid")
+                        .ShowBorders(true)
+                        .DataSource(d => d.Mvc().Controller("Branch").LoadAction("GetShops").Key("ShopId"))
+                        .Columns(columns => {
+                            columns.AddFor(o => o.ShopCode).Caption("รหัสสาขา");
+                            columns.AddFor(o => o.ShopName).Caption("ชื่อสาขา");
+                        })
+                        .HoverStateEnabled(true)
+                        .Paging(p => p.PageSize(100))
+                        .FilterRow(f => f.Visible(true))
+                        .Scrolling(s => s.Mode(GridScrollingMode.Standard))
+                        .Height(400)
+                        .Selection(s => s.Mode(SelectionMode.Multiple)
+                        .ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always).Deferred(true))
+                        .SelectionFilter(new object[] { "Selected", "=", true})
+                    )
+        </div>
+    </div>
+    <div class="form-row justify-content-center">
+        <div class="form-group mr-4">
+            @(Html.DevExtreme().Button().Text("บันทึก").UseSubmitBehavior(true))
+        </div>
+        <div class="form-group">
+            @(Html.DevExtreme().Button().Type(ButtonType.Success).Text("อัพเดต"))
+        </div>
+    </div>
+</form>
 
 <script>
-    var isUploadFinish = false;
+
     var uploadFileName = '';
+
+    $(function () {
+        var slBrand = $("#slBrand").dxSelectBox("instance");
+        slBrand.getDataSource().load().done(function (data) {
+            slBrand.option('value', data[0].BrandId);
+        });
+    })
 
     function beforeSend(e) {
         e.request.setRequestHeader('RequestVerificationToken', "@Xsrf.GetAndStoreTokens(Model.HttpContext).RequestToken");
     }
 
-    function getBrandId() {
-        return $("#slBrand").dxSelectBox('instance').option('value');
-    }
-
-    function gridBox_valueChanged(e) {
-        var $dataGrid = $("#shop-datagrid");
-
-        if ($dataGrid.length) {
-            var dataGrid = $dataGrid.dxDataGrid("instance");
-            dataGrid.selectRows(e.value, false);
+    function onShopCateSelectionChange(e) {
+        var shopDataGrid = $("#shop-datagrid").dxDataGrid('instance');
+        var dataSource = shopDataGrid.getDataSource();
+        if (e.selectedItem == null) {
+            dataSource.filter(null);
+            dataSource.reload();
+        } else {
+            var shopCatId = e.selectedItem.ShopCateId;
+            dataSource.filter(["ShopCateId", "=", shopCatId]);
+            dataSource.load();
         }
     }
 
     function onUploadStarted(e) {
-        isUploadFinish = false;
         uploadFileName = e.file.name;
     }
 
     function onUploaded(e) {
-        isUploadFinish = true;
         var fileUrl = '@($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/Patch/")' + uploadFileName;
         $('#inputFileUrl').dxTextBox("instance").option('value', fileUrl);
     }
 
     function onUploadError() {
-        isUploadFinish = false;
         DevExpress.ui.dialog.alert("File is too large or not allowed file extension", "Error");
     }
 </script>

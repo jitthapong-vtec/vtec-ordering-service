@@ -59,8 +59,9 @@ namespace VerticalTec.POS.LiveUpdateConsole.Services
                             ShopId = reader.GetValue<int>("ShopID"),
                             ShopCode = reader.GetValue<string>("ShopCode"),
                             ShopName = reader.GetValue<string>("ShopName"),
+                            ShopFullName = $"{reader.GetValue<string>("ShopCode")}: {reader.GetValue<string>("ShopName")}",
                             BrandId = reader.GetValue<int>("BrandID"),
-                            ShopCatId = reader.GetValue<int>("ShopCatID1"),
+                            ShopCateId = reader.GetValue<int>("ShopCatID1"),
                             Selected = reader.GetValue<bool>("Selected")
                         });
                     }
