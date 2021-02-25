@@ -9,11 +9,10 @@ namespace VerticalTec.POS.LiveUpdateConsole.Models
     public class ShopData
     {
         public int BrandId { get; set; }
-        public int ShopCateId { get; set; }
+        public int ShopCatId { get; set; }
         public int ShopId { get; set; }
         public string ShopCode { get; set; }
         public string ShopName { get; set; }
-        public string ShopFullName { get; set; }
         public bool Selected { get; set; }
     }
 }

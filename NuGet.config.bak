@@ -1,6 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <configuration>
-    <packageSources>
-        <add key="DevExpress-Local" value="C:\Program Files (x86)\DevExpress 19.1\Components\System\Components\packages" />
-    </packageSources>
+  <packageSources>
+    <add key="DevExpress-Local" value="C:\Program Files (x86)\DevExpress 19.1\Components\System\Components\packages" />
+    <add key="devextreme-controls-netcore" value="C:\Program Files (x86)\DevExpress 20.2\DevExtreme\System\DevExtreme\Bin\AspNetCore" />
+  </packageSources>
 </configuration>
