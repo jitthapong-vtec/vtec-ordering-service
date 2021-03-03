@@ -149,7 +149,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 
                     if (exportDatas.Count > 0)
                     {
-                        HttpClientManager.Instance.ConnTimeOut = TimeSpan.FromSeconds(timeout);
+                        HttpClientManager.Instance.ConnTimeOut = TimeSpan.FromMinutes(timeout);
 
                         foreach (var export in exportDatas)
                         {
