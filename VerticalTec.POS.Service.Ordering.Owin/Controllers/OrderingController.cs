@@ -633,8 +633,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             using (var conn = await _database.ConnectAsync())
             {
                 await _orderingService.SubmitOrderAsync(conn, transaction.TransactionID, transaction.ComputerID, transaction.ShopID, transaction.TableID);
-                await _printService.PrintOrder(transaction);
-                _messengerService.SendMessage($"102|101|{transaction.TableID}");
+
+                var jobId = BackgroundJob.Enqueue(() => _printService.PrintOrder(transaction));
+                BackgroundJob.ContinueJobWith(jobId, () => _messengerService.SendMessage($"102|101|{transaction.TableID}"));
             }
             return result;
         }
