@@ -99,7 +99,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 
         [HttpGet]
         [Route("v1/inv/sendtohq")]
-        public async Task<IHttpActionResult> SendInvAsync(int shopId = 0, string docDate = "")
+        public async Task<IHttpActionResult> SendInvAsync(int shopId = 0, string docDate = "", int timeout=2)
         {
             await LogManager.Instance.WriteLogAsync($"Call v1/inv/sendtohq?shopId={shopId}&docDate={docDate}", LogPrefix);
 
@@ -149,6 +149,8 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 
                     if (exportDatas.Count > 0)
                     {
+                        HttpClientManager.Instance.ConnTimeOut = TimeSpan.FromMinutes(timeout);
+
                         foreach (var export in exportDatas)
                         {
                             try
