@@ -110,12 +110,22 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var saleDateStr = await _posRepo.GetSaleDateAsync(conn, orderPromotion.ShopID, false);
                     var saleDate = DateTime.ParseExact(saleDateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-                    var success = LoyaltyManagerLib.LoyaltyManager.Loyalty_MemberApplyPromotion(myConn,
+                    var posModule = new POSModule();
+                    var success = posModule.Member_Apply_Validate(ref responseText, orderPromotion.ShopID, saleDateStr, orderPromotion.TransactionID,
+                        orderPromotion.ComputerID, orderPromotion.StaffID, 1, "front", conn as MySqlConnection);
+
+                    if(success == false)
+                    {
+                        result.StatusCode = HttpStatusCode.InternalServerError;
+                        result.Message = responseText;
+                        return result;
+                    }
+
+                    success = LoyaltyManagerLib.LoyaltyManager.Loyalty_MemberApplyPromotion(myConn,
                         dbUtil, orderPromotion.ShopID, orderPromotion.TransactionID, orderPromotion.ComputerID,
                         saleDate, orderPromotion.MemberID, ref responseText);
                     if (success)
                     {
-                        var posModule = new POSModule();
                         posModule.OrderDetail_CalBill(ref responseText, orderPromotion.TransactionID, orderPromotion.ComputerID,
                             orderPromotion.ShopID, decimalDigit, "front", conn as MySqlConnection);
 
@@ -140,12 +150,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             return result;
         }
 
-        [HttpDelete]
-        [Route("v1/promotions/member")]
-        public async Task<IHttpActionResult> ClearMemberPromotionAsync(int shopId, int terminalId, int transactionId, int computerId)
+        [HttpPost]
+        [Route("v1/promotions/member/clear")]
+        public async Task<IHttpActionResult> ClearMemberPromotionAsync(int shopId, int terminalId, int transactionId, int computerId, int staffId = 2, int langId=1)
         {
-            _log.Info($"ClearMember: TransactionID {transactionId}, ComputerID {computerId}");
-
             var result = new HttpActionResult<string>(Request);
             try
             {
@@ -155,11 +163,22 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var dbUtil = new CDBUtil();
                     string responseText = "";
                     int decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
+                    var saleDateStr = await _posRepo.GetSaleDateAsync(conn, shopId, false);
 
-                    var success = LoyaltyManagerLib.LoyaltyManager.Loyalty_ClearMemberPromotion(myConn, dbUtil, transactionId, computerId, ref responseText);
+                    var posModule = new POSModule();
+                    var success = posModule.Member_Apply_Validate(ref responseText, shopId, saleDateStr, transactionId,
+                        computerId, staffId, langId, "front", conn as MySqlConnection);
+
+                    if (success == false)
+                    {
+                        result.StatusCode = HttpStatusCode.InternalServerError;
+                        result.Message = responseText;
+                        return result;
+                    }
+
+                    success = LoyaltyManagerLib.LoyaltyManager.Loyalty_ClearMemberPromotion(myConn, dbUtil, transactionId, computerId, ref responseText);
                     if (success)
                     {
-                        var posModule = new POSModule();
                         posModule.OrderDetail_CalBill(ref responseText, transactionId, computerId, shopId, decimalDigit, "front", conn as MySqlConnection);
 
                         var cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName" +
@@ -170,6 +189,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         await _database.ExecuteNonQueryAsync(cmd);
 
                         result.StatusCode = HttpStatusCode.OK;
+
+                        _log.Info($"ClearMember: TransactionID {transactionId}, ComputerID {computerId}");
                     }
                     else
                     {
@@ -215,6 +236,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     int decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
                     var saleDateStr = await _posRepo.GetSaleDateAsync(conn, orderPromotion.ShopID, false);
                     var saleDate = DateTime.ParseExact(saleDateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+                    var success = posModule.Promotion_eCoupon_Validate(ref responseText, orderPromotion.ShopID, saleDateStr, orderPromotion.TransactionID,
+                        orderPromotion.ComputerID, orderPromotion.StaffID, 1, "front", myConn);
+
+                    if(success == false)
+                    {
+                        result.StatusCode = HttpStatusCode.InternalServerError;
+                        result.Message = responseText;
+                    }
+
                     var shopData = await _posRepo.GetShopDataAsync(conn);
                     var computerData = await _posRepo.GetComputerAsync(conn, orderPromotion.TerminalID);
 
@@ -255,7 +286,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         memberName = orderPromotion.VoucherData?.MemberName ?? ""
                     };
 
-                    var success = LoyaltyManagerLib.LoyaltyManager.Loyalty_VoucherApplyPromotion_V1(myConn, dbUtil, posModule,
+                    success = LoyaltyManagerLib.LoyaltyManager.Loyalty_VoucherApplyPromotion_V1(myConn, dbUtil, posModule,
                         orderPromotion.ShopID, orderPromotion.TerminalID, orderPromotion.TransactionID, orderPromotion.ComputerID,
                         saleDate, orderPromotion.StaffID, orderPromotion.VoucherSn, voucherData, ref responseText);
 
@@ -336,7 +367,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var saleDateStr = await _posRepo.GetSaleDateAsync(conn, shopId, false);
                     var saleDate = DateTime.ParseExact(saleDateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-                    var success = LoyaltyManagerLib.LoyaltyManager.Loyalty_RemoveVoucherPromotion(myConn, dbUtil, posModule,
+                    var success = posModule.Promotion_eCoupon_Validate(ref responseText, shopId, saleDateStr, transactionId,
+                        computerId, staffId, 1, "front", myConn);
+
+                    if (success == false)
+                    {
+                        result.StatusCode = HttpStatusCode.InternalServerError;
+                        result.Message = responseText;
+                        return result;
+                    }
+
+                    success = LoyaltyManagerLib.LoyaltyManager.Loyalty_RemoveVoucherPromotion(myConn, dbUtil, posModule,
                         shopId, computerId, transactionId, computerId, saleDate, staffId, voucherSn, ref responseText);
 
                     if (success)
