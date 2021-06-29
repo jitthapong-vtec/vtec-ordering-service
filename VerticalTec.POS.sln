@@ -35,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.Service.Liv
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "VerticalTec.POS.Service.LiveUpdate.Installer", "VerticalTec.POS.Service.LiveUpdate.Installer\VerticalTec.POS.Service.LiveUpdate.Installer.wixproj", "{A757F90D-81AD-4164-9996-187B4207A5A0}"
 EndProject
-#Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{0BA83A99-903F-4452-B4B0-A2AF53670131}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{0BA83A99-903F-4452-B4B0-A2AF53670131}"
 EndProject
 #Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "VDSSetup", "VerticalTec.POS.Service.DataSync.Setup\VerticalTec.POS.Service.DataSync.Setup.vdproj", "{6ABD52FD-EDCC-42FB-8A14-FDB488087D80}"
 EndProject

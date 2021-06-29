@@ -14,6 +14,8 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
 {
     public class InventoryController : ApiController
     {
+        private static object lockImport = new object();
+
         const string LogPrefix = "Inv_";
 
         IDatabase _database;
@@ -90,7 +92,11 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
                 var respText = "";
                 var importJson = "";
                 var dataSet = new DataSet();
-                var success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, payload.ToString(), conn as SqlConnection);
+                var success = false;
+                lock (lockImport)
+                {
+                    success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, payload.ToString(), conn as SqlConnection);
+                }
                 if (success)
                 {
                     var exchInvJson = "";
