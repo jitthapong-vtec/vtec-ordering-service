@@ -99,7 +99,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 
         [HttpGet]
         [Route("v1/inv/sendtohq")]
-        public async Task<IHttpActionResult> SendInvAsync(int shopId = 0, string docDate = "", int timeout=2)
+        public async Task<IHttpActionResult> SendInvAsync(int shopId = 0, string docDate = "", int timeout = 10)
         {
             await LogManager.Instance.WriteLogAsync($"Call v1/inv/sendtohq?shopId={shopId}&docDate={docDate}", LogPrefix);
 
@@ -115,7 +115,21 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
                     var shopData = new ShopData(_db);
                     var dtShop = await shopData.GetShopDataAsync(conn);
                     var exportDatas = new Dictionary<int, string>();
-                    foreach (var shop in dtShop.Select($"IsInv=1"))
+
+                    DataRow[] shops;
+                    if (shopId == 0)
+                        shops = dtShop.Select("IsInv=1");
+                    else
+                        shops = dtShop.Select($"ShopID={shopId}");
+
+                    if(shops.Length == 0)
+                    {
+                        result.StatusCode = HttpStatusCode.BadRequest;
+                        result.Message = $"No shop data to export";
+                        return result;
+                    }
+
+                    foreach (var shop in shops)
                     {
                         var respText = "";
                         var exportJson = "";
@@ -149,7 +163,8 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 
                     if (exportDatas.Count > 0)
                     {
-                        HttpClientManager.Instance.ConnTimeOut = TimeSpan.FromMinutes(timeout);
+                        if (timeout > 0)
+                            HttpClientManager.Instance.ConnTimeOut = TimeSpan.FromMinutes(timeout);
 
                         foreach (var export in exportDatas)
                         {
@@ -198,7 +213,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
             }
             catch (Exception ex)
             {
-                result.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+                result.StatusCode = HttpStatusCode.BadRequest;
                 result.Message = ex.Message;
             }
             return result;
