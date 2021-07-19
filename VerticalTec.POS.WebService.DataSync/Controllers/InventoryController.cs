@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -88,12 +89,13 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
 
             using (var conn = _database.Connect())
             {
-                LogManager.Instance.WriteLog($"Begin import inventory {shopId}", LogPrefix);
+                var json = JsonConvert.SerializeObject(payload);
+                LogManager.Instance.WriteLog($"Begin import inventory {shopId} => {json}", LogPrefix);
 
                 var respText = "";
                 var importJson = "";
                 var dataSet = new DataSet();
-                var success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, payload.ToString(), conn as SqlConnection);
+                var success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, json, conn as SqlConnection);
 
                 if (success)
                 {

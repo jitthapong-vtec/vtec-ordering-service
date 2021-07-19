@@ -174,8 +174,17 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
 
                                 var respText = "";
                                 var exchInvData = await HttpClientManager.Instance.VDSPostAsync<InvExchangeData>($"{importApiUrl}?shopId={export.Key}", export.Value);
-                                var success = _posModule.ImportDocumentData(ref respText, exchInvData.ExchInvJson, conn);
-                                success = _posModule.SyncInventUpdate(ref respText, exchInvData.SyncLogJson, conn);
+
+                                var success = false;
+                                if (exchInvData != null)
+                                {
+                                    await LogManager.Instance.WriteLogAsync($"ExchInvJson => {exchInvData.ExchInvJson}", LogPrefix);
+                                    await LogManager.Instance.WriteLogAsync($"SyncLogJson => {exchInvData.SyncLogJson}", LogPrefix);
+
+                                    success = _posModule.ImportDocumentData(ref respText, exchInvData.ExchInvJson, conn);
+                                    success = _posModule.SyncInventUpdate(ref respText, exchInvData.SyncLogJson, conn);
+                                }
+
                                 if (success)
                                 {
                                     result.Message = $"Sync inven data successfully";
