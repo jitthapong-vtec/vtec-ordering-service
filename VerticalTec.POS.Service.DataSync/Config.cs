@@ -29,6 +29,14 @@ namespace VerticalTec.POS.Service.DataSync
             return Convert.ToBoolean(config.AppSettings.Settings["EnableLog"].Value);
         }
 
+        public static DateTime TimeToSyncInven()
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
+            var time = DateTime.MinValue;
+            DateTime.TryParse(config.AppSettings.Settings["TimeToSyncInv"].Value, out time);
+            return time;
+        }
+
         public static string GetExecPath()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().Location;

@@ -11,6 +11,8 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Services
     {
         Task SyncInvData(IDbConnection conn, int shopId, string startDate, string endDate, string batchUuid = "", int exportType = 0);
 
+        Task<string> SyncInvenData(IDbConnection conn, int shopId, string docDate, int timeout = 10);
+
         Task SyncSaleData();
     }
 }

@@ -29,6 +29,116 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Services
             _posModule = posModule;
         }
 
+        public async Task<string> SyncInvenData(IDbConnection conn, int shopId, string docDate="", int timeout=10)
+        {
+            var result = "";
+            var prop = new ProgramProperty(_db);
+            var vdsUrl = prop.GetVdsUrl(conn);
+            var importApiUrl = $"{vdsUrl}/v1/inv/import";
+
+            var shopData = new ShopData(_db);
+            var dtShop = await shopData.GetShopDataAsync(conn);
+            var exportDatas = new Dictionary<int, string>();
+
+            DataRow[] shops;
+            if (shopId == 0)
+                shops = dtShop.Select("IsInv=1");
+            else
+                shops = dtShop.Select($"ShopID={shopId}");
+
+            if (shops.Length == 0)
+            {
+                return "No shop data to export";
+            }
+
+            foreach (var shop in shops)
+            {
+                var respText = "";
+                var exportJson = "";
+                var dataSet = new DataSet();
+                var exportType = 0;
+                var documentId = 0;
+                var keyShopId = 0;
+                var merchantId = shop.GetValue<int>("MerchantID");
+                var brandId = shop.GetValue<int>("BrandID");
+
+                shopId = shop.GetValue<int>("ShopID");
+
+                var success = _posModule.ExportInventData(ref respText, ref dataSet, ref exportJson, exportType, docDate, shopId,
+                    documentId, keyShopId, merchantId, brandId, conn as MySqlConnection);
+                if (success)
+                {
+                    var byteCount = 0;
+                    try
+                    {
+                        byteCount = Encoding.UTF8.GetByteCount(exportJson);
+                    }
+                    catch (Exception) { }
+                    await LogManager.Instance.WriteLogAsync($"Export inven data of shop {shopId} {byteCount} bytes.", LogPrefix);
+                    exportDatas.Add(shopId, exportJson);
+                }
+                else
+                {
+                    await LogManager.Instance.WriteLogAsync($"Export inven data error => {respText}", LogPrefix);
+                }
+            }
+
+            if (exportDatas.Count > 0)
+            {
+                if (timeout > 0)
+                    HttpClientManager.Instance.ConnTimeOut = TimeSpan.FromMinutes(timeout);
+
+                foreach (var export in exportDatas)
+                {
+                    try
+                    {
+                        await LogManager.Instance.WriteLogAsync($"Begin send inven data of shopId {export.Key} to hq", LogPrefix);
+
+                        var respText = "";
+                        var exchInvData = await HttpClientManager.Instance.VDSPostAsync<InvExchangeData>($"{importApiUrl}?shopId={export.Key}", export.Value);
+
+                        var success = false;
+                        if (exchInvData != null)
+                        {
+                            await LogManager.Instance.WriteLogAsync($"ExchInvJson => {exchInvData.ExchInvJson}", LogPrefix);
+                            await LogManager.Instance.WriteLogAsync($"SyncLogJson => {exchInvData.SyncLogJson}", LogPrefix);
+
+                            success = _posModule.ImportDocumentData(ref respText, exchInvData.ExchInvJson, conn as MySqlConnection);
+                            success = _posModule.SyncInventUpdate(ref respText, exchInvData.SyncLogJson, conn as MySqlConnection);
+                        }
+
+                        if (success)
+                        {
+                            result = "Sync inven data successfully";
+                            await LogManager.Instance.WriteLogAsync(result, LogPrefix);
+                        }
+                        else
+                        {
+                            result = respText;
+                            await LogManager.Instance.WriteLogAsync(respText, LogPrefix);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = ex.Message;
+                        if (ex is HttpRequestException)
+                        {
+                            var reqEx = (ex as HttpRequestException);
+                            msg = $"{reqEx.InnerException.Message} {vdsUrl}";
+                        }
+                        else if (ex is HttpResponseException)
+                        {
+                            msg = $"{(ex as HttpResponseException).Response.ReasonPhrase}";
+                        }
+
+                        result = $"Send inventory data fail {msg}";
+                        await LogManager.Instance.WriteLogAsync(result, LogPrefix, LogManager.LogTypes.Error);
+                    }
+                }
+            }
+            return result;
+        }
+
         // exportType 0 = default, 1 = end stock, 2 = end stock from counting
         public async Task SyncInvData(IDbConnection conn, int shopId, string startDate, string endDate, string batchUuid = "", int exportType = 0)
         {

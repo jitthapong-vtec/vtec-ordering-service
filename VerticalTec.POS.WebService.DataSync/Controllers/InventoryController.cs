@@ -17,6 +17,8 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
     {
         const string LogPrefix = "Inv_";
 
+        public static object _lock = new object();
+
         IDatabase _database;
         POSModule _posModule;
 
@@ -87,36 +89,39 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
                 return result;
             }
 
-            using (var conn = _database.Connect())
+            lock (_lock)
             {
-                var json = JsonConvert.SerializeObject(payload);
-                LogManager.Instance.WriteLog($"Begin import inventory {shopId} => {json}", LogPrefix);
-
-                var respText = "";
-                var importJson = "";
-                var dataSet = new DataSet();
-                var success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, json, conn as SqlConnection);
-
-                if (success)
+                using (var conn = _database.Connect())
                 {
-                    var exchInvJson = "";
-                    _posModule.ExchangeInventData(ref respText, ref exchInvJson, ref dataSet, shopId, conn as SqlConnection);
-                    var body = new
+                    var json = JsonConvert.SerializeObject(payload);
+                    LogManager.Instance.WriteLog($"Begin import inventory {shopId} => {json}", LogPrefix);
+
+                    var respText = "";
+                    var importJson = "";
+                    var dataSet = new DataSet();
+                    var success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, json, conn as SqlConnection);
+
+                    if (success)
                     {
-                        SyncLogJson = importJson,
-                        ExchInvJson = exchInvJson
-                    };
-                    result.Success = success;
-                    result.StatusCode = HttpStatusCode.Created;
-                    result.Data = body;
-                    LogManager.Instance.WriteLog($"Import inventory data successfully", LogPrefix);
-                }
-                else
-                {
-                    result.StatusCode = HttpStatusCode.InternalServerError;
-                    result.Message = respText;
+                        var exchInvJson = "";
+                        _posModule.ExchangeInventData(ref respText, ref exchInvJson, ref dataSet, shopId, conn as SqlConnection);
+                        var body = new
+                        {
+                            SyncLogJson = importJson,
+                            ExchInvJson = exchInvJson
+                        };
+                        result.Success = success;
+                        result.StatusCode = HttpStatusCode.Created;
+                        result.Data = body;
+                        LogManager.Instance.WriteLog($"Import inventory data successfully", LogPrefix);
+                    }
+                    else
+                    {
+                        result.StatusCode = HttpStatusCode.InternalServerError;
+                        result.Message = respText;
 
-                    LogManager.Instance.WriteLog($"Import inventory data {respText}", LogPrefix, LogManager.LogTypes.Error);
+                        LogManager.Instance.WriteLog($"Import inventory data {respText}", LogPrefix, LogManager.LogTypes.Error);
+                    }
                 }
             }
             return result;
