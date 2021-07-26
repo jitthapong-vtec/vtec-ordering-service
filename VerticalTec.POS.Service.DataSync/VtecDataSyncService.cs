@@ -17,8 +17,8 @@ namespace VerticalTec.POS.Service.DataSync
         const string LogPrefix = "Service_";
 
         private Timer _timer;
-        private DateTime _timeToSyncInv = DateTime.MinValue;
-        private bool _isSyncing;
+        private int _syncInterval;
+        private int _timeCounter;
 
         private string _dbServer;
         private string _dbName;
@@ -36,7 +36,7 @@ namespace VerticalTec.POS.Service.DataSync
 
         protected override void OnStart(string[] args)
         {
-            _timeToSyncInv = Config.TimeToSyncInven();
+            _syncInterval = Config.SyncInterval();
             _dbServer = Config.GetDatabaseServer();
             _dbName = Config.GetDatabaseName();
             var port = Config.GetPort();
@@ -44,10 +44,10 @@ namespace VerticalTec.POS.Service.DataSync
             string baseAddress = $"http://+:{port}/";
             var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
 
-            _timer = new Timer(1000);
+            _timer = new Timer(60 * 1000);
             _timer.Elapsed += _timer_Elapsed;
 
-            if (_timeToSyncInv > DateTime.MinValue)
+            if (_syncInterval > 0)
                 _timer.Start();
 
             _server = WebApp.Start(baseAddress, appBuilder => new Startup(_dbServer, _dbName, hangfireConStr).Configuration(appBuilder));
@@ -56,17 +56,13 @@ namespace VerticalTec.POS.Service.DataSync
 
         private void _timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (_isSyncing)
-                return;
-
-            var now = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, 0);
-
-            if (TimeSpan.Compare(now.TimeOfDay, _timeToSyncInv.TimeOfDay) == 0)
+            if (++_timeCounter == _syncInterval)
             {
-                LogManager.Instance.WriteLog($"Schedule begin {_timeToSyncInv}");
+                _timeCounter = 0;
+
+                LogManager.Instance.WriteLog($"Schedule begin {DateTime.Now}");
                 try
                 {
-                    _isSyncing = true;
                     var db = new MySqlDatabase(_dbServer, _dbName, "3308");
                     using (var conn = db.Connect())
                     {
@@ -77,13 +73,8 @@ namespace VerticalTec.POS.Service.DataSync
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Instance.WriteLog($"schedule error {ex.Message}");
+                    LogManager.Instance.WriteLog($"Schedule error {ex.Message}");
                 }
-            }
-            else
-            {
-                if (_isSyncing)
-                    _isSyncing = false;
             }
         }
 

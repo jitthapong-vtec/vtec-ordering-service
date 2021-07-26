@@ -29,12 +29,12 @@ namespace VerticalTec.POS.Service.DataSync
             return Convert.ToBoolean(config.AppSettings.Settings["EnableLog"].Value);
         }
 
-        public static DateTime TimeToSyncInven()
+        public static int SyncInterval()
         {
             var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
-            var time = DateTime.MinValue;
-            DateTime.TryParse(config.AppSettings.Settings["TimeToSyncInv"].Value, out time);
-            return time;
+            var interval = 0;
+            int.TryParse(config.AppSettings.Settings["SyncInterval"].Value, out interval);
+            return interval;
         }
 
         public static string GetExecPath()
