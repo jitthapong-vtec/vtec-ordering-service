@@ -108,6 +108,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
             {
                 using(var conn = await _db.ConnectAsync())
                 {
+                    result.Success = true;
                     result.Message = await _dataSyncService.SyncInvenData(conn, shopId, docDate, timeout);
                 }
             }

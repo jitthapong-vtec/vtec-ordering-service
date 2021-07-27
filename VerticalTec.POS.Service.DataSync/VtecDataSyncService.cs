@@ -68,7 +68,7 @@ namespace VerticalTec.POS.Service.DataSync
                     {
                         var posModule = new POSModule();
                         var syncService = new DataSyncService(db, posModule);
-                        syncService.SyncInvenData(conn, 0).ConfigureAwait(false);
+                        syncService.SyncInvenData(conn, 0).Wait();
                     }
                 }
                 catch (Exception ex)
