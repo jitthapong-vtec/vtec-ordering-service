@@ -35,44 +35,44 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Controllers
             _posModule = posModule;
         }
 
-        [HttpPost]
-        [Route("v1/inv/exchange")]
-        public async Task<IHttpActionResult> ExchangeInventoryDataAsync(List<int> shopIds)
-        {
-            await LogManager.Instance.WriteLogAsync($"Call v1/inv/exchange", LogPrefix);
-            var result = new HttpActionResult<string>(Request);
-            using (var conn = await _db.ConnectAsync() as MySqlConnection)
-            {
-                var prop = new ProgramProperty(_db);
-                var vdsUrl = prop.GetVdsUrl(conn);
-                var apiUrl = $"{vdsUrl}/v1/inv/exchange";
-                try
-                {
-                    var exchanges = await HttpClientManager.Instance.VDSPostAsync<List<InvExchangeData>>(apiUrl, shopIds);
-                    foreach (var exchange in exchanges)
-                    {
-                        var responseText = "";
-                        var exchInvJson = exchange.ExchInvJson;
-                        var shopId = exchange.ShopId;
-                        var isSuccess = _posModule.ImportDocumentData(ref responseText, exchInvJson, conn);
-                        if (isSuccess)
-                        {
-                            await LogManager.Instance.WriteLogAsync($"Import document shop {shopId} successfully.", LogPrefix);
-                        }
-                        else
-                        {
-                            await LogManager.Instance.WriteLogAsync($"Import document shop {shopId} fail {responseText}", LogPrefix);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    result.StatusCode = HttpStatusCode.InternalServerError;
-                    result.Message = ex.Message;
-                }
-            }
-            return result;
-        }
+        //[HttpPost]
+        //[Route("v1/inv/exchange")]
+        //public async Task<IHttpActionResult> ExchangeInventoryDataAsync(List<int> shopIds)
+        //{
+        //    await LogManager.Instance.WriteLogAsync($"Call v1/inv/exchange", LogPrefix);
+        //    var result = new HttpActionResult<string>(Request);
+        //    using (var conn = await _db.ConnectAsync() as MySqlConnection)
+        //    {
+        //        var prop = new ProgramProperty(_db);
+        //        var vdsUrl = prop.GetVdsUrl(conn);
+        //        var apiUrl = $"{vdsUrl}/v1/inv/exchange";
+        //        try
+        //        {
+        //            var exchanges = await HttpClientManager.Instance.VDSPostAsync<List<InvExchangeData>>(apiUrl, shopIds);
+        //            foreach (var exchange in exchanges)
+        //            {
+        //                var responseText = "";
+        //                var exchInvJson = exchange.ExchInvJson;
+        //                var shopId = exchange.ShopId;
+        //                var isSuccess = _posModule.ImportDocumentData(ref responseText, exchInvJson, conn);
+        //                if (isSuccess)
+        //                {
+        //                    await LogManager.Instance.WriteLogAsync($"Import document shop {shopId} successfully.", LogPrefix);
+        //                }
+        //                else
+        //                {
+        //                    await LogManager.Instance.WriteLogAsync($"Import document shop {shopId} fail {responseText}", LogPrefix);
+        //                }
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            result.StatusCode = HttpStatusCode.InternalServerError;
+        //            result.Message = ex.Message;
+        //        }
+        //    }
+        //    return result;
+        //}
 
         [HttpGet]
         [Route("v2/inv/sendtohq")]

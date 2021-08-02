@@ -29,7 +29,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Services
             _posModule = posModule;
         }
 
-        public async Task<string> SyncInvenData(IDbConnection conn, int shopId, string docDate="", int timeout=10)
+        public async Task<string> SyncInvenData(IDbConnection conn, int shopId, string docDate = "", int timeout = 10)
         {
             var result = "";
             var prop = new ProgramProperty(_db);
@@ -97,16 +97,7 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Services
                         var respText = "";
                         var exchInvData = await HttpClientManager.Instance.VDSPostAsync<InvExchangeData>($"{importApiUrl}?shopId={export.Key}", export.Value);
 
-                        var success = false;
-                        if (exchInvData != null)
-                        {
-                            await LogManager.Instance.WriteLogAsync($"ExchInvJson => {exchInvData.ExchInvJson}", LogPrefix);
-                            await LogManager.Instance.WriteLogAsync($"SyncLogJson => {exchInvData.SyncLogJson}", LogPrefix);
-
-                            success = _posModule.ImportDocumentData(ref respText, exchInvData.ExchInvJson, conn as MySqlConnection);
-                            success = _posModule.SyncInventUpdate(ref respText, exchInvData.SyncLogJson, conn as MySqlConnection);
-                        }
-
+                        var success = await ImportExchangeInvenData(conn, exchInvData);
                         if (success)
                         {
                             result = "Sync inven data successfully";
@@ -136,7 +127,61 @@ namespace VerticalTec.POS.Service.DataSync.Owin.Services
                     }
                 }
             }
+            else
+            {
+                await ExchangeInvenData(conn, vdsUrl, shopId);
+            }
             return result;
+        }
+
+        public async Task ExchangeInvenData(IDbConnection conn, string vdsUrl, int shopId)
+        {
+            var exchangeApiUrl = $"{vdsUrl}/v1/inv/exchange";
+
+            try
+            {
+                var exchInvDatas = await HttpClientManager.Instance.VDSPostAsync<List<InvExchangeData>>(exchangeApiUrl, new int[] { shopId});
+                foreach (var exchInvData in exchInvDatas)
+                {
+                    await ImportExchangeInvenData(conn, exchInvData);
+                }
+            }
+            catch (Exception ex)
+            {
+                var msg = ex.Message;
+                if (ex is HttpRequestException)
+                {
+                    var reqEx = (ex as HttpRequestException);
+                    msg = $"{reqEx.InnerException.Message} {vdsUrl}";
+                }
+                else if (ex is HttpResponseException)
+                {
+                    msg = $"{(ex as HttpResponseException).Response.ReasonPhrase}";
+                }
+
+                await LogManager.Instance.WriteLogAsync($"Get exchange inventory data fail {msg}", LogPrefix, LogManager.LogTypes.Error);
+            }
+        }
+
+        public async Task<bool> ImportExchangeInvenData(IDbConnection conn, InvExchangeData exchInvData)
+        {
+            var success = true;
+            if (exchInvData != null)
+            {
+                var respText = "";
+
+                await LogManager.Instance.WriteLogAsync($"ExchInvJson => {exchInvData.ExchInvJson}", LogPrefix);
+                await LogManager.Instance.WriteLogAsync($"SyncLogJson => {exchInvData.SyncLogJson}", LogPrefix);
+
+                success = _posModule.ImportDocumentData(ref respText, exchInvData.ExchInvJson, conn as MySqlConnection);
+                if (!success)
+                    await LogManager.Instance.WriteLogAsync($"Error ImportDocumentData => {respText}", LogPrefix, LogManager.LogTypes.Error);
+
+                success = _posModule.SyncInventUpdate(ref respText, exchInvData.SyncLogJson, conn as MySqlConnection);
+                if (!success)
+                    await LogManager.Instance.WriteLogAsync($"Error SyncInventUpdate => {respText}", LogPrefix, LogManager.LogTypes.Error);
+            }
+            return success;
         }
 
         // exportType 0 = default, 1 = end stock, 2 = end stock from counting
