@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -14,9 +15,9 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
 {
     public class InventoryController : ApiController
     {
-        private static object lockImport = new object();
-
         const string LogPrefix = "Inv_";
+
+        public static object _lock = new object();
 
         IDatabase _database;
         POSModule _posModule;
@@ -76,47 +77,51 @@ namespace VerticalTec.POS.WebService.DataSync.Controllers
 
         [HttpPost]
         [Route("v1/inv/import")]
-        public async Task<IHttpActionResult> ImportInventoryDataAsync(int shopId, [FromBody] object payload)
+        public IHttpActionResult ImportInventoryData(int shopId, [FromBody] object payload)
         {
             var result = new HttpActionResult<object>(Request);
             if (payload == null)
             {
                 var msg = $"Very large JSON or invalid format!";
-                await LogManager.Instance.WriteLogAsync(msg, LogPrefix);
+                LogManager.Instance.WriteLog(msg, LogPrefix);
                 result.StatusCode = HttpStatusCode.BadRequest;
                 result.Message = msg;
                 return result;
             }
-            using (var conn = await _database.ConnectAsync())
-            {
-                var respText = "";
-                var importJson = "";
-                var dataSet = new DataSet();
-                var success = false;
-                lock (lockImport)
-                {
-                    success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, payload.ToString(), conn as SqlConnection);
-                }
-                if (success)
-                {
-                    var exchInvJson = "";
-                    _posModule.ExchangeInventData(ref respText, ref exchInvJson, ref dataSet, shopId, conn as SqlConnection);
-                    var body = new
-                    {
-                        SyncLogJson = importJson,
-                        ExchInvJson = exchInvJson
-                    };
-                    result.Success = success;
-                    result.StatusCode = HttpStatusCode.Created;
-                    result.Data = body;
-                    await LogManager.Instance.WriteLogAsync($"Import inventory data successfully", LogPrefix);
-                }
-                else
-                {
-                    result.StatusCode = HttpStatusCode.InternalServerError;
-                    result.Message = respText;
 
-                    await LogManager.Instance.WriteLogAsync($"Import inventory data {respText}", LogPrefix, LogManager.LogTypes.Error);
+            lock (_lock)
+            {
+                using (var conn = _database.Connect())
+                {
+                    var json = JsonConvert.SerializeObject(payload);
+                    LogManager.Instance.WriteLog($"Begin import inventory {shopId} => {json}", LogPrefix);
+
+                    var respText = "";
+                    var importJson = "";
+                    var dataSet = new DataSet();
+                    var success = _posModule.ImportInventData(ref importJson, ref respText, dataSet, json, conn as SqlConnection);
+
+                    if (success)
+                    {
+                        var exchInvJson = "";
+                        _posModule.ExchangeInventData(ref respText, ref exchInvJson, ref dataSet, shopId, conn as SqlConnection);
+                        var body = new
+                        {
+                            SyncLogJson = importJson,
+                            ExchInvJson = exchInvJson
+                        };
+                        result.Success = success;
+                        result.StatusCode = HttpStatusCode.Created;
+                        result.Data = body;
+                        LogManager.Instance.WriteLog($"Import inventory data successfully", LogPrefix);
+                    }
+                    else
+                    {
+                        result.StatusCode = HttpStatusCode.InternalServerError;
+                        result.Message = respText;
+
+                        LogManager.Instance.WriteLog($"Import inventory data {respText}", LogPrefix, LogManager.LogTypes.Error);
+                    }
                 }
             }
             return result;
