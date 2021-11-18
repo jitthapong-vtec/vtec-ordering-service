@@ -39,6 +39,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VerticalTec.POS.LiveUpdateC
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "VDSSetup", "VerticalTec.POS.Service.DataSync.Setup\VerticalTec.POS.Service.DataSync.Setup.vdproj", "{FFE9EB8F-5453-45B8-8123-5C4B9A790EC4}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{6A117A38-FD57-41BA-827F-8657D5CDEB8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -333,6 +335,22 @@ Global
 		{FFE9EB8F-5453-45B8-8123-5C4B9A790EC4}.Release|iPhoneSimulator.Build.0 = Release
 		{FFE9EB8F-5453-45B8-8123-5C4B9A790EC4}.Release|x86.ActiveCfg = Release
 		{FFE9EB8F-5453-45B8-8123-5C4B9A790EC4}.Release|x86.Build.0 = Release
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|Any CPU.ActiveCfg = Debug
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|Any CPU.Build.0 = Debug
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|iPhone.ActiveCfg = Debug
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|iPhone.Build.0 = Debug
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|iPhoneSimulator.ActiveCfg = Debug
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|iPhoneSimulator.Build.0 = Debug
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|x86.ActiveCfg = Debug
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|x86.Build.0 = Debug
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|Any CPU.ActiveCfg = Release
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|Any CPU.Build.0 = Release
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|iPhone.ActiveCfg = Release
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|iPhone.Build.0 = Release
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|iPhoneSimulator.ActiveCfg = Release
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|iPhoneSimulator.Build.0 = Release
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|x86.ActiveCfg = Release
+		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|x86.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

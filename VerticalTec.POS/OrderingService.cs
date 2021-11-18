@@ -616,7 +616,7 @@ namespace VerticalTec.POS
                 saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
 
             var cmd = _database.CreateCommand(
-                "select a.ShopKey, b.MerchantKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID where a.ShopID=@shopId and a.Deleted=0;" +
+                "select a.ShopKey, b.MerchantKey, c.BrandKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID join brand_data c on a.MerchantID=c.MerchantID where a.ShopID=@shopId and a.Deleted=0;" +
                 "select * from weborder_token where SaleDate=@saleDate;", conn);
 
             cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
@@ -635,6 +635,7 @@ namespace VerticalTec.POS
                 throw new VtecPOSException($"Not found shop data {shopId}");
 
             var merchantKey = dtShopData.ToEnumerable().FirstOrDefault()?.GetValue<string>("MerchantKey");
+            var brandKey = dtShopData.ToEnumerable().FirstOrDefault()?.GetValue<string>("BrandKey");
             var shopKey = dtShopData.ToEnumerable().FirstOrDefault()?.GetValue<string>("ShopKey");
             var reqId = "";
             var reqToken = "";
@@ -712,6 +713,19 @@ namespace VerticalTec.POS
                     throw new VtecPOSException(pinData.responseText);
 
                 pinCode = pinData.responseObj.smsNumber;
+
+                var tableRequestPinCode = await _posRepo.GetPropertyValueAsync(conn, 1130, "TableRequestPinCode");
+                if (!string.IsNullOrEmpty(tableRequestPinCode))
+                {
+                    var enWebOrderUrlQr = tableRequestPinCode == "1";
+                    if (enWebOrderUrlQr)
+                    {
+                        var webOrderUrl = await _posRepo.GetPropertyValueAsync(conn, 1130, "WebOrderingUrl");
+                        if (!webOrderUrl.EndsWith("/"))
+                            webOrderUrl = webOrderUrl + "/";
+                        pinCode = $"{webOrderUrl}{brandKey}/{shopKey}/{pinCode}";
+                    }
+                }
             }
             else
             {
