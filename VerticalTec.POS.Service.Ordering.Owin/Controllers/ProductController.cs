@@ -128,6 +128,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     if (productDeptIds.EndsWith(","))
                         productDeptIds = productDeptIds.Substring(0, productDeptIds.Length - 1);
+                    if (productDeptIds == "0")
+                        productDeptIds = "";
 
                     var filterProducts = (from row in dtComputerProduct.AsEnumerable()
                                           where filterDepts.Contains(row.GetValue<string>("ProductDeptID"))
@@ -139,11 +141,24 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     if (productIds.EndsWith(","))
                         productIds = productIds.Substring(0, productIds.Length - 1);
+                    if (productIds == "0")
+                        productIds = "";
                 }
 
                 DataTable dtProductGroup = await _posRepo.GetProductGroupsAsync(conn, productGroupIds);
                 DataTable dtProductDept = await _posRepo.GetProductDeptsAsync(conn, 0, productDeptIds);
                 DataTable dtProducts = await _posRepo.GetProductsAsync(conn, shopId, 0, 0, productIds, saleMode);
+
+                if (string.IsNullOrEmpty(productDeptIds))
+                {
+                    var groupIds = dtProductGroup.AsEnumerable().Select(g => g.GetValue<int>("ProductGroupID")).ToArray();
+                    dtProductDept = dtProductDept.AsEnumerable().Where(d => groupIds.Contains(d.GetValue<int>("ProductGroupID"))).CopyToDataTable();
+                }
+                if (string.IsNullOrEmpty(productIds))
+                {
+                    var deptIds = dtProductDept.AsEnumerable().Select(d => d.GetValue<int>("ProductDeptID")).ToArray();
+                    dtProducts = dtProducts.AsEnumerable().Where(p => deptIds.Contains(p.GetValue<int>("ProductDeptID"))).CopyToDataTable();
+                }
 
                 var hqUrl = await _posRepo.GetBackofficeHQPathAsync(conn, shopId);
                 var products = new
