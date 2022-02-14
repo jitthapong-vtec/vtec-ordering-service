@@ -640,6 +640,20 @@ namespace VerticalTec.POS
             var reqId = "";
             var reqToken = "";
 
+            var buffetType = 0;
+            try
+            {
+                cmd = _database.CreateCommand("SELECT MAX(p.BuffetType) AS BuffetType FROM orderdetailfront a INNER JOIN products p ON a.ProductID=p.ProductID INNER JOIN orderdetail_status c ON a.OrderStatusID=c.OrderStatusID WHERE c.OrderStatusSale=1 AND a.TranKey=@tranKey", conn);
+                cmd.Parameters.Clear();
+                cmd.Parameters.Add(_database.CreateParameter("@tranKey", tranKey));
+                using (var reader = await _database.ExecuteReaderAsync(cmd))
+                {
+                    if (reader.Read())
+                        buffetType = reader.GetValue<int>("BuffetType");
+                }
+            }
+            catch { }
+
             if (dtWebOrderToken?.Rows.Count > 0)
             {
                 var row = dtWebOrderToken.ToEnumerable().FirstOrDefault();
@@ -662,9 +676,9 @@ namespace VerticalTec.POS
             var merchantUrl = $"api/MerchantInfo/MerchantInfo?reqId={reqId}&WebUrl={merchantKey}";
             var propertyUrl = $"api/POSModule/PropertyData?reqId={reqId}";
 
-            var pinUrl = $"api/POSModule/Table_GetPINCode?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}";
+            var pinUrl = $"api/POSModule/Table_GetPINCode?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}&buffetType={buffetType}";
             if (mode == 2)
-                pinUrl = $"api/POSModule/Table_ReGenPINCode?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}";
+                pinUrl = $"api/POSModule/Table_ReGenPINCode?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}&buffetType={buffetType}";
 
             var httpClient = new HttpClient();
             httpClient.BaseAddress = new UriBuilder(posPlatformApi).Uri;
