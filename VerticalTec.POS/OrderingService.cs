@@ -737,7 +737,7 @@ namespace VerticalTec.POS
                         var webOrderUrl = await _posRepo.GetPropertyValueAsync(conn, 1130, "WebOrderingUrl");
                         if (!webOrderUrl.EndsWith("/"))
                             webOrderUrl = webOrderUrl + "/";
-                        pinCode = $"{webOrderUrl}{brandKey}/{shopKey}/{pinCode}";
+                        pinCode = $"{webOrderUrl}{brandKey}/{shopKey}/{pinCode}/{tranKey}";
                     }
                 }
             }
@@ -746,6 +746,106 @@ namespace VerticalTec.POS
                 throw new VtecPOSException($"Response from posplatform api {pinResponse.ReasonPhrase}");
             }
             return pinCode;
+        }
+
+        public async Task<string> UpdateBuffetAsync(IDbConnection conn, string tranKey, int shopId, int tableId)
+        {
+            var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
+
+            var cmd = _database.CreateCommand(
+                "select a.ShopKey, b.MerchantKey, c.BrandKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID join brand_data c on a.MerchantID=c.MerchantID where a.ShopID=@shopId and a.Deleted=0;" +
+                "select * from weborder_token where SaleDate=@saleDate;", conn);
+
+            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+            cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
+
+            var ds = new DataSet();
+            var adapter = _database.CreateDataAdapter(cmd);
+            adapter.TableMappings.Add("Table", "ShopData");
+            adapter.TableMappings.Add("Table1", "WebOrderToken");
+            adapter.Fill(ds);
+
+            var dtShopData = ds.Tables["ShopData"];
+            var dtWebOrderToken = ds.Tables["WebOrderToken"];
+
+            if (dtShopData.Rows.Count == 0)
+                throw new VtecPOSException($"Not found shop data {shopId}");
+
+            var shopKey = dtShopData.ToEnumerable().FirstOrDefault()?.GetValue<string>("ShopKey");
+            var reqId = "";
+            var reqToken = "";
+
+            var buffetType = 0;
+            try
+            {
+                cmd = _database.CreateCommand("SELECT MAX(p.BuffetType) AS BuffetType FROM orderdetailfront a INNER JOIN products p ON a.ProductID=p.ProductID INNER JOIN orderdetail_status c ON a.OrderStatusID=c.OrderStatusID WHERE c.OrderStatusSale=1 AND a.TranKey=@tranKey", conn);
+                cmd.Parameters.Clear();
+                cmd.Parameters.Add(_database.CreateParameter("@tranKey", tranKey));
+                using (var reader = await _database.ExecuteReaderAsync(cmd))
+                {
+                    if (reader.Read())
+                        buffetType = reader.GetValue<int>("BuffetType");
+                }
+            }
+            catch { }
+
+            if (dtWebOrderToken?.Rows.Count > 0)
+            {
+                var row = dtWebOrderToken.ToEnumerable().FirstOrDefault();
+                reqId = row.GetValue<string>("MerchantReqId");
+                reqToken = row.GetValue<string>("AuthenToken");
+            }
+
+            if (string.IsNullOrEmpty(reqId))
+            {
+                reqId = Guid.NewGuid().ToString();
+            }
+
+            var posPlatformApi = await _posRepo.GetPropertyValueAsync(conn, 1130, "ApiBaseServerUrl");
+            if (string.IsNullOrEmpty(posPlatformApi))
+                throw new VtecPOSException("Not found ApiBaseServerUrl of property 1130");
+
+            if (!posPlatformApi.EndsWith("/"))
+                posPlatformApi = posPlatformApi + "/";
+
+            var updateBuffetUrl = $"api/POSModule/Table_BuffetUpdate?reqId={reqId}&outletTranKey={tranKey}&shopId={shopId}&shopKey={shopKey}&saleDate={saleDate}&tableId={tableId}&buffetType={buffetType}";
+            
+            var httpClient = new HttpClient();
+            httpClient.BaseAddress = new UriBuilder(posPlatformApi).Uri;
+
+            if (string.IsNullOrEmpty(reqToken))
+            {
+                try
+                {
+                    reqToken = await GetTokenAsync(httpClient);
+                }
+                catch (Exception ex)
+                {
+                    throw new VtecPOSException(ex.Message);
+                }
+            }
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", reqToken);
+
+            var request = new HttpRequestMessage(HttpMethod.Post, updateBuffetUrl);
+            var resp = await httpClient.SendAsync(request);
+            if (resp.IsSuccessStatusCode)
+            {
+                var data = new
+                {
+                    responseCode = "",
+                    responseText = "",
+                    responseObj = new object()
+                };
+                var json = await resp.Content.ReadAsStringAsync();
+                data = JsonConvert.DeserializeAnonymousType(json, data);
+                if (!string.IsNullOrEmpty(data.responseCode))
+                    throw new VtecPOSException(data.responseText);
+            }
+            else
+            {
+                throw new VtecPOSException($"Response from posplatform api {resp.ReasonPhrase}");
+            }
+            return $"{posPlatformApi}{updateBuffetUrl}";
         }
 
         async Task<string> GetTokenAsync(HttpClient httpClient)

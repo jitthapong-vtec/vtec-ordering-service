@@ -51,12 +51,90 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     pinCode = await _orderingService.GetOrRegenPincodeAsync(conn, tranKey, shopId, tableId, saleDate: saleDate);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     return BadRequest(ex.Message);
                 }
             }
             return Ok(pinCode);
+        }
+
+        [HttpGet]
+        [Route("v1/tables/buffetoption")]
+        public async Task<IHttpActionResult> GetBuffetOptionAsync(int tranId, int compId, int shopId)
+        {
+            var result = new HttpActionResult<object>(Request);
+            using (var conn = (await _database.ConnectAsync() as MySqlConnection))
+            {
+                var posModule = new POSModule();
+                var dtBuffetOption = new DataTable();
+                int buffetOptionId = 0;
+                var qddid = 0;
+                var respText = "";
+                var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
+                var success = posModule.Buffet_TypeOption(ref respText, ref dtBuffetOption, ref buffetOptionId, ref qddid, tranId, compId, shopId, saleDate, "front", conn);
+                if (!success)
+                {
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = respText;
+                    return result;
+                }
+
+                var bfOptions = dtBuffetOption.AsEnumerable().Select(dr => new
+                {
+                    QuestionID = dr.GetValue<int>("QDDID"),
+                    OptionID = dr.GetValue<int>("OptionID"),
+                    OptionName = dr.GetValue<string>("OptionName"),
+                    Selected = dr.GetValue<int>("OptionID") == buffetOptionId
+                });
+                result.StatusCode = HttpStatusCode.OK;
+                result.Body = bfOptions;
+                return result;
+            }
+        }
+
+        [HttpPost]
+        [Route("v1/tables/buffetoption")]
+        public async Task<IHttpActionResult> ChangeBuffetTypeAsync(int tableId, int tranId, int compId, int qddid, int optionId, int shopId, int staffId, int langId = 1)
+        {
+            var result = new HttpActionResult<object>(Request);
+            try
+            {
+                using (var conn = await (_database.ConnectAsync()) as MySqlConnection)
+                {
+                    var posModule = new POSModule();
+                    var respText = "";
+                    var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
+                    var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
+                    var success = posModule.Buffet_ChangeType(ref respText, tranId, compId, qddid, optionId, shopId, saleDate, "front", decimalDigit, staffId, langId, conn);
+                    if (!success)
+                    {
+                        result.StatusCode = HttpStatusCode.BadRequest;
+                        result.Message = respText;
+                        return result;
+                    }
+                    var receiptString = "";
+                    var receiptCopyString = "";
+                    var noCopy = 0;
+                    var resultData = new DataSet();
+
+                    var updateResult = await _orderingService.UpdateBuffetAsync(conn, $"{tranId}:{compId}", shopId, tableId);
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Message = "Success";
+
+                    posModule.BillDetail(ref respText, ref receiptString, ref receiptCopyString, ref noCopy, ref resultData,
+                        (int)ViewBillTypes.Default, tranId, compId, shopId, 0, "front", langId, conn);
+
+                    _log.Info($"Update buffet type: {updateResult}");
+                }
+            }
+            catch (Exception ex)
+            {
+                result.StatusCode = HttpStatusCode.InternalServerError;
+                result.Message = ex.Message;
+            }
+            return result;
+
         }
 
         [HttpPost]
@@ -122,7 +200,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         if (param == "1")
                             await _orderingService.GetOrRegenPincodeAsync(conn, $"{table.TransactionID}:{table.ComputerID}", table.ShopID, table.FromTableID, 2);
                     }
-                    catch(Exception ex) 
+                    catch (Exception ex)
                     {
                         _log.Error($"Regen pin code {ex.Message}");
                     }
