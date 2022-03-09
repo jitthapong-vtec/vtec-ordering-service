@@ -142,13 +142,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     }
                                 }
 
-                                if (tableId == 0)
-                                {
-                                    result.StatusCode = HttpStatusCode.BadRequest;
-                                    result.Message = $"Not found tableId of TranKey {transactionId}:{computerId}";
-                                    return result;
-                                }
-
                                 var transPayload = new TransactionPayload()
                                 {
                                     TransactionID = transactionId,
