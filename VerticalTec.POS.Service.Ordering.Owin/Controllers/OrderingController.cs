@@ -47,6 +47,26 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             lock (Owner)
             {
                 var result = new SimpleHttpActionResult(Request);
+
+                try
+                {
+                    var clientId = Request.Headers.GetValues("x-client-id").FirstOrDefault();
+                    var clientSecret = Request.Headers.GetValues("x-client-secret").FirstOrDefault();
+
+                    if (clientId != "vtec-ordering" && clientSecret != "688635a6c68f85e8")
+                    {
+                        result.StatusCode = HttpStatusCode.Unauthorized;
+                        result.Message = "Unauthorized";
+                        return result;
+                    }
+                }
+                catch
+                {
+                    result.StatusCode = HttpStatusCode.Unauthorized;
+                    result.Message = "Unauthorized";
+                    return result;
+                }
+
                 try
                 {
                     var posModule = new POSModule();
