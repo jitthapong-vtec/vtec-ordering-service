@@ -18,6 +18,7 @@ using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 using VerticalTec.POS.Utils;
+using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin
 {
@@ -57,6 +58,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
                 AppConfig.Instance.DbPort));
             _container.RegisterType<IOrderingService, OrderingService>(new TransientLifetimeManager());
             _container.RegisterType<IPaymentService, PaymentService>(new TransientLifetimeManager());
+            _container.RegisterType<POSModule>(new TransientLifetimeManager());
             _container.RegisterSingleton<IMessengerService, MessengerService>();
             _container.RegisterSingleton<IPrintService, PrintService>();
 

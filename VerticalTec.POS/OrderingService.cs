@@ -1,15 +1,14 @@
 ﻿using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using VerticalTec.POS.Database;
-using vtecPOS.GlobalFunctions;
-using vtecPOS.POSControl;
 using VerticalTec.POS.Utils;
-using System.Net.Http;
-using Newtonsoft.Json;
+using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS
 {

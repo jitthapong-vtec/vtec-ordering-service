@@ -1,14 +1,12 @@
 ﻿using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using System;
-using System.Data;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
-using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
