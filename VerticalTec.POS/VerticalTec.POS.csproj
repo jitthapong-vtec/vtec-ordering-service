@@ -10,11 +10,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj" />
-    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="System.Configuration.ConfigurationManager">
       <HintPath>..\DLLs\System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference>
