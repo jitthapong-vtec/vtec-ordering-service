@@ -12,12 +12,12 @@ namespace VerticalTec.POS.Service.Test
     {
         static void Main(string[] args)
         {
-            string baseAddress = "http://+:9100/";
+            string baseAddress = "http://127.0.0.1:9200/";
 
             try
             {
                 var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
-                using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.Ordering.Owin.Startup("192.168.1.30", "hsh", hangfireConStr).Configuration(appBuilder)))
+                using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.Ordering.Owin.Startup("192.168.1.35", "demo_indo", hangfireConStr).Configuration(appBuilder)))
                 {
                     Console.ReadLine();
                 }
