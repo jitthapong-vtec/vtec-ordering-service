@@ -341,7 +341,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
             using (var conn = await _database.ConnectAsync())
             {
-                var billHtml = await _orderingService.GetBillHtmlAsync(conn, transactionId, computerId, shopId);
+                var billHtml = await _orderingService.GetBillHtmlAsync(conn, transactionId, computerId, shopId, langId);
                 if (!string.IsNullOrEmpty(billHtml))
                 {
                     response.Content = new StringContent(billHtml);
@@ -351,6 +351,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 else
                 {
                     response.StatusCode = HttpStatusCode.NotFound;
+                    response.Content = new StringContent("<p>Not found bill data</p>");
                 }
             }
             return response;
