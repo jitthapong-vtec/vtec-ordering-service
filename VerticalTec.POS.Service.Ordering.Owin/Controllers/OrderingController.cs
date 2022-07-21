@@ -318,43 +318,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             return result;
         }
 
-        [HttpGet]
-        [Route("v2/orders/billhtml")]
-        public async Task<HttpResponseMessage> GetBillHtmlV2Async(int transactionId, int computerId, int shopId, int langId = 0)
-        {
-            var response = new HttpResponseMessage();
-            try
-            {
-                var clientId = Request.Headers.GetValues("x-client-id").FirstOrDefault();
-                var clientSecret = Request.Headers.GetValues("x-client-secret").FirstOrDefault();
-
-                if (clientId != "vtec-platform-api" && clientSecret != "yBd1dnH/qd+uIm+weNCk3gaMzvMVnNydOpa4fUk02wI=")
-                {
-                    response.StatusCode = HttpStatusCode.Unauthorized;
-                }
-            }
-            catch
-            {
-                response.StatusCode = HttpStatusCode.Unauthorized;
-            }
-
-            using (var conn = await _database.ConnectAsync())
-            {
-                var billHtml = await _orderingService.GetBillHtmlAsync(conn, transactionId, computerId, shopId);
-                if (!string.IsNullOrEmpty(billHtml))
-                {
-                    response.Content = new StringContent(billHtml);
-                    response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/html");
-                    return response;
-                }
-                else
-                {
-                    response.StatusCode = HttpStatusCode.NotFound;
-                }
-            }
-            return response;
-        }
-
         [HttpPost]
         [Route("v1/orders")]
         public async Task<IHttpActionResult> AddOrderAsync(OrderTransaction order)
