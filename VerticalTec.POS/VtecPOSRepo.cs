@@ -900,7 +900,7 @@ namespace VerticalTec.POS
                         DateTime lastSaleDate = reader.GetDateTime(0);
                         var lastSaleDateEarlyNow = DateTime.Compare(lastSaleDate.Date, currentDate.Date) < 0;
                         if (ignoreOpenDayCheck == false && lastSaleDateEarlyNow)
-                            throw new VtecPOSException("The front program did not open sale day!");
+                            throw new VtecPOSException("Store is not open!");
 
                         // incase bypass check open day must use last date
                         if (lastSaleDateEarlyNow)
@@ -1050,6 +1050,14 @@ namespace VerticalTec.POS
             var rootDir = await GetPropertyValueAsync(conn, 1012, "RootWebDir", shopId);
             var backoffice = await GetPropertyValueAsync(conn, 1012, "BackOfficePath", shopId);
             return $"{rootDir}/{backoffice}/";
+        }
+
+        public async Task<string> GetResourceUrl(IDbConnection conn, int shopId)
+        {
+            var fileResourceUrl = await GetPropertyValueAsync(conn, 1130, "FileResourceUrl", shopId);
+            if (!string.IsNullOrEmpty(fileResourceUrl) && !fileResourceUrl.EndsWith("/"))
+                fileResourceUrl += "/";
+            return fileResourceUrl;
         }
 
         public async Task<string> GetPropertyValueAsync(IDbConnection conn, int propertyId, string param, int shopId = 0, int computerId = 0)

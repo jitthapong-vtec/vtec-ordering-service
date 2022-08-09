@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.8" />
-    <PackageReference Include="vtecPOS" Version="4.0.0.31" />
+    <PackageReference Include="vtecPOS" Version="4.0.0.34" />
   </ItemGroup>
 
   <ItemGroup>

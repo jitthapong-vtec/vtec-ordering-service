@@ -311,9 +311,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             " inner join kiosk_template_shoplink b" +
                             " on a.Kiosk_TemplateID=b.Kiosk_TemplateID" +
                             " where a.Deleted=0" +
-                            " and a.Kiosk_StartDate <= @date and a.Kiosk_EndDate >= @date" +
+                            " and a.Kiosk_StartDate <= @date and (CASE WHEN a.Kiosk_EndDate IS NULL THEN DATE_FORMAT(NOW(),'%Y-%m-%d') END) >= @date" +
                             " and b.ShopID=@shopId", conn);
-                    cmd.Parameters.Add(_database.CreateParameter("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+                    cmd.Parameters.Add(_database.CreateParameter("@date", DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
                     cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
                     DataTable dtTemplate = new DataTable();
                     using (IDataReader reader = cmd.ExecuteReader())
@@ -324,7 +324,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         throw new Exception("Not found kiosk template configuration!");
 
                     int templateId = dtTemplate.Rows[0].GetValue<int>("Kiosk_TemplateID");
-                    string imageBaseUrl = await _posRepo.GetKioskMenuImageBaseUrlAsync(conn, shopId);
+                    string imageBaseUrl = await _posRepo.GetResourceUrl(conn, shopId);
                     cmd = _database.CreateCommand(
                             " select concat('" + imageBaseUrl + "', a.PageImage) as PageImage, a.*, b.LayoutTypeName, " +
                             " case when b.NoRows is null then 4 else b.NoRows end as NoRows, " +
@@ -460,7 +460,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    var imageUrlBase = await _posRepo.GetKioskMenuImageBaseUrlAsync(conn, shopId);
+                    var imageUrlBase = await _posRepo.GetResourceUrl(conn, shopId);
                     var cmd = _database.CreateCommand(
                         "select *" +
                         " from productcomponentgroup " + (parentProductId > 0 ? " where ProductID = @parentProductId;" : ";") +
@@ -468,7 +468,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         " case when a.FlexibleProductPrice = 0 then -1 else a.FlexibleProductPrice end as ProductPrice," +
                         " a.QtyRatio, b.ProductID, b.ProductCode, " +
                         " b.ProductName, b.ProductName as ProductName1, b.ProductName2, b.ProductName3, b.ProductTypeID," +
-                        " concat(@imageUrlBase, replace(b.ProductPictureServer, 'UploadImage/Products/', '')) as ProductImage," +
+                        " concat(@imageUrlBase, b.ProductPictureServer) as ProductImage," +
                         " d.CurrentStock" +
                         " from productcomponent a" +
                         " inner join products b" +
@@ -605,7 +605,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
             }
 
-            string imageBaseUrl = await _posRepo.GetKioskMenuImageBaseUrlAsync(conn, shopId);
+            string imageBaseUrl = await _posRepo.GetResourceUrl(conn, shopId);
             cmd = _database.CreateCommand(
                                " SELECT a.PageID, a.PageDetailID, b.ProductID, b.DisplayName AS ProductName, " +
                                " CONCAT('" + imageBaseUrl + "', b.DetailImage) AS MenuImageUrl, c.ProductTypeID, " +

@@ -46,7 +46,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     if (dtTerminal.Rows.Count > 0)
                     {
                         var shopId = dtTerminal.Rows[0].GetValue<int>("ShopID");
-                        string imageBaseUrl = await _posRepo.GetKioskAdsImageBaseUrlAsync(conn, shopId);
+                        string imageBaseUrl = await _posRepo.GetResourceUrl(conn, shopId);
 
                         cmd.CommandText =
                             " select * from programpropertyvalue;" +
