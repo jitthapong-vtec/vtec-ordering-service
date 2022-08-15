@@ -29,21 +29,24 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpGet]
-        [Route("v1/products/stock")]
-        public async Task<IHttpActionResult> GetProductInfoStockAsync(int shopId, string keyword, int langId)
+        [Route("v1/products/info")]
+        public async Task<IHttpActionResult> GetProductInfoStockAsync(string keyword, int shopId = 0, int langId = 2)
         {
-            var response = new HttpActionResult<DataSet>(Request);
             var respText = "";
             var ds = new DataSet();
             using (var conn = await _database.ConnectAsync())
             {
-                var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
+                var saleDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 var success = _posModule.ProductInfo_Stock(ref respText, ref ds, shopId, saleDate, keyword, langId, conn as MySqlConnection);
                 if (!success)
-                    response.StatusCode = HttpStatusCode.BadRequest;
-                response.Body = ds;
+                {
+                    return BadRequest(respText);
+                }
+                else
+                {
+                    return Ok(ds);
+                }
             }
-            return response;
         }
 
         [HttpGet]
