@@ -44,6 +44,9 @@
     <Reference Include="LoyaltyGateWayLib">
       <HintPath>..\DLLs\LoyaltyGateWayLib.dll</HintPath>
     </Reference>
+    <Reference Include="LoyaltyInterface">
+      <HintPath>..\dlls\LoyaltyInterface.dll</HintPath>
+    </Reference>
     <Reference Include="LoyaltyManagerLib">
       <HintPath>..\DLLs\LoyaltyManagerLib.dll</HintPath>
     </Reference>
