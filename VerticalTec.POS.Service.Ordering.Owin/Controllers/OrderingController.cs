@@ -745,19 +745,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(transaction.TableName))
-                    {
-                        var cmd = _database.CreateCommand("update ordertransactionfront set TableName=@tableName," +
-                            " TransactionStatusID=@status" +
-                            " where TransactionID=@transactionId and ComputerID=@computerId", conn);
-                        cmd.Parameters.Add(_database.CreateParameter("@tableName", transaction.TableName));
-                        cmd.Parameters.Add(_database.CreateParameter("@transactionId", transaction.TransactionID));
-                        cmd.Parameters.Add(_database.CreateParameter("@status", transaction.TransactionStatus));
-                        cmd.Parameters.Add(_database.CreateParameter("@computerId", transaction.TerminalID));
-                        cmd.ExecuteNonQuery();
-                    }
-
                     await _printService.KioskPrintCheckBill(transaction);
+
+                    var cmd = _database.CreateCommand("update ordertransactionfront set TransactionStatusID=@status" +
+                        " where TransactionID=@transactionId and ComputerID=@computerId", conn);
+                    cmd.Parameters.Add(_database.CreateParameter("@transactionId", transaction.TransactionID));
+                    cmd.Parameters.Add(_database.CreateParameter("@computerId", transaction.TerminalID));
+                    cmd.Parameters.Add(_database.CreateParameter("@status", 9));
+                    cmd.ExecuteNonQuery();
                 }
                 catch (VtecPOSException ex)
                 {
