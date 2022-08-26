@@ -700,6 +700,29 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpPost]
+        [Route("v1/orders/kiosk/combo/delchild")]
+        public async Task<IHttpActionResult> KioskDeleteChildOrderAsync(int transactionId, int computerId, int parentOrderId)
+        {
+            var result = new HttpActionResult<string>(Request);
+            try
+            {
+                using (var conn = await _database.ConnectAsync())
+                {
+                    await _orderingService.DeleteChildComboAsync(conn, transactionId, computerId, parentOrderId);
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = "";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"KioskDeleteChildOrderAsync {ex}");
+                result.StatusCode = HttpStatusCode.InternalServerError;
+                result.Message = $"Cannot delete child order";
+            }
+            return result;
+        }
+
+        [HttpPost]
         [Route("v1/orders/kiosk/cancel")]
         public async Task<IHttpActionResult> KioskCancelTransactionAsync(int transactionId, int computerId)
         {

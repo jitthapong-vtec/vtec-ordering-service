@@ -885,8 +885,19 @@ namespace VerticalTec.POS
 
         public async Task<string> GetSaleDateAsync(IDbConnection conn, int shopId, bool includeSpecialSyntax, bool ignoreOpenDayCheck = false)
         {
-            string saleDate = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            var cmd = _database.CreateCommand("select SessionDate from sessionenddaydetail " +
+            var currentDate = DateTime.Today;
+            var saleDate = currentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            var cmd = _database.CreateCommand("SELECT DATE_FORMAT(NOW(),'%Y-%m-%d') as CurrentDate;", conn);
+            using(var reader = cmd.ExecuteReader())
+            {
+                if (reader.Read())
+                {
+                    currentDate = reader.GetValue<DateTime>("CurrentDate");
+                }
+            }
+
+            cmd = _database.CreateCommand("select SessionDate from sessionenddaydetail " +
                 "where ShopID=@shopId and IsEndDay=@isEndDay order by sessiondate desc limit 1", conn);
             cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
             cmd.Parameters.Add(_database.CreateParameter("@isEndDay", 0));
@@ -896,7 +907,6 @@ namespace VerticalTec.POS
                 {
                     if (reader.Read())
                     {
-                        DateTime currentDate = DateTime.Now;
                         DateTime lastSaleDate = reader.GetDateTime(0);
                         var lastSaleDateEarlyNow = DateTime.Compare(lastSaleDate.Date, currentDate.Date) < 0;
                         if (ignoreOpenDayCheck == false && lastSaleDateEarlyNow)
