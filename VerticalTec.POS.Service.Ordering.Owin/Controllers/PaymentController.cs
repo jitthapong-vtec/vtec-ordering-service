@@ -19,6 +19,7 @@ using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
+using static LoyaltyInterface.BlueCard.BlueCardObj;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
@@ -43,6 +44,74 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _messenger = messenger;
             _printService = printService;
             _posRepo = new VtecPOSRepo(database);
+        }
+
+        [HttpPost]
+        [Route("v1/payments/edc/kbank/inquiry")]
+        public IHttpActionResult InquiryKbankQRCode(string edcPort)
+        {
+            var result = new HttpActionResult<objCreditCardInfo>(Request);
+            var respText = "";
+            try
+            {
+                var cardData = new objCreditCardInfo();
+                var sPort = new SerialPort
+                {
+                    PortName = edcPort,
+                    ReadTimeout = -1,
+                    WriteTimeout = -1
+                };
+                var success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayInquiry(sPort, "", "", ref cardData, ref respText);
+                if (!success)
+                {
+                    _logger.Error($"Edc Error {respText}");
+                    throw new ApiException(ErrorCodes.EDC, $"Edc Error {respText}");
+                }
+                result.Body = cardData;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                if (ex is ApiException apiEx)
+                    result.ErrorCode = apiEx.ErrorCode;
+
+                result.StatusCode = HttpStatusCode.BadRequest;
+            }
+            return result;
+        }
+
+        [HttpPost]
+        [Route("v1/payments/edc/kbank/genqr")]
+        public IHttpActionResult GetKbankQRCode(string edcPort, decimal totalPrice)
+        {
+            var result = new HttpActionResult<objCreditCardInfo>(Request);
+            var respText = "";
+            try
+            {
+                var cardData = new objCreditCardInfo();
+                var sPort = new SerialPort
+                {
+                    PortName = edcPort,
+                    ReadTimeout = -1,
+                    WriteTimeout = -1
+                };
+                var success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayPayment(sPort, totalPrice, "", "", ref cardData, ref respText);
+                if (!success)
+                {
+                    _logger.Error($"Edc Error {respText}");
+                    throw new ApiException(ErrorCodes.EDC, $"Edc Error {respText}");
+                }
+                result.Body = cardData;
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex.Message;
+                if (ex is ApiException apiEx)
+                    result.ErrorCode = apiEx.ErrorCode;
+
+                result.StatusCode = HttpStatusCode.BadRequest;
+            }
+            return result;
         }
 
         [HttpPost]
@@ -97,7 +166,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var success = false;
                     try
                     {
-                        success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4.SendEdc_CreditCardPayment(sPort, paymentData.PayAmount, "", "", ref cardData, ref respText);
+                        success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_Credit.SendEdc_CreditCardPayment(sPort, paymentData.PayAmount, "", "", ref cardData, ref respText);
                     }
                     catch(Exception ex)
                     {
