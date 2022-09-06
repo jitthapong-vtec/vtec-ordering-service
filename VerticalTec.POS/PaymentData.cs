@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using VerticalTec.POS.Utils;
 
@@ -8,8 +9,13 @@ namespace VerticalTec.POS
     {
         public int PayTypeID { get; set; }
         public int PayDetailID { get; set; }
+        [Required]
         public int EDCType { get; set; }
+        [Required]
+        public string EDCPort { get; set; }
+        [Required]
         public int TransactionID { get; set; }
+        [Required]
         public int ComputerID { get; set; }
         public int TerminalID { get; set; }
         public int TableID { get; set; }
@@ -44,6 +50,7 @@ namespace VerticalTec.POS
         public string CardExpYear { get; set; }
         public string ReferenceNo { get; set; }
         public string EncryptedCardInfo { get; set; }
+        [Required]
         public decimal PayAmount { get; set; }
         public decimal CashChange
         {

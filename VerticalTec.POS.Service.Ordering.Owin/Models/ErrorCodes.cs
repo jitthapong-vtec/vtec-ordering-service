@@ -12,11 +12,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Models
         // serve 10 for order error
         NotFoundRegisteredDevice = 1,
 
-        // 20 for 
-
         // 30 for printer
-        PrinterError = 30,
+        Printer = 30,
 
-        PaymentGatewayTimeout = 504
+        PaymentGatewayTimeout = 504,
+
+        OrderFunction = 7001,
+
+        NoPaymentConfig = 8001,
+        PaymentFunction = 8002,
+
+        EDC = 9001
     }
 }

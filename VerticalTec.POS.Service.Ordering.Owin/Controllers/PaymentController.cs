@@ -1,16 +1,20 @@
-﻿using Hangfire;
+﻿using EdcObjLib;
+using Hangfire;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
+using System.IO.Ports;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.Service.Ordering.Owin.Exceptions;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 using VerticalTec.POS.Utils;
@@ -20,7 +24,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
     public class PaymentController : ApiController
     {
-        static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logpayment");
+        static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("logpayment");
 
         IDatabase _database;
         IPaymentService _paymentService;
@@ -29,7 +33,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         IPrintService _printService;
         VtecPOSRepo _posRepo;
 
-        public PaymentController(IDatabase database, IPaymentService paymentService, 
+        public PaymentController(IDatabase database, IPaymentService paymentService,
             IOrderingService orderingService, IMessengerService messenger,
             IPrintService printService)
         {
@@ -39,6 +43,117 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _messenger = messenger;
             _printService = printService;
             _posRepo = new VtecPOSRepo(database);
+        }
+
+        [HttpPost]
+        [Route("v1/payments/edc/kbank")]
+        public async Task<IHttpActionResult> KbankEdcPayment(PaymentData paymentData)
+        {
+            _logger.Debug("Call v1/payments/edc/kbank");
+
+            var result = new HttpActionResult<object>(Request);
+            try
+            {
+                var respText = "";
+                using (var conn = await _database.ConnectAsync())
+                {
+                    var cardData = new objCreditCardInfo();
+                    var sPort = new SerialPort
+                    {
+                        PortName = paymentData.EDCPort,
+                        ReadTimeout = -1,
+                        WriteTimeout = -1
+                    };
+
+                    string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
+
+                    if (!string.IsNullOrEmpty(paymentData.TableName))
+                    {
+                        var cmd = _database.CreateCommand("update ordertransactionfront set QueueName=@tableName " +
+                            " where TransactionID=@transactionId and ComputerID=@computerId", conn);
+                        cmd.Parameters.Add(_database.CreateParameter("@tableName", paymentData.TableName));
+                        cmd.Parameters.Add(_database.CreateParameter("@transactionId", paymentData.TransactionID));
+                        cmd.Parameters.Add(_database.CreateParameter("@computerId", paymentData.ComputerID));
+                        await _database.ExecuteNonQueryAsync(cmd);
+                    }
+
+                    if (paymentData.EDCType != 0)
+                    {
+                        var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
+                        cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
+                        using (IDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
+                            }
+                        }
+                        if (paymentData.PayTypeID == 0)
+                            throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+                    }
+
+                    _logger.Info("Send data to EDC");
+
+                    var success = false;
+                    try
+                    {
+                        success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4.SendEdc_CreditCardPayment(sPort, paymentData.PayAmount, "", "", ref cardData, ref respText);
+                    }
+                    catch(Exception ex)
+                    {
+                        throw new ApiException(ErrorCodes.EDC, ex.Message);
+                    }
+                    if (!success)
+                    {
+                        _logger.Error($"Edc Error {respText}");
+                        throw new ApiException(ErrorCodes.EDC, $"Edc Error {respText}");
+                    }
+
+                    var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
+                    if (dtPendingPayment.Rows.Count > 0)
+                        await _paymentService.DeletePaymentAsync(conn, dtPendingPayment.Rows[0].GetValue<int>("PayDetailID"), paymentData.TransactionID, paymentData.ComputerID);
+                    await _paymentService.AddPaymentAsync(conn, paymentData);
+
+                    var posModule = new POSModule();
+                    var cardDataJson = JsonConvert.SerializeObject(cardData);
+                    success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, cardDataJson, paymentData.TransactionID,
+                        paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, saleDate, paymentData.BrandName,
+                        paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
+
+                    if (!success)
+                    {
+                        throw new ApiException(ErrorCodes.PaymentFunction, respText);
+                    }
+                    else
+                    {
+                        await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
+                        await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+
+                        var printData = new PrintData()
+                        {
+                            TransactionID = paymentData.TransactionID,
+                            ComputerID = paymentData.ComputerID,
+                            ShopID = paymentData.ShopID,
+                            LangID = paymentData.LangID,
+                            PrinterIds = paymentData.PrinterIds,
+                            PrinterNames = paymentData.PrinterNames,
+                            PaperSize = paymentData.PaperSize
+                        };
+
+                        await _printService.PrintBill(printData);
+                        _messenger.SendMessage();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                if (ex is ApiException apiEx)
+                    result.ErrorCode = apiEx.ErrorCode;
+
+                result.StatusCode = HttpStatusCode.BadRequest;
+            }
+            return result;
         }
 
         [HttpGet]
@@ -74,7 +189,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/add")]
         public async Task<IHttpActionResult> AddPaymentDetailAsync(PaymentData paymentData)
         {
-            _log.Info($"AddPayment => {JsonConvert.SerializeObject(paymentData)}");
+            _logger.Info($"AddPayment => {JsonConvert.SerializeObject(paymentData)}");
 
             var result = new HttpActionResult<PaymentData>(Request);
             using (var conn = await _database.ConnectAsync())
@@ -168,14 +283,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/finalize")]
         public async Task<IHttpActionResult> FinalizeBillAsync(PaymentData payload)
         {
-            _log.Info($"FinalizeBill => {JsonConvert.SerializeObject(payload)}");
+            _logger.Info($"FinalizeBill => {JsonConvert.SerializeObject(payload)}");
 
             var result = new HttpActionResult<string>(Request);
             using (var conn = await _database.ConnectAsync())
             {
                 try
                 {
-                    await _paymentService.FinalizeBillAsync(conn, payload.TransactionID, payload.ComputerID, 
+                    await _paymentService.FinalizeBillAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.TerminalID, payload.ShopID, payload.StaffID);
                     await _paymentService.FinalizeOrderAsync(conn, payload.TransactionID, payload.ComputerID,
                         payload.TerminalID, payload.ShopID, payload.StaffID, payload.LangID, payload.PrinterIds, payload.PrinterNames);
@@ -358,7 +473,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var grc = new GrcPaymentData();
                     try
                     {
-                        _log.Info($"Request GrcPaymentGateway: {JsonConvert.SerializeObject(grcPayload)}");
+                        _logger.Info($"Request GrcPaymentGateway: {JsonConvert.SerializeObject(grcPayload)}");
 
                         var uri = new UriBuilder($"{baseUrl}pay").ToString();
                         var json = JsonConvert.SerializeObject(grcPayload);
@@ -370,7 +485,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             var respContent = await resp.Content.ReadAsStringAsync();
                             grc = JsonConvert.DeserializeObject<GrcPaymentData>(respContent);
 
-                            _log.Info($"Response from {uri}: {JsonConvert.SerializeObject(grc)}");
+                            _logger.Info($"Response from {uri}: {JsonConvert.SerializeObject(grc)}");
 
                             if (grc.response_code == "00")
                             {
@@ -415,14 +530,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                                 result.StatusCode = HttpStatusCode.InternalServerError;
                                 result.Message = errMsg;
-                                _log.Error($"{baseUrl} Fail: {result.Message}");
+                                _logger.Error($"{baseUrl} Fail: {result.Message}");
                             }
                         }
                         else
                         {
                             result.StatusCode = HttpStatusCode.InternalServerError;
                             result.Message = resp.ReasonPhrase;
-                            _log.Error($"{baseUrl} Fail: {result.Message}");
+                            _logger.Error($"{baseUrl} Fail: {result.Message}");
                         }
                     }
                     catch (Exception ex)
@@ -434,7 +549,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             result.StatusCode = HttpStatusCode.GatewayTimeout;
                         }
                         result.Message = message;
-                        _log.Error(message);
+                        _logger.Error(message);
                     }
                 }
                 else
@@ -442,7 +557,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = "Not found GRC Payment Gateway base url (prop 1117)";
 
-                    _log.Error("Not found GRC Payment Gateway base url (prop 1117)");
+                    _logger.Error("Not found GRC Payment Gateway base url (prop 1117)");
                 }
             }
             return result;
@@ -486,7 +601,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             fintech = "ovo";
 
                         var uri = new UriBuilder($"{baseUrl}check/{fintech}/{orderId}").ToString();
-                        _log.Info($"Request GrcPaymentGateway for CheckPayment: {uri}");
+                        _logger.Info($"Request GrcPaymentGateway for CheckPayment: {uri}");
 
                         var resp = await httpClient.GetAsync(uri);
                         if (resp.IsSuccessStatusCode)
@@ -494,7 +609,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             var respContent = await resp.Content.ReadAsStringAsync();
                             grc = JsonConvert.DeserializeObject<GrcPaymentData>(respContent);
 
-                            _log.Info($"Response from {uri}: {JsonConvert.SerializeObject(grc)}");
+                            _logger.Info($"Response from {uri}: {JsonConvert.SerializeObject(grc)}");
 
                             if (grc.response_code == "00")
                             {
@@ -536,11 +651,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 var errMsg = $"{grc.response_message}\n{grc.response_description}";
                                 if (string.IsNullOrEmpty(grc.response_message))
                                     errMsg = "Unknow error!";
-                                
+
                                 result.StatusCode = HttpStatusCode.InternalServerError;
                                 result.Message = errMsg;
 
-                                _log.Error($"{baseUrl} Fail: {errMsg}");
+                                _logger.Error($"{baseUrl} Fail: {errMsg}");
                             }
                         }
                         else
@@ -548,7 +663,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             result.StatusCode = HttpStatusCode.InternalServerError;
                             result.Message = resp.ReasonPhrase;
 
-                            _log.Error($"{baseUrl} Fail: {result.Message}");
+                            _logger.Error($"{baseUrl} Fail: {result.Message}");
                         }
                     }
                     catch (Exception ex)
@@ -558,7 +673,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             message = $"Can't connect to {baseUrl} {ex.Message}";
                             result.StatusCode = HttpStatusCode.GatewayTimeout;
-                            _log.Error(message);
+                            _logger.Error(message);
                         }
                         result.Message = message;
                     }
@@ -568,7 +683,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = "Not found GRC Payment Gateway base url (prop 1117)";
 
-                    _log.Error("Not found GRC Payment Gateway base url (prop 1117)");
+                    _logger.Error("Not found GRC Payment Gateway base url (prop 1117)");
                 }
             }
             return result;

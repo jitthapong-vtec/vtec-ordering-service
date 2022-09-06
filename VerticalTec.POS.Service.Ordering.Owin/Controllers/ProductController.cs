@@ -314,7 +314,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             " inner join kiosk_template_shoplink b" +
                             " on a.Kiosk_TemplateID=b.Kiosk_TemplateID" +
                             " where a.Deleted=0" +
-                            " and a.Kiosk_StartDate <= @date and (CASE WHEN a.Kiosk_EndDate IS NULL THEN DATE_FORMAT(NOW(),'%Y-%m-%d') END) >= @date" +
+                            " and a.Kiosk_StartDate <= @date and (CASE WHEN a.Kiosk_EndDate IS NULL THEN DATE_FORMAT(NOW(),'%Y-%m-%d') else a.Kiosk_EndDate END) >= @date" +
                             " and b.ShopID=@shopId", conn);
                     cmd.Parameters.Add(_database.CreateParameter("@date", DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
                     cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));

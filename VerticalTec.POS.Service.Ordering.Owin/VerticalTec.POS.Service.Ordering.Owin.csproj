@@ -99,6 +99,7 @@
     <Compile Include="Controllers\StaffController.cs" />
     <Compile Include="Controllers\TableController.cs" />
     <Compile Include="DatabaseMigration.cs" />
+    <Compile Include="Exceptions\ApiException.cs" />
     <Compile Include="Models\ChangeSaleModeOrder.cs" />
     <Compile Include="Models\ErrorCodes.cs" />
     <Compile Include="Models\ErrorDetail.cs" />
