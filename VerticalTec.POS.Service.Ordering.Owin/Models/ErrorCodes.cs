@@ -22,6 +22,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Models
         NoPaymentConfig = 8001,
         PaymentFunction = 8002,
 
-        EDC = 9001
+        EDCComPort = 9000,
+        EDCCreditPayment = 9001,
+        EDCInquiry = 9002,
+        EDCQRPayment = 9003,
+        EDCCancelQR = 9004
     }
 }

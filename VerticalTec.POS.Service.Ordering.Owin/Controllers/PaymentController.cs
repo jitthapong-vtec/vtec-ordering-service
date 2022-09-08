@@ -47,10 +47,108 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpPost]
-        [Route("v1/payments/edc/kbank/inquiry")]
-        public IHttpActionResult InquiryKbankQRCode(string edcPort)
+        [Route("v1/payments/edc/kbank/qrinquiry")]
+        public async Task<IHttpActionResult> InquiryKbankQRCodeAsync(PaymentData paymentData)
         {
-            var result = new HttpActionResult<objCreditCardInfo>(Request);
+            var result = new HttpActionResult<object>(Request);
+            var respText = "";
+            try
+            {
+                using (var conn = await _database.ConnectAsync())
+                {
+                    var cardData = new objCreditCardInfo();
+                    var sPort = new SerialPort
+                    {
+                        PortName = paymentData.EDCPort,
+                        ReadTimeout = -1,
+                        WriteTimeout = -1
+                    };
+
+                    var success = false;
+                    try
+                    {
+                        success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayInquiry(sPort, "", "", ref cardData, ref respText);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ApiException(ErrorCodes.EDCComPort, ex.Message);
+                    }
+
+                    if (!success)
+                    {
+                        _logger.Error($"Inquiry Error {respText}");
+                        throw new ApiException(ErrorCodes.EDCInquiry, $"Inquiry Error {respText}");
+                    }
+
+                    string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
+
+                    if (paymentData.EDCType != 0)
+                    {
+                        var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
+                        cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
+                        using (IDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
+                            }
+                        }
+                        if (paymentData.PayTypeID == 0)
+                            throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+                    }
+
+                    var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
+                    if (dtPendingPayment.Rows.Count > 0)
+                        await _paymentService.DeletePaymentAsync(conn, dtPendingPayment.Rows[0].GetValue<int>("PayDetailID"), paymentData.TransactionID, paymentData.ComputerID);
+                    await _paymentService.AddPaymentAsync(conn, paymentData);
+
+                    var posModule = new POSModule();
+                    var cardDataJson = JsonConvert.SerializeObject(cardData);
+                    success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, cardDataJson, paymentData.TransactionID,
+                        paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, saleDate, paymentData.BrandName,
+                        paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
+
+                    if (!success)
+                    {
+                        throw new ApiException(ErrorCodes.PaymentFunction, respText);
+                    }
+                    else
+                    {
+                        await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
+                        await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+
+                        var printData = new PrintData()
+                        {
+                            TransactionID = paymentData.TransactionID,
+                            ComputerID = paymentData.ComputerID,
+                            ShopID = paymentData.ShopID,
+                            LangID = paymentData.LangID,
+                            PrinterIds = paymentData.PrinterIds,
+                            PrinterNames = paymentData.PrinterNames,
+                            PaperSize = paymentData.PaperSize
+                        };
+
+                        await _printService.PrintBill(printData);
+                        _messenger.SendMessage();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                if (ex is ApiException apiEx)
+                    result.ErrorCode = apiEx.ErrorCode;
+
+                result.StatusCode = HttpStatusCode.BadRequest;
+            }
+            return result;
+
+        }
+        [HttpPost]
+        [Route("v1/payments/edc/kbank/genqr")]
+        public IHttpActionResult GetKbankQRCode(string edcPort, decimal totalPrice)
+        {
+            var result = new HttpActionResult<string>(Request);
             var respText = "";
             try
             {
@@ -61,13 +159,23 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     ReadTimeout = -1,
                     WriteTimeout = -1
                 };
-                var success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayInquiry(sPort, "", "", ref cardData, ref respText);
+
+                var success = false;
+                try
+                {
+                    success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayPayment(sPort, totalPrice, "", "", ref cardData, ref respText);
+                }
+                catch (Exception ex)
+                {
+                    throw new ApiException(ErrorCodes.EDCComPort, ex.Message);
+                }
+
                 if (!success)
                 {
-                    _logger.Error($"Edc Error {respText}");
-                    throw new ApiException(ErrorCodes.EDC, $"Edc Error {respText}");
+                    _logger.Error($"Edc GenQR Error {respText}");
+                    throw new ApiException(ErrorCodes.EDCQRPayment, $"Edc GenQR Error {respText}");
                 }
-                result.Body = cardData;
+                result.Body = cardData.szQrPaymentInfo;
             }
             catch (Exception ex)
             {
@@ -80,9 +188,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             return result;
         }
 
-        [HttpPost]
-        [Route("v1/payments/edc/kbank/genqr")]
-        public IHttpActionResult GetKbankQRCode(string edcPort, decimal totalPrice)
+        [HttpGet]
+        [Route("v1/payments/edc/kbank/cancelqr")]
+        public IHttpActionResult CancelKbankQRCode(string edcPort)
         {
             var result = new HttpActionResult<objCreditCardInfo>(Request);
             var respText = "";
@@ -95,15 +203,25 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     ReadTimeout = -1,
                     WriteTimeout = -1
                 };
-                var success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayPayment(sPort, totalPrice, "", "", ref cardData, ref respText);
+
+                var success = false;
+                try
+                {
+                    success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayCancel(sPort, "", "", ref cardData, ref respText);
+                }
+                catch (Exception ex)
+                {
+                    new ApiException(ErrorCodes.EDCComPort, ex.Message);
+                }
+
                 if (!success)
                 {
-                    _logger.Error($"Edc Error {respText}");
-                    throw new ApiException(ErrorCodes.EDC, $"Edc Error {respText}");
+                    _logger.Error($"Edc Cancel QR ERROR {respText}");
+                    throw new ApiException(ErrorCodes.EDCCancelQR, $"Edc Cancel QR ERROR {respText}");
                 }
                 result.Body = cardData;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 result.Message = ex.Message;
                 if (ex is ApiException apiEx)
@@ -136,16 +254,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
 
-                    if (!string.IsNullOrEmpty(paymentData.TableName))
-                    {
-                        var cmd = _database.CreateCommand("update ordertransactionfront set QueueName=@tableName " +
-                            " where TransactionID=@transactionId and ComputerID=@computerId", conn);
-                        cmd.Parameters.Add(_database.CreateParameter("@tableName", paymentData.TableName));
-                        cmd.Parameters.Add(_database.CreateParameter("@transactionId", paymentData.TransactionID));
-                        cmd.Parameters.Add(_database.CreateParameter("@computerId", paymentData.ComputerID));
-                        await _database.ExecuteNonQueryAsync(cmd);
-                    }
-
                     if (paymentData.EDCType != 0)
                     {
                         var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
@@ -166,16 +274,33 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var success = false;
                     try
                     {
-                        success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_Credit.SendEdc_CreditCardPayment(sPort, paymentData.PayAmount, "", "", ref cardData, ref respText);
+                        if (paymentData.EDCType == 104)
+                        {
+                            success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_Credit.SendEdc_CreditCardPayment(sPort, paymentData.PayAmount, "", "", ref cardData, ref respText);
+                        }
+                        else if (paymentData.EDCType == 111)
+                        {
+                            success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayInquiry(sPort, "", "", ref cardData, ref respText);
+                        }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
-                        throw new ApiException(ErrorCodes.EDC, ex.Message);
+                        throw new ApiException(ErrorCodes.EDCComPort, ex.Message);
                     }
+
                     if (!success)
                     {
-                        _logger.Error($"Edc Error {respText}");
-                        throw new ApiException(ErrorCodes.EDC, $"Edc Error {respText}");
+                        var errCode = ErrorCodes.EDCCreditPayment;
+                        var errMsg = $"Edc credit payment ERROR {respText}";
+
+                        if (paymentData.EDCType == 111)
+                        {
+                            errCode = ErrorCodes.EDCQRPayment;
+                            errMsg = $"Edc qr payment ERROR {respText}";
+                        }
+
+                        _logger.Error(errMsg);
+                        throw new ApiException(errCode, errMsg);
                     }
 
                     var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
