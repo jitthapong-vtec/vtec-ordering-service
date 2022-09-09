@@ -195,8 +195,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             catch (Exception ex)
             {
+                var errMsg = ex.Message;
+                if (ex is MySqlException myEx)
+                    errMsg = "Can't connect to database";
                 response.StatusCode = HttpStatusCode.InternalServerError;
-                response.Message = ex.Message;
+                response.Message = errMsg;
             }
             return response;
         }
