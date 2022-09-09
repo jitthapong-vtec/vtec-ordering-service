@@ -99,25 +99,6 @@ namespace VerticalTec.POS
                     dtOrderClone.Rows.Add(rows);
                 }
 
-                //// WTF
-                //DataTable dtBillFake = new DataTable();
-                //DataTable dtOrderLang = new DataTable();
-                //_pos.GetOrderDetail(conn, ref responseText,
-                //    ref dtOrderData, ref dtOrderLang, ref dtPromotion, ref dtBillFake, ref dtPayment,
-                //    ref dtOrderGroup, dtVoidItem, 0, transactionId, computerId, "ASC", langId);
-
-                //var supportLang = (from order in dtOrderClone.AsEnumerable()
-                //                   join orderLang in dtOrderLang.AsEnumerable()
-                //                   on new { ProductID = order.GetValue<int>("ProductID"), SaleMode = order.GetValue<int>("SaleMode") }
-                //                   equals new { ProductID = orderLang.GetValue<int>("ProductID"), SaleMode = orderLang.GetValue<int>("SaleMode") }
-                //                   where order.GetValue<int>("ProductID") > 0
-                //                   select new { order, orderLang }).ToArray();
-
-                //foreach (var item in supportLang)
-                //{
-                //    item.order["ProductName"] = item.orderLang["ProductDisplayName"];
-                //}
-
                 dtOrderClone.TableName = "Orders";
                 dtPromotion.TableName = "Promotions";
                 dtBill.TableName = "Bill";
