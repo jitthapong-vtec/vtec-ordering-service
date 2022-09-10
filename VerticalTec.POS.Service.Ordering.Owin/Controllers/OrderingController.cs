@@ -8,6 +8,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -314,6 +315,46 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 }
             }
             return result;
+        }
+
+        [HttpGet]
+        [Route("v2/orders/billhtml")]
+        public async Task<HttpResponseMessage> GetBillHtmlV2Async(int transactionId, int computerId, int shopId, int langId = 0)
+        {
+            var response = new HttpResponseMessage();
+            try
+            {
+                var clientId = Request.Headers.GetValues("x-client-id").FirstOrDefault();
+                var clientSecret = Request.Headers.GetValues("x-client-secret").FirstOrDefault();
+
+                if (clientId != "vtec-platform-api" && clientSecret != "yBd1dnH/qd+uIm+weNCk3gaMzvMVnNydOpa4fUk02wI=")
+                {
+                    response.StatusCode = HttpStatusCode.Unauthorized;
+                    return response;
+                }
+            }
+            catch
+            {
+                response.StatusCode = HttpStatusCode.Unauthorized;
+                return response;
+            }
+
+            using (var conn = await _database.ConnectAsync())
+            {
+                var billHtml = await _orderingService.GetBillHtmlAsync(conn, transactionId, computerId, shopId, langId);
+                if (!string.IsNullOrEmpty(billHtml))
+                {
+                    response.Content = new StringContent(billHtml);
+                    response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/html");
+                    return response;
+                }
+                else
+                {
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    response.Content = new StringContent("<p>Not found bill data</p>");
+                }
+            }
+            return response;
         }
 
         [HttpPost]

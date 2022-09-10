@@ -22,8 +22,8 @@ namespace VerticalTec.POS.Service.Ordering
 
         private void Service_AfterInstall(object sender, InstallEventArgs e)
         {
-            StartService();
             SetFirewallRule();
+            StartService();
         }
 
         void SetFirewallRule()
