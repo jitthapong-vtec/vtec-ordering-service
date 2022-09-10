@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -7,11 +8,9 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
-using VerticalTec.POS.Utils;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
-using VerticalTec.POS.Service.Ordering.Owin;
+using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
-using MySql.Data.MySqlClient;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {

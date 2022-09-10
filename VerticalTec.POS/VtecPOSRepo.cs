@@ -460,6 +460,11 @@ namespace VerticalTec.POS
                     }
                     catch (Exception) { }
                 }
+                else
+                {
+                    if (!string.IsNullOrEmpty(productCode))
+                        dtComment.Clear();
+                }
             }
             return dtComment;
         }
