@@ -59,7 +59,7 @@ namespace VerticalTec.POS
 
             string responseText = "";
             bool isSuccess = _posModule.GetOrderDetail_View(ref responseText,
-                ref dtOrders, ref dtOrderData, ref dtPromotion, ref dtBill, ref dtPayment, ref dtOrderGroup, dtVoidItem, 0,
+                ref dtOrders, ref dtOrderData, ref dtPromotion, ref dtBill, ref dtPayment, ref dtOrderGroup, dtVoidItem, 1,
                 "front", transactionId, computerId, "ASC", langId, conn as MySqlConnection);
 
             if (isSuccess)
@@ -687,7 +687,7 @@ namespace VerticalTec.POS
             {
                 dtResult.Load(reader);
             }
-            await SetSaleModePrefixTextAsync(conn, saleMode, dtResult);
+            //await SetSaleModePrefixTextAsync(conn, saleMode, dtResult);
             return dtResult;
         }
 
