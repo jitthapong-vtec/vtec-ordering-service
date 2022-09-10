@@ -16,7 +16,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 {
     public class PrintService : IPrintService
     {
-        static readonly NLog.Logger _log = NLog.LogManager.GetCurrentClassLogger();
+        static readonly object lockPrint = new object();
+        static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logordering");
 
         IDatabase _db;
         IOrderingService _orderingService;
@@ -29,104 +30,109 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             _posRepo = new VtecPOSRepo(database);
         }
 
-        public async Task<bool> PrintOrder(TransactionPayload payload)
+        public Task<bool> PrintOrder(TransactionPayload payload)
         {
-            using (var conn = await _db.ConnectAsync())
+            lock (lockPrint)
             {
-                var myConn = conn as MySqlConnection;
-                var posModule = new POSModule();
-                int defaultDecimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
-                string saleDate = await _posRepo.GetSaleDateAsync(conn, payload.ShopID, true);
-                DataSet dsSummaryData = new DataSet();
-                DataSet dsSummaryOrderData = new DataSet();
-                DataSet dsOrderData = new DataSet();
-                var responseText = "";
-
-                var ePosPrint = await _posRepo.GetPropertyValueAsync(conn, 1010, "ePosPrint", payload.ShopID);
-                var mobileSummaryPrint = await _posRepo.GetPropertyValueAsync(conn, 1010, "MobileSummaryPrint", payload.ShopID);
-
-                var isSuccess = false;
-                if (mobileSummaryPrint == "1")
+                using (var conn = _db.ConnectAsync().Result)
                 {
-                    isSuccess = posModule.Summary_Print(ref responseText, ref dsSummaryData, "front", payload.ShopID, saleDate,
-                        payload.TransactionID, payload.ComputerID, payload.StaffID, payload.TerminalID, payload.PrinterIds, myConn);
+                    var myConn = conn as MySqlConnection;
+                    var posModule = new POSModule();
+                    int defaultDecimalDigit = _posRepo.GetDefaultDecimalDigitAsync(conn).Result;
+                    string saleDate = _posRepo.GetSaleDateAsync(conn, payload.ShopID, true).Result;
+                    DataSet dsSummaryData = new DataSet();
+                    DataSet dsSummaryOrderData = new DataSet();
+                    DataSet dsOrderData = new DataSet();
+                    var responseText = "";
 
-                    if (!isSuccess)
+                    var ePosPrint = _posRepo.GetPropertyValueAsync(conn, 1010, "ePosPrint", payload.ShopID).Result;
+                    var mobileSummaryPrint = _posRepo.GetPropertyValueAsync(conn, 1010, "MobileSummaryPrint", payload.ShopID).Result;
+
+                    var isSuccess = false;
+                    if (mobileSummaryPrint == "1")
                     {
-                        _log.Error(responseText);
+                        isSuccess = posModule.Summary_Print(ref responseText, ref dsSummaryData, "front", payload.ShopID, saleDate,
+                            payload.TransactionID, payload.ComputerID, payload.StaffID, payload.TerminalID, payload.PrinterIds, myConn);
+
+                        if (!isSuccess)
+                        {
+                            _log.Error(responseText);
+                        }
                     }
-                }
 
-                int batchId = 0;
-                isSuccess = posModule.Table_PrintSummaryOrder(ref responseText, ref batchId, "front", payload.PrinterIds,
-                    payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.StaffID,
-                    payload.TerminalID, payload.TableID, payload.LangID, defaultDecimalDigit, myConn);
-                if (isSuccess)
-                {
-                    isSuccess = posModule.Table_PrintSummaryOrderData(ref responseText, ref dsSummaryOrderData, batchId, "front",
-                        payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
-                    if (!isSuccess)
+                    int batchId = 0;
+                    isSuccess = posModule.Table_PrintSummaryOrder(ref responseText, ref batchId, "front", payload.PrinterIds,
+                        payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.StaffID,
+                        payload.TerminalID, payload.TableID, payload.LangID, defaultDecimalDigit, myConn);
+                    if (isSuccess)
                     {
-                        _log.Error("An error occurred when Table_PrintSummaryOrderData " + responseText);
+                        isSuccess = posModule.Table_PrintSummaryOrderData(ref responseText, ref dsSummaryOrderData, batchId, "front",
+                            payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
+                        if (!isSuccess)
+                        {
+                            _log.Error("An error occurred when Table_PrintSummaryOrderData " + responseText);
+                        }
                     }
-                }
-                else
-                {
-                    _log.Error("An error occurred when PrintSummaryOrder " + responseText);
-                }
+                    else
+                    {
+                        _log.Error("An error occurred when PrintSummaryOrder " + responseText);
+                    }
 
-                batchId = 0;
-                isSuccess = posModule.Table_PrintOrder(ref responseText, ref batchId, "front", payload.TransactionID,
-                    payload.ComputerID, payload.ShopID, saleDate, payload.StaffID,
-                    payload.TerminalID, payload.TableID, payload.LangID, defaultDecimalDigit, myConn);
-                if (isSuccess)
-                {
-                    isSuccess = posModule.Table_PrintOrderData(ref responseText, ref dsOrderData, batchId, "front",
-                        payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
-                    if (!isSuccess)
+                    batchId = 0;
+                    isSuccess = posModule.Table_PrintOrder(ref responseText, ref batchId, "front", payload.TransactionID,
+                        payload.ComputerID, payload.ShopID, saleDate, payload.StaffID,
+                        payload.TerminalID, payload.TableID, payload.LangID, defaultDecimalDigit, myConn);
+                    if (isSuccess)
                     {
-                        _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrderDetail" : responseText);
+                        isSuccess = posModule.Table_PrintOrderData(ref responseText, ref dsOrderData, batchId, "front",
+                            payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
+                        if (!isSuccess)
+                        {
+                            _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrderDetail" : responseText);
+                        }
                     }
-                }
-                else
-                {
-                    _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrders" : responseText);
-                }
+                    else
+                    {
+                        _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrders" : responseText);
+                    }
 
-                posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
-                    payload.ShopID, saleDate, payload.LangID, myConn);
+                    posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
+                        payload.ShopID, saleDate, payload.LangID, myConn);
 
-                if (ePosPrint == "1")
-                {
-                    var summaryResponse = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryData);
-                    var orderSummaryResponse = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryOrderData);
-                    var orderResponse = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsOrderData);
-                    if (summaryResponse?.Success == false ||
-                        orderSummaryResponse?.Success == false ||
-                        orderResponse?.Success == false)
+                    if (ePosPrint == "1")
                     {
-                        _log.Error($"{summaryResponse?.Message}{orderSummaryResponse?.Message}{orderResponse?.Message}");
+                        var summaryResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryData).Result;
+                        var orderSummaryResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryOrderData).Result;
+                        var orderResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsOrderData).Result;
+                        if (summaryResponse?.Success == false ||
+                            orderSummaryResponse?.Success == false ||
+                            orderResponse?.Success == false)
+                        {
+                            _log.Error($"{summaryResponse?.Message}{orderSummaryResponse?.Message}{orderResponse?.Message}");
+                        }
                     }
-                }
-                else
-                {
-                    try
+                    else
                     {
-                        CDBUtil dbUtil = new CDBUtil();
-                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                            payload.ComputerID, dsSummaryData);
-                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                            payload.ComputerID, dsSummaryOrderData);
-                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                            payload.ComputerID, dsOrderData);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex.Message);
+                        try
+                        {
+                            CDBUtil dbUtil = new CDBUtil();
+                            PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                                payload.ComputerID, dsSummaryData);
+                            PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                                payload.ComputerID, dsSummaryOrderData);
+
+                            _log.Info($"Call PrintKdsDataFromDataSet with tranKey: {payload.TransactionID}:{payload.ComputerID}, Data in dsOrderData = {dsOrderData.Tables.Count}");
+                            PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                                payload.ComputerID, dsOrderData);
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex.Message);
+                        }
                     }
                 }
             }
-            return true;
+            return Task.FromResult(true);
         }
 
         public async Task PrintBill(PrintData payload)
