@@ -50,6 +50,7 @@ namespace VerticalTec.POS
         public string CardExpYear { get; set; }
         public string ReferenceNo { get; set; }
         public string EncryptedCardInfo { get; set; }
+        public string MemberName { get; set; }
         [Required]
         public decimal PayAmount { get; set; }
         public decimal CashChange

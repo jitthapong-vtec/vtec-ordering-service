@@ -97,6 +97,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
                     }
 
+                    if (!string.IsNullOrEmpty(paymentData.MemberName))
+                    {
+                        var cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName where TransactionID=@tranId and ComputerID=@compId", conn);
+                        cmd.Parameters.Add(_database.CreateParameter("@memberName", paymentData.MemberName));
+                        cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
+                        cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.ComputerID));
+                        await _database.ExecuteNonQueryAsync(cmd);
+                    }
+
                     var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
                     if (dtPendingPayment.Rows.Count > 0)
                         await _paymentService.DeletePaymentAsync(conn, dtPendingPayment.Rows[0].GetValue<int>("PayDetailID"), paymentData.TransactionID, paymentData.ComputerID);
@@ -267,6 +276,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         }
                         if (paymentData.PayTypeID == 0)
                             throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+                    }
+
+                    if (!string.IsNullOrEmpty(paymentData.MemberName))
+                    {
+                        var cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName where TransactionID=@tranId and ComputerID=@compId", conn);
+                        cmd.Parameters.Add(_database.CreateParameter("@memberName", paymentData.MemberName));
+                        cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
+                        cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.ComputerID));
+                        await _database.ExecuteNonQueryAsync(cmd);
                     }
 
                     _logger.Info("Send data to EDC");
