@@ -471,11 +471,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         " a.QtyRatio, b.ProductID, b.ProductCode, " +
                         " b.ProductName, b.ProductName as ProductName1, b.ProductName2, b.ProductName3, b.ProductTypeID," +
                         " concat(@imageUrlBase, b.ProductPictureServer) as ProductImage," +
-                        " d.CurrentStock" +
+                        " c.DisplayName, c.DisplayName1, c.DisplayName2, c.DisplayName3, d.CurrentStock" +
                         " from productcomponent a" +
                         " inner join products b" +
                         " on a.MaterialID=b.ProductID" +
-                        " left join (select ProductID, DisplayName, DisplayName1, DisplayName2, DisplayName3, DetailImage from kiosk_pagedetail where GoPageID=0 and Deleted=0) c" +
+                        " left join (select ProductID, DisplayName, DisplayName1, DisplayName2, DisplayName3, DetailImage from kiosk_pagedetail where GoPageID=0 and Deleted=0 limit 1) c" +
                         " on b.ProductID=c.ProductID" +
                         " left join productcountdownstock d " +
                         " on b.ProductID=d.ProductID" +
@@ -522,9 +522,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                                              ProductPrice = component.GetValue<decimal>("ProductPrice"),
                                                              ProductCode = component.GetValue<string>("ProductCode"),
                                                              ProductName = component.GetValue<string>("ProductName"),
-                                                             ProductName1 = component.GetValue<string>("ProductName1"),
-                                                             ProductName2 = component.GetValue<string>("ProductName2"),
-                                                             ProductName3 = component.GetValue<string>("ProductName3"),
+                                                             ProductName1 = string.IsNullOrEmpty(component.GetValue<string>("DisplayName1")) ? component.GetValue<string>("ProductName1") : component.GetValue<string>("DisplayName1"),
+                                                             ProductName2 = string.IsNullOrEmpty(component.GetValue<string>("DisplayName2")) ? component.GetValue<string>("ProductName2") : component.GetValue<string>("DisplayName2"),
+                                                             ProductName3 = string.IsNullOrEmpty(component.GetValue<string>("DisplayName3")) ? component.GetValue<string>("ProductName3") : component.GetValue<string>("DisplayName3"),
                                                              ProductImage = component.GetValue<string>("ProductImage"),
                                                              CurrentStock = component["CurrentStock"]
                                                          }).ToList()
