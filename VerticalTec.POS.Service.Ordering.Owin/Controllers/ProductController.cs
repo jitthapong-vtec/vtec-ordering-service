@@ -475,7 +475,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         " from productcomponent a" +
                         " inner join products b" +
                         " on a.MaterialID=b.ProductID" +
-                        " left join (select ProductID, DisplayName, DisplayName1, DisplayName2, DisplayName3, DetailImage from kiosk_pagedetail where GoPageID=0 and Deleted=0 limit 1) c" +
+                        " left join (select ProductID, DisplayName, DisplayName1, DisplayName2, DisplayName3, DetailImage from kiosk_pagedetail where GoPageID=0 and Deleted=0 group by ProductID) c" +
                         " on b.ProductID=c.ProductID" +
                         " left join productcountdownstock d " +
                         " on b.ProductID=d.ProductID" +
