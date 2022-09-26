@@ -155,10 +155,10 @@ namespace VerticalTec.POS
             return receiptHtml;
         }
 
-        public async Task<DataTable> GetModifierOrderAsync(IDbConnection conn, int shopId, int transactionId, int computerId, int parentOrderDetailId, string productCode = "", SaleModes saleMode = SaleModes.DineIn)
+        public async Task<DataTable> GetModifierOrderAsync(IDbConnection conn, int shopId, int transactionId, int computerId, int parentOrderDetailId, string productCode = "", int langId = 1, SaleModes saleMode = SaleModes.DineIn)
         {
             DataTable dtComment = await _posRepo.GetProductModifierAsync(conn, shopId, productCode, saleMode);
-            DataSet orderDataSet = await _posRepo.GetOrderDataAsync(conn, transactionId, computerId);
+            DataSet orderDataSet = await _posRepo.GetOrderDataAsync(conn, transactionId, computerId, langId);
 
             var orders = (from order in orderDataSet.Tables["Orders"].ToEnumerable()
                           where order.GetValue<int>("OrderDetailLinkID") == parentOrderDetailId
@@ -179,7 +179,7 @@ namespace VerticalTec.POS
                                      ProductName1 = commentProduct.GetValue<string>("ProductName1"),
                                      ProductName2 = commentProduct.GetValue<string>("ProductName2"),
                                      ProductName3 = commentProduct.GetValue<string>("ProductName3"),
-                                     ProductDisplayName = commentProduct.GetValue<string>("ProductDisplayName"),
+                                     ProductDisplayName = commentProduct.GetValue<string>("ProductName" + langId),
                                      TransactionID = transactionId,
                                      ComputerID = computerId,
                                      OrderDetailID = orderComment.GetValue<int>("OrderDetailID"),
@@ -338,7 +338,6 @@ namespace VerticalTec.POS
                     ProductName1 = row.GetValue<string>("ProductName1"),
                     ProductName2 = row.GetValue<string>("ProductName2"),
                     ProductName3 = row.GetValue<string>("ProductName3"),
-                    //ProductDisplayName = string.IsNullOrEmpty(row.GetValue<string>("ProductDisplayName")) ? row.GetValue<string>("ProductName") : row.GetValue<string>("ProductDisplayName"),
                     ProductDisplayName = row.GetValue<string>("ProductDisplayName"),
                     ProductTypeID = row.GetValue<int>("ProductSetType"),
                     TotalQty = row.GetValue<double>("TotalQty"),
@@ -349,7 +348,8 @@ namespace VerticalTec.POS
                     OtherFoodName = row.GetValue<string>("OtherFoodName"),
                     SetGroupNo = row.GetValue<int>("SetGroupNo"),
                     QtyRatio = row.GetValue<double>("QtyRatio"),
-                    PrintStatus = row.GetValue<int>("PrintStatus")
+                    PrintStatus = row.GetValue<int>("PrintStatus"),
+                    ProductPrice = row.GetValue<decimal>("PricePerUnit")
                 };
                 if (order.ProductID == 0 && string.IsNullOrEmpty(order.OtherFoodName))
                 {

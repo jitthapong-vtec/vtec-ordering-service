@@ -522,14 +522,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpGet]
         [Route("v1/orders/modifiers")]
-        public async Task<IHttpActionResult> GetModifierOrderAsync(int shopId, int transactionId = 0, int computerId = 0, int parentOrderDetailId = 0, string productCode = "")
+        public async Task<IHttpActionResult> GetModifierOrderAsync(int shopId, int transactionId = 0, int computerId = 0, int parentOrderDetailId = 0, string productCode = "", int langId = 1)
         {
             var result = new HttpActionResult<object>(Request);
             using (var conn = await _database.ConnectAsync())
             {
                 try
                 {
-                    var modifierOrder = await _orderingService.GetModifierOrderAsync(conn, shopId, transactionId, computerId, parentOrderDetailId, productCode);
+                    var modifierOrder = await _orderingService.GetModifierOrderAsync(conn, shopId, transactionId, computerId, parentOrderDetailId, productCode, langId: langId);
 
                     var cmd = _database.CreateCommand("select * from productdept a" +
                         " inner join productgroup b" +
