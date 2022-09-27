@@ -444,10 +444,8 @@ namespace VerticalTec.POS
                 {
                     try
                     {
-                        var fixCommentQuery = (from fixComment in dtFixComment.ToEnumerable()
-                                               join comment in dtComment.ToEnumerable()
-                                               on fixComment.GetValue<string>("CommentCode") equals comment.GetValue<string>("ProductCode")
-                                               select comment);
+                        var fixCommentCode = dtFixComment.ToEnumerable().Select(c => c.GetValue<string>("CommentCode")?.Trim()).ToArray();
+                        var fixCommentQuery = dtComment.ToEnumerable().Where(c => fixCommentCode.Contains(c.GetValue<string>("ProductCode")?.Trim()));
                         if (fixCommentQuery.Count() > 0)
                         {
                             var dtClone = dtComment.Clone();

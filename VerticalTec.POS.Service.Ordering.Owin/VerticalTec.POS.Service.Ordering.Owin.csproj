@@ -216,7 +216,7 @@
       <Version>4.3.4</Version>
     </PackageReference>
     <PackageReference Include="vtecPOS">
-      <Version>4.0.0.34</Version>
+      <Version>4.0.0.52</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

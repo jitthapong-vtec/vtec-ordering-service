@@ -79,6 +79,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         }
                         catch (Exception) { }
 
+                        try
+                        {
+                            var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false);
+                            dtTerminal.Rows[0]["IsOpenDay"] = 1;
+                        }
+                        catch { }
+
                         response.StatusCode = HttpStatusCode.OK;
                         response.Body = dataSet;
                     }
