@@ -15,7 +15,17 @@ namespace VerticalTec.POS.Database
 
         public MySqlDatabase(string dbServer, string dbName, string dbPort)
         {
-            _connectionString = $"Port={dbPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={dbServer};DATABASE={dbName};old guids=true;";
+            var connectionStringBuilder = new MySqlConnectionStringBuilder();
+            connectionStringBuilder.Server = dbServer;
+            connectionStringBuilder.Database = dbName;
+            connectionStringBuilder.UserID = "vtecPOS";
+            connectionStringBuilder.Password = "vtecpwnet";
+            connectionStringBuilder.Port = uint.Parse(dbPort);
+            connectionStringBuilder.AllowUserVariables = true;
+            connectionStringBuilder.DefaultCommandTimeout = 60;
+            connectionStringBuilder.SslMode = MySqlSslMode.None;
+
+            _connectionString = connectionStringBuilder.ConnectionString;//$"Port={dbPort};Connection Timeout=28800;Allow User Variables=True;default command timeout=28800;UID=vtecPOS;PASSWORD=vtecpwnet;SERVER={dbServer};DATABASE={dbName};old guids=true;";
         }
 
         public MySqlDatabase(string conStr)

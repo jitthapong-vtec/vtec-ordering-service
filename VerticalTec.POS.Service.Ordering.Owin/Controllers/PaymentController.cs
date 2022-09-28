@@ -138,6 +138,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         };
 
                         await _printService.PrintBill(printData);
+                        await _printService.PrintOrder(new TransactionPayload
+                        {
+                            TransactionID = paymentData.TransactionID,
+                            ComputerID = paymentData.ComputerID,
+                            TerminalID = paymentData.TerminalID,
+                            ShopID = paymentData.ShopID,
+                            LangID = paymentData.LangID,
+                            StaffID = paymentData.StaffID,
+                            PrinterIds = paymentData.PrinterIds,
+                            PrinterNames = paymentData.PrinterNames
+                        });
                         _messenger.SendMessage();
                     }
                 }
@@ -148,6 +159,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 if (ex is ApiException apiEx)
                     result.ErrorCode = apiEx.ErrorCode;
 
+                _logger.Error(ex.Message);
                 result.StatusCode = HttpStatusCode.BadRequest;
             }
             return result;
@@ -192,6 +204,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 if (ex is ApiException apiEx)
                     result.ErrorCode = apiEx.ErrorCode;
 
+                _logger.Error(ex.Message);
                 result.StatusCode = HttpStatusCode.BadRequest;
             }
             return result;
@@ -287,8 +300,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         await _database.ExecuteNonQueryAsync(cmd);
                     }
 
-                    _logger.Info("Send data to EDC");
-
                     var success = false;
                     try
                     {
@@ -351,8 +362,18 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             PrinterNames = paymentData.PrinterNames,
                             PaperSize = paymentData.PaperSize
                         };
-
                         await _printService.PrintBill(printData);
+                        await _printService.PrintOrder(new TransactionPayload
+                        {
+                            TransactionID = paymentData.TransactionID,
+                            ComputerID = paymentData.ComputerID,
+                            TerminalID = paymentData.TerminalID,
+                            ShopID = paymentData.ShopID,
+                            LangID = paymentData.LangID,
+                            StaffID = paymentData.StaffID,
+                            PrinterIds = paymentData.PrinterIds,
+                            PrinterNames = paymentData.PrinterNames
+                        });
                         _messenger.SendMessage();
                     }
                 }
@@ -363,6 +384,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 if (ex is ApiException apiEx)
                     result.ErrorCode = apiEx.ErrorCode;
 
+                _logger.Error(ex.Message);
                 result.StatusCode = HttpStatusCode.BadRequest;
             }
             return result;
