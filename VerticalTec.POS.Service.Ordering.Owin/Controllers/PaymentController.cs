@@ -50,36 +50,38 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/edc/kbank/qrinquiry")]
         public async Task<IHttpActionResult> InquiryKbankQRCodeAsync(PaymentData paymentData)
         {
+            _logger.Info("Call v1/payments/edc/kbank/qrinquiry");
+
             var result = new HttpActionResult<object>(Request);
             var respText = "";
             try
             {
+                var cardData = new objCreditCardInfo();
+                var sPort = new SerialPort
+                {
+                    PortName = paymentData.EDCPort,
+                    ReadTimeout = -1,
+                    WriteTimeout = -1
+                };
+
+                var success = false;
+                try
+                {
+                    success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayInquiry(sPort, "", "", ref cardData, ref respText);
+                }
+                catch (Exception ex)
+                {
+                    throw new ApiException(ErrorCodes.EDCComPort, ex.Message);
+                }
+
+                if (!success)
+                {
+                    _logger.Error($"Inquiry Error {respText}");
+                    throw new ApiException(ErrorCodes.EDCInquiry, "");
+                }
+
                 using (var conn = await _database.ConnectAsync())
                 {
-                    var cardData = new objCreditCardInfo();
-                    var sPort = new SerialPort
-                    {
-                        PortName = paymentData.EDCPort,
-                        ReadTimeout = -1,
-                        WriteTimeout = -1
-                    };
-
-                    var success = false;
-                    try
-                    {
-                        success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayInquiry(sPort, "", "", ref cardData, ref respText);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new ApiException(ErrorCodes.EDCComPort, ex.Message);
-                    }
-
-                    if (!success)
-                    {
-                        _logger.Error($"Inquiry Error {respText}");
-                        throw new ApiException(ErrorCodes.EDCInquiry, $"Inquiry Error {respText}");
-                    }
-
                     string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
 
                     if (paymentData.EDCType != 0)
@@ -124,7 +126,28 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     else
                     {
                         await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
-                        await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                        
+                        try
+                        {
+                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "Error finalize");
+                            _logger.Info("Retry finalize bill again");
+                            try
+                            {
+                                await Task.Delay(500);
+                                using (var conn2 = await _database.ConnectAsync())
+                                {
+                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                                }
+                            }
+                            catch (Exception ex2)
+                            {
+                                _logger.Error(ex2, "Retry finalize bill failed");
+                            }
+                        }
 
                         var printData = new PrintData()
                         {
@@ -169,6 +192,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/edc/kbank/genqr")]
         public IHttpActionResult GetKbankQRCode(string edcPort, decimal totalPrice)
         {
+            _logger.Info("Call v1/payments/edc/kbank/genqr");
+
             var result = new HttpActionResult<string>(Request);
             var respText = "";
             try
@@ -194,7 +219,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 if (!success)
                 {
                     _logger.Error($"Edc GenQR Error {respText}");
-                    throw new ApiException(ErrorCodes.EDCQRPayment, $"Edc GenQR Error {respText}");
+                    throw new ApiException(ErrorCodes.EDCQRPayment, "");
                 }
                 result.Body = cardData.szQrPaymentInfo;
             }
@@ -214,6 +239,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/edc/kbank/cancelqr")]
         public IHttpActionResult CancelKbankQRCode(string edcPort)
         {
+            _logger.Info("Call v1/payments/edc/kbank/cancelqr");
+
             var result = new HttpActionResult<objCreditCardInfo>(Request);
             var respText = "";
             try
@@ -239,7 +266,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 if (!success)
                 {
                     _logger.Error($"Edc Cancel QR ERROR {respText}");
-                    throw new ApiException(ErrorCodes.EDCCancelQR, $"Edc Cancel QR ERROR {respText}");
+                    throw new ApiException(ErrorCodes.EDCCancelQR, "");
                 }
                 result.Body = cardData;
             }
@@ -258,7 +285,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/edc/kbank")]
         public async Task<IHttpActionResult> KbankEdcPayment(PaymentData paymentData)
         {
-            _logger.Debug("Call v1/payments/edc/kbank");
+            _logger.Info("Call v1/payments/edc/kbank");
 
             var result = new HttpActionResult<object>(Request);
             try
@@ -329,7 +356,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         }
 
                         _logger.Error(errMsg);
-                        throw new ApiException(errCode, errMsg);
+                        throw new ApiException(errCode, "");
                     }
 
                     var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
@@ -350,8 +377,27 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     else
                     {
                         await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
-                        await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
-
+                        try
+                        {
+                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "Error finalize");
+                            _logger.Info("Retry finalize bill again");
+                            try
+                            {
+                                await Task.Delay(500);
+                                using (var conn2 = await _database.ConnectAsync())
+                                {
+                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                                }
+                            }
+                            catch (Exception ex2)
+                            {
+                                _logger.Error(ex2, "Retry finalize bill failed");
+                            }
+                        }
                         var printData = new PrintData()
                         {
                             TransactionID = paymentData.TransactionID,
