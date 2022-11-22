@@ -78,7 +78,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var tranKey = "";
                     var isPrint = false;
                     var jsonData = JsonConvert.SerializeObject(payload);
-                    _logger.Info("Online Order: {0}", jsonData);
+                    //_logger.Info("Online Order: {0}", jsonData);
                     using (var conn = _database.Connect())
                     {
                         var dtShop = _posRepo.GetShopDataAsync(conn).Result;
