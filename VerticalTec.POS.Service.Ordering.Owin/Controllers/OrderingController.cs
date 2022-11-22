@@ -43,7 +43,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/orders/online")]
-        public IHttpActionResult OnlineOrder(POSObject.OrderObj payload)
+        public IHttpActionResult OnlineOrder(object payload)
         {
             lock (Owner)
             {
@@ -78,7 +78,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var tranKey = "";
                     var isPrint = false;
                     var jsonData = JsonConvert.SerializeObject(payload);
-
+                    _logger.Info("Online Order: {0}", jsonData);
                     using (var conn = _database.Connect())
                     {
                         var dtShop = _posRepo.GetShopDataAsync(conn).Result;
@@ -126,6 +126,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                         if (success)
                         {
+                            result.Message = "Success";
+
                             if (isPrint)
                             {
                                 var tableId = 0;
@@ -171,6 +173,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             result.StatusCode = HttpStatusCode.BadRequest;
                             result.Message = responseMsg;
+
+                            _logger.Error("OrderAPI_VTEC: {0}", responseMsg);
                             return result;
                         }
                     }
