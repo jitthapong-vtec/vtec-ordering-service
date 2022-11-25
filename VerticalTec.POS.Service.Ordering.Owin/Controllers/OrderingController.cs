@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -122,7 +123,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                         var decimalDigit = _posRepo.GetDefaultDecimalDigitAsync(conn).Result;
 
-                        var success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+                        var success = false;
+
+                        using (var _ = new InvariantCultureScope())
+                        {
+                            success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+                        }
 
                         if (success)
                         {
