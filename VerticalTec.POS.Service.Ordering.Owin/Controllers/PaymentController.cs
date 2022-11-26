@@ -1,5 +1,6 @@
 ﻿using EdcObjLib;
 using Hangfire;
+using LoyaltyInterface.BlueCard;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using System;
@@ -60,8 +61,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var sPort = new SerialPort
                 {
                     PortName = paymentData.EDCPort,
-                    ReadTimeout = -1,
-                    WriteTimeout = -1
+                    ReadTimeout = 60 * 1000 * 3,
+                    WriteTimeout = 60 * 1000 * 3
                 };
 
                 var success = false;
@@ -125,8 +126,29 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     else
                     {
+                        if (!string.IsNullOrEmpty(paymentData.MemberName))
+                        {
+                            _logger.Info("Call InsertTransPOS");
+
+                            var blueCard = new BlueCard(paymentData.ShopID, paymentData.ComputerID, saleDate, conn as MySqlConnection);
+                            var blueCardSuccess = blueCard.InsertTransPOS(ref respText, paymentData.ShopID, saleDate, paymentData.TransactionID, paymentData.ComputerID, "front", Card_No: "", paymentData.MemberName, 2, false, conn as MySqlConnection);
+                            if (blueCardSuccess)
+                            {
+                                var systemData = new SystemData();
+                                blueCardSuccess = blueCard.CommitTransPOS(ref respText, ref systemData, paymentData.TransactionID, paymentData.ComputerID, "front", conn as MySqlConnection);
+                                if (blueCardSuccess)
+                                    _logger.Info("InsertTransPOS success");
+                                else
+                                    _logger.Error("CommitTransPOS {0}", respText);
+                            }
+                            else
+                            {
+                                _logger.Error("InsertTransPOS {0}", respText);
+                            }
+                        }
+
                         await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
-                        
+
                         try
                         {
                             await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
@@ -202,8 +224,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var sPort = new SerialPort
                 {
                     PortName = edcPort,
-                    ReadTimeout = -1,
-                    WriteTimeout = -1
+                    ReadTimeout = 60 * 1000 * 3,
+                    WriteTimeout = 60 * 1000 * 3
                 };
 
                 var success = false;
@@ -249,8 +271,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var sPort = new SerialPort
                 {
                     PortName = edcPort,
-                    ReadTimeout = -1,
-                    WriteTimeout = -1
+                    ReadTimeout = 60 * 1000 * 3,
+                    WriteTimeout = 60 * 1000 * 3
                 };
 
                 var success = false;
@@ -297,8 +319,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var sPort = new SerialPort
                     {
                         PortName = paymentData.EDCPort,
-                        ReadTimeout = -1,
-                        WriteTimeout = -1
+                        ReadTimeout = 60 * 1000 * 3,
+                        WriteTimeout = 60 * 1000 * 3
                     };
 
                     string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
@@ -328,6 +350,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
 
                     var success = false;
+#if DEBUG
+                    success = true;
+#else
                     try
                     {
                         if (paymentData.EDCType == 104)
@@ -343,7 +368,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     {
                         throw new ApiException(ErrorCodes.EDCComPort, ex.Message);
                     }
-
+#endif
                     if (!success)
                     {
                         var errCode = ErrorCodes.EDCCreditPayment;
@@ -366,16 +391,38 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     var posModule = new POSModule();
                     var cardDataJson = JsonConvert.SerializeObject(cardData);
+#if DEBUG == false
                     success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, cardDataJson, paymentData.TransactionID,
                         paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, saleDate, paymentData.BrandName,
                         paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
-
+#endif
                     if (!success)
                     {
                         throw new ApiException(ErrorCodes.PaymentFunction, respText);
                     }
                     else
                     {
+                        if (!string.IsNullOrEmpty(paymentData.MemberName))
+                        {
+                            _logger.Info("Call InsertTransPOS");
+
+                            var blueCard = new BlueCard(paymentData.ShopID, paymentData.ComputerID, saleDate, conn as MySqlConnection);
+                            var blueCardSuccess = blueCard.InsertTransPOS(ref respText, paymentData.ShopID, saleDate, paymentData.TransactionID, paymentData.ComputerID, "front", Card_No: "", paymentData.MemberName, 2, false, conn as MySqlConnection);
+                            if (blueCardSuccess)
+                            {
+                                var systemData = new SystemData();
+                                blueCardSuccess = blueCard.CommitTransPOS(ref respText, ref systemData, paymentData.TransactionID, paymentData.ComputerID, "front", conn as MySqlConnection);
+                                if (blueCardSuccess)
+                                    _logger.Info("InsertTransPOS success");
+                                else
+                                    _logger.Error("CommitTransPOS {0}", respText);
+                            }
+                            else
+                            {
+                                _logger.Error("InsertTransPOS {0}", respText);
+                            }
+                        }
+
                         await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
                         try
                         {
