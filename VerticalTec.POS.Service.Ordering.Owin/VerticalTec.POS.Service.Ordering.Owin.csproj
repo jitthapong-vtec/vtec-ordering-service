@@ -236,6 +236,7 @@
     <Compile Include="Models\ChangeSaleModeOrder.cs" />
     <Compile Include="Models\ErrorCodes.cs" />
     <Compile Include="Models\ErrorDetail.cs" />
+    <Compile Include="Models\GetProductPriceParam.cs" />
     <Compile Include="Models\GlobalExceptionHandler.cs" />
     <Compile Include="Models\GrcPayload.cs" />
     <Compile Include="Models\GrcPaymentData.cs" />
