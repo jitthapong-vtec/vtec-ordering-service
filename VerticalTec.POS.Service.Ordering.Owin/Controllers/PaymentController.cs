@@ -85,20 +85,22 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
 
-                    if (paymentData.EDCType != 0)
-                    {
-                        var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
-                        cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
-                        using (IDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
-                            }
-                        }
-                        if (paymentData.PayTypeID == 0)
-                            throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
-                    }
+                    //if (paymentData.EDCType != 0)
+                    //{
+                    //    var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
+                    //    cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
+                    //    using (IDataReader reader = cmd.ExecuteReader())
+                    //    {
+                    //        if (reader.Read())
+                    //        {
+                    //            paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
+                    //        }
+                    //    }
+                    //    if (paymentData.PayTypeID == 0)
+                    //        throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+                    //}
+
+                    paymentData.PayTypeID = 100000300;
 
                     if (!string.IsNullOrEmpty(paymentData.MemberName))
                     {
@@ -325,20 +327,22 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
 
-                    if (paymentData.EDCType != 0)
-                    {
-                        var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
-                        cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
-                        using (IDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
-                            }
-                        }
-                        if (paymentData.PayTypeID == 0)
-                            throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
-                    }
+                    //if (paymentData.EDCType != 0)
+                    //{
+                    //    var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
+                    //    cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
+                    //    using (IDataReader reader = cmd.ExecuteReader())
+                    //    {
+                    //        if (reader.Read())
+                    //        {
+                    //            paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
+                    //        }
+                    //    }
+                    //    if (paymentData.PayTypeID == 0)
+                    //        throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+                    //}
+
+                    paymentData.PayTypeID = 102;
 
                     if (!string.IsNullOrEmpty(paymentData.MemberName))
                     {
