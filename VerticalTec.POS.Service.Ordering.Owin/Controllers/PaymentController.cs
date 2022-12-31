@@ -102,6 +102,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     paymentData.PayTypeID = 100000300;
 
+
                     if (!string.IsNullOrEmpty(paymentData.MemberName))
                     {
                         var cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName where TransactionID=@tranId and ComputerID=@compId", conn);
@@ -153,7 +154,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                         try
                         {
-                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerIDymentData.ShopID, paymentData.StaffID);
                         }
                         catch (Exception ex)
                         {
@@ -164,7 +165,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 await Task.Delay(500);
                                 using (var conn2 = await _database.ConnectAsync())
                                 {
-                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerIDntData.ShopID, paymentData.StaffID);
                                 }
                             }
                             catch (Exception ex2)
@@ -189,7 +190,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             TransactionID = paymentData.TransactionID,
                             ComputerID = paymentData.ComputerID,
-                            TerminalID = paymentData.TerminalID,
+                            TerminalID = paymentData.ComputerID,
                             ShopID = paymentData.ShopID,
                             LangID = paymentData.LangID,
                             StaffID = paymentData.StaffID,
@@ -441,7 +442,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 await Task.Delay(500);
                                 using (var conn2 = await _database.ConnectAsync())
                                 {
-                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerIDymentData.ShopID, paymentData.StaffID);
                                 }
                             }
                             catch (Exception ex2)
@@ -464,7 +465,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             TransactionID = paymentData.TransactionID,
                             ComputerID = paymentData.ComputerID,
-                            TerminalID = paymentData.TerminalID,
+                            TerminalID = paymentData.ComputerID,
                             ShopID = paymentData.ShopID,
                             LangID = paymentData.LangID,
                             StaffID = paymentData.StaffID,
