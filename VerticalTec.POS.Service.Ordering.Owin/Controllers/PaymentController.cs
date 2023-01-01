@@ -154,7 +154,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                         try
                         {
-                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerIDymentData.ShopID, paymentData.StaffID);
+                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
                         }
                         catch (Exception ex)
                         {
@@ -165,7 +165,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 await Task.Delay(500);
                                 using (var conn2 = await _database.ConnectAsync())
                                 {
-                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerIDntData.ShopID, paymentData.StaffID);
+                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
                                 }
                             }
                             catch (Exception ex2)
@@ -343,8 +343,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     //        throw new ApiException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
                     //}
 
-                    paymentData.PayTypeID = 102;
-
                     if (!string.IsNullOrEmpty(paymentData.MemberName))
                     {
                         var cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName where TransactionID=@tranId and ComputerID=@compId", conn);
@@ -362,10 +360,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     {
                         if (paymentData.EDCType == 104)
                         {
+                            paymentData.PayTypeID = 102;
                             success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_Credit.SendEdc_CreditCardPayment(sPort, paymentData.PayAmount, "", "", ref cardData, ref respText);
                         }
                         else if (paymentData.EDCType == 111)
                         {
+                            paymentData.PayTypeID = 100000300;
                             success = EdcObjLib.KBank_OR_V4.ClassEdcLib_KBankOR_V4_PromptPay.SendEdc_PromptPayInquiry(sPort, "", "", ref cardData, ref respText);
                         }
                     }
@@ -442,7 +442,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 await Task.Delay(500);
                                 using (var conn2 = await _database.ConnectAsync())
                                 {
-                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerIDymentData.ShopID, paymentData.StaffID);
+                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
                                 }
                             }
                             catch (Exception ex2)
