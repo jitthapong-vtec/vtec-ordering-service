@@ -431,7 +431,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
                         try
                         {
-                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.TerminalID, paymentData.ShopID, paymentData.StaffID);
+                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
                         }
                         catch (Exception ex)
                         {
