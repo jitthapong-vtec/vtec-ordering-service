@@ -40,7 +40,7 @@ namespace VerticalTec.POS.LiveUpdateConsole
 
             services.AddDevExpressBlazor();
             services.AddRazorPages();
-            services.AddSignalR();
+            services.AddSignalR().AddStackExchangeRedis();
             services.AddServerSideBlazor();
             services.AddSweetAlert2();
             services.AddBlazoredSessionStorage();

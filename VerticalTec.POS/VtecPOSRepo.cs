@@ -1025,6 +1025,14 @@ namespace VerticalTec.POS
             return dtResult;
         }
 
+        public async Task<string> GetPlatformApiAsync(IDbConnection conn)
+        {
+            var baseUrl = await GetPropertyValueAsync(conn, 1130, "ApiBaseServerUrl");
+            if (!baseUrl.EndsWith("/"))
+                baseUrl += "/";
+            return baseUrl;
+        }
+
         public async Task<string> GetLoyaltyApiAsync(IDbConnection conn)
         {
             var baseUrl = await GetPropertyValueAsync(conn, 1013, "LoyaltyWebServiceUrl");
@@ -1047,8 +1055,8 @@ namespace VerticalTec.POS
 
         public async Task<string> GetBackofficeHQPathAsync(IDbConnection conn, int shopId)
         {
-            var rootDir = await GetPropertyValueAsync(conn, 1012, "RootWebDir", shopId);
-            var backoffice = await GetPropertyValueAsync(conn, 1012, "BackOfficePath", shopId);
+            var rootDir = await GetPropertyValueAsync(conn, 1011, "RootWebDir", shopId);
+            var backoffice = await GetPropertyValueAsync(conn, 1011, "BackOfficePath", shopId);
             return $"{rootDir}/{backoffice}/";
         }
 

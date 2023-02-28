@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace VerticalTec.POS
@@ -19,7 +20,7 @@ namespace VerticalTec.POS
         Task<DataSet> MergeTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText);
         Task<DataSet> SplitTableOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId, int langId, string toTableIdList, string modifyReasonIdList, string modifyReasonText);
         Task UpdateTableStatusAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int langId = 1);
-        Task<DataTable> GetModifierOrderAsync(IDbConnection conn, int shopId, int transactionId, int computerId, int parentOrderDetailId, string productCode = "", SaleModes saleMode = SaleModes.DineIn);
+        Task<DataTable> GetModifierOrderAsync(IDbConnection conn, int shopId, int transactionId, int computerId, int parentOrderDetailId, string productCode = "", int langId=1, SaleModes saleMode = SaleModes.DineIn);
         Task<List<OrderDetail>> GetOrderDetailsAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int staffId = 2, int langId = 1);
         Task<object> GetOrderDataAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int langId = 1);
         Task<DataTable> GetChildOrderAsync(IDbConnection conn, int transactionId, int computerId, int parentOrderId);
@@ -31,5 +32,6 @@ namespace VerticalTec.POS
         Task<bool> SubmitOrderAsync(IDbConnection conn, int transactionId, int computerId, int shopId, int tableId);
         Task<string> GetOrRegenPincodeAsync(IDbConnection conn, string tranKey, int shopId, int tableId, int mode = 1, string saleDate = "");
         Task<string> UpdateBuffetAsync(IDbConnection conn, string tranKey, int shopId, int tableId);
+        Task<string> GetPlatformApiTokenAsync(HttpClient client);
     }
 }

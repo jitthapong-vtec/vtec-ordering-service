@@ -53,7 +53,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             " select Id, concat('" + imageBaseUrl + "', ImageName) as ImageName, ChangeDuration from advertisement;" +
                             " select * from paytype where PayTypeID in (select PayTypeList from computername where DeviceCode=@deviceCode);" +
                             " select * from salemode where deleted=0;" +
-                            " select a.*, case when b.ProductVATPercent is null then 7.00 else b.ProductVATPercent end as VATPercent from shop_data a left join (select * from productvat where Deleted=0) b on a.VATCode=b.ProductVATCode where a.ShopID=@shopId;";
+                            " select a.*, c.*, d.*, case when b.ProductVATPercent is null then 7.00 else b.ProductVATPercent end as VATPercent from shop_data a " +
+                            " left join (select * from productvat where Deleted=0) b on a.VATCode=b.ProductVATCode " +
+                            " join brand_data c on a.BrandID=c.BrandID" +
+                            " join merchant_data d on a.MerchantID=c.MerchantID where a.ShopID=@shopId;";
                         cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
 
                         adapter = _database.CreateDataAdapter(cmd);
@@ -76,112 +79,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         }
                         catch (Exception) { }
 
-                        var terminalId = dtTerminal.Rows[0].GetValue<int>("ComputerID");
-                        var allowKioskOpenDay = await _posRepo.GetPropertyValueAsync(conn, 2002, "AllowKioskOpenDay", shopId) == "1";
-
-                        var openDayComputer = await _posRepo.GetCashierComputerIdAsync(conn, shopId);
-
-                        if (openDayComputer > 0 || allowKioskOpenDay)
+                        try
                         {
-                            cmd = _database.CreateCommand("select * from staffs where StaffRoleID = 2", conn);
-                            var staffId = 2;
-                            var staffName = "";
-                            using (var reader = await _database.ExecuteReaderAsync(cmd))
-                            {
-                                if (reader.Read())
-                                {
-                                    staffId = reader.GetValue<int>("StaffID");
-                                    staffName = $"{reader.GetValue<string>("StaffFirstName")} {reader.GetValue<string>("StaffLastName")}";
-                                }
-                            }
-
-                            if (openDayComputer == 0 && allowKioskOpenDay)
-                            {
-                                string responseText = "";
-                                cmd = _database.CreateCommand("delete from order_tablefront where SaleDate < @saleDate and ShopID=@shopId", conn);
-                                cmd.Parameters.Add(_database.CreateParameter("@saleDate", DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InstalledUICulture)));
-                                cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-                                cmd.ExecuteNonQuery();
-
-                                cmd = _database.CreateCommand("update tableno set Status=@status where Status > 0", conn);
-                                cmd.Parameters.Add(_database.CreateParameter("@status", 0));
-                                await _database.ExecuteNonQueryAsync(cmd);
-
-                                var posModule = new POSModule();
-                                posModule.Enday_Auto(ref responseText, shopId, terminalId, staffId, conn as MySqlConnection);
-                            }
-
-                            var sessionDate = await _posRepo.GetSaleDateAsync(conn, shopId, false, true);
-                            cmd = _database.CreateCommand("select ComputerID from session " +
-                                " where SessionDate=@sessionDate " +
-                                " and ComputerID=@computerId" +
-                                " and ShopID=@shopId", conn);
-                            cmd.Parameters.Add(_database.CreateParameter("@sessionDate", sessionDate));
-                            cmd.Parameters.Add(_database.CreateParameter("@computerId", terminalId));
-                            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-
-                            var allowKioskOpenSession = allowKioskOpenDay;
-                            if (!allowKioskOpenSession)
-                                allowKioskOpenSession = await _posRepo.GetPropertyValueAsync(conn, 2002, "AllowKioskOpenSession", shopId) == "1";
-
-                            if (allowKioskOpenSession)
-                            {
-                                var isOpenSession = false;
-                                using (var reader = await _database.ExecuteReaderAsync(cmd))
-                                {
-                                    if (reader.Read())
-                                    {
-                                        if (reader.GetValue<int>("ComputerID") > 0)
-                                        {
-                                            isOpenSession = true;
-                                        }
-                                    }
-                                }
-                                if (!isOpenSession)
-                                {
-                                    cmd = _database.CreateCommand(
-                                        " select max(SessionID) as SessionID from session" +
-                                        " where ComputerID=@computerId " +
-                                        " and ShopID=@shopId", conn);
-                                    cmd.Parameters.Add(_database.CreateParameter("@computerId", terminalId));
-                                    cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-
-                                    var sessionId = 0;
-                                    using (var reader = await _database.ExecuteReaderAsync(cmd))
-                                    {
-                                        if (reader.Read())
-                                        {
-                                            sessionId = reader.GetValue<int>("SessionID") + 1;
-                                        }
-                                    }
-
-                                    cmd = _database.CreateCommand(
-                                        " insert into session(SessionID, ComputerID, SessionKey, ComputerName, OpenStaffID, OpenStaff, OpenSessionDateTime, SessionDate, ShopID)" +
-                                        " values (@sessionId, @computerId, @sessionKey, @computerName, @openStaffId, @openStaff, @openDateTime, @sessionDate, @shopId)", conn);
-                                    cmd.Parameters.Add(_database.CreateParameter("@sessionId", sessionId));
-                                    cmd.Parameters.Add(_database.CreateParameter("@computerId", terminalId));
-                                    cmd.Parameters.Add(_database.CreateParameter("@sessionKey", $"{sessionId}:{terminalId}"));
-                                    cmd.Parameters.Add(_database.CreateParameter("@computerName", dtTerminal.Rows[0].GetValue<string>("ComputerName")));
-                                    cmd.Parameters.Add(_database.CreateParameter("@openStaffId", staffId));
-                                    cmd.Parameters.Add(_database.CreateParameter("@openStaff", staffName));
-                                    cmd.Parameters.Add(_database.CreateParameter("@openDateTime", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
-                                    cmd.Parameters.Add(_database.CreateParameter("@sessionDate", sessionDate));
-                                    cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-                                    await _database.ExecuteNonQueryAsync(cmd);
-
-                                    if (allowKioskOpenDay)
-                                    {
-                                        cmd = _database.CreateCommand("insert into sessionenddaydetail(SessionDate, ShopID, OpenDayDateTime)" +
-                                            " values(@sessionDate, @shopId, @openDayDateTime)", conn);
-                                        cmd.Parameters.Add(_database.CreateParameter("@sessionDate", sessionDate));
-                                        cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-                                        cmd.Parameters.Add(_database.CreateParameter("@openDayDateTime", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
-                                        await _database.ExecuteNonQueryAsync(cmd);
-                                    }
-                                }
-                            }
+                            var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false);
                             dtTerminal.Rows[0]["IsOpenDay"] = 1;
                         }
+                        catch { }
+
                         response.StatusCode = HttpStatusCode.OK;
                         response.Body = dataSet;
                     }
@@ -195,11 +99,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             catch (Exception ex)
             {
+                var errMsg = ex.Message;
+                if (ex is MySqlException myEx)
+                    errMsg = "Can't connect to database";
                 response.StatusCode = HttpStatusCode.InternalServerError;
-                response.Message = ex.Message;
+                response.Message = errMsg;
             }
             return response;
         }
+
 
         [HttpGet]
         [Route("mobile")]
