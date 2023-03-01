@@ -269,7 +269,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                         using (var conn = await _database.ConnectAsync())
                         {
-                            var payTypeId = 0;
                             if (paymentData.EDCType != 0)
                             {
                                 var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
@@ -278,10 +277,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 {
                                     if (reader.Read())
                                     {
-                                        payTypeId = reader.GetValue<int>("PayTypeID");
+                                        paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
                                     }
                                 }
-                                if (payTypeId == 0)
+                                if (paymentData.PayTypeID == 0)
                                     throw new VtecPOSException($"Not found PayType of EDCType {paymentData.EDCType}");
 
                                 if (!string.IsNullOrEmpty(paymentData.CustAccountNo))
@@ -293,12 +292,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     await _database.ExecuteNonQueryAsync(cmd);
                                 }
 
-                                var payDetailId = 0;
-                                var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, payTypeId);
+                                var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
                                 if (dtPendingPayment.Rows.Count > 0)
                                 {
-                                    payDetailId = dtPendingPayment.Rows[0].GetValue<int>("PayDetailID");
-                                    await _paymentService.DeletePaymentAsync(conn, payDetailId, paymentData.TransactionID, paymentData.ComputerID);
+                                    paymentData.PayDetailID = dtPendingPayment.Rows[0].GetValue<int>("PayDetailID");
+                                    await _paymentService.DeletePaymentAsync(conn, paymentData.PayDetailID, paymentData.TransactionID, paymentData.ComputerID);
                                 }
 
                                 await _paymentService.AddPaymentAsync(conn, paymentData);
@@ -306,7 +304,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 var respText = "";
 
                                 var success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, respStr, paymentData.TransactionID,
-                                    paymentData.ComputerID, payDetailId.ToString(), paymentData.ShopID, $"'{paymentData.SaleDate}'", paymentData.BrandName,
+                                    paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, $"'{paymentData.SaleDate}'", paymentData.BrandName,
                                     paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
 
                                 if (success == false)
