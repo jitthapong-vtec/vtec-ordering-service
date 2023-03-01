@@ -325,6 +325,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     if (dtTemplate.Rows.Count == 0)
                         throw new Exception("Not found kiosk template configuration!");
 
+                    var dfSaleMode = 1;
+                    var dtDfSaleMode = new DataTable();
+                    cmd = _database.CreateCommand("select SaleModeID from salemode where Deleted=0 and IsDefault=1", conn);
+                    using(var reader = await _database.ExecuteReaderAsync(cmd))
+                    {
+                        dtDfSaleMode.Load(reader);
+                        dfSaleMode = dtDfSaleMode.AsEnumerable().FirstOrDefault()?.GetValue<int>("SaleModeID") ?? 1;
+                    }
+
                     int templateId = dtTemplate.Rows[0].GetValue<int>("Kiosk_TemplateID");
                     string imageBaseUrl = await _posRepo.GetResourceUrl(conn, shopId);
                     cmd = _database.CreateCommand(
@@ -346,7 +355,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             " left join " +
                             " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@saleMode) c on b.ProductID = c.ProductID " +
                             " left join " +
-                            " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=1) d on b.ProductID = d.ProductID " +
+                            " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) d on b.ProductID = d.ProductID " +
                             " left join productcountdownstock e" +
                             " on b.ProductID=e.ProductID" +
                             " and e.ShopID=@shopId " +
@@ -357,6 +366,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     cmd.Parameters.Add(_database.CreateParameter("@templateId", templateId));
                     cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
                     cmd.Parameters.Add(_database.CreateParameter("@saleMode", saleMode));
+                    cmd.Parameters.Add(_database.CreateParameter("@dfSaleMode", dfSaleMode));
                     cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
 
                     IDataAdapter adapter = _database.CreateDataAdapter(cmd);

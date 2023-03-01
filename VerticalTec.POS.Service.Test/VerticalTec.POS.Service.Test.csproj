@@ -77,10 +77,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\VerticalTec.POS.Service.DataSync.Owin\VerticalTec.POS.Service.DataSync.Owin.csproj">
-      <Project>{a0049e0c-5046-417a-9398-9d16565f7e8d}</Project>
-      <Name>VerticalTec.POS.Service.DataSync.Owin</Name>
-    </ProjectReference>
     <ProjectReference Include="..\VerticalTec.POS.Service.Ordering.Owin\VerticalTec.POS.Service.Ordering.Owin.csproj">
       <Project>{f47c6806-dfb9-4e2e-bdc9-456166dd7df5}</Project>
       <Name>VerticalTec.POS.Service.Ordering.Owin</Name>
