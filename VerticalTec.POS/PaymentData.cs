@@ -45,6 +45,11 @@ namespace VerticalTec.POS
         public string ReferenceNo { get; set; }
         public string EncryptedCardInfo { get; set; }
         public decimal PayAmount { get; set; }
+        public string PlatformApiUrl { get; set; }
+        public string ShopKey { get; set; }
+        public string ShopCode { get; set; }
+        public string ShopName { get; set; }
+        public string Token { get; set; }
         public decimal CashChange
         {
             get

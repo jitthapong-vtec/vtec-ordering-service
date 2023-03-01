@@ -1,5 +1,6 @@
 ﻿using DevExpress.XtraEditors.Controls;
 using Hangfire;
+using Microsoft.Owin;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using ResCenterObjLib;
@@ -19,6 +20,7 @@ using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 using VerticalTec.POS.Utils;
+using VoucherManagerLib;
 using vtecPOS.GlobalFunctions;
 using static vtecPOS.GlobalFunctions.LoyaltyObj;
 
@@ -50,18 +52,18 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         #region OnlinePayment
         [HttpPost]
         [Route("v1/payments/online/qr")]
-        public async Task<IHttpActionResult> GetQrCodeAsync(OnlinePaymentRequest req)
+        public async Task<IHttpActionResult> GetQrCodeAsync(PaymentData payment)
         {
             var result = new HttpActionResult<object>(Request);
             using (var conn = await _database.ConnectAsync())
             {
-                var saleDate = await _posRepo.GetSaleDateAsync(conn, req.ShopId, false);
+                var saleDate = await _posRepo.GetSaleDateAsync(conn, payment.ShopID, false);
 
                 var cmd = _database.CreateCommand(
                 "select a.ShopKey, a.ShopCode, a.ShopName, b.MerchantKey, c.BrandKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID join brand_data c on a.MerchantID=c.MerchantID where a.ShopID=@shopId and a.Deleted=0;" +
                 "select * from weborder_token where SaleDate=@saleDate;", conn);
 
-                cmd.Parameters.Add(_database.CreateParameter("@shopId", req.ShopId));
+                cmd.Parameters.Add(_database.CreateParameter("@shopId", payment.ShopID));
                 cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
 
                 var ds = new DataSet();
@@ -74,7 +76,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var dtWebOrderToken = ds.Tables["WebOrderToken"];
 
                 if (dtShopData.Rows.Count == 0)
-                    throw new VtecPOSException($"Not found shop data {req.ShopId}");
+                    throw new VtecPOSException($"Not found shop data {payment.ShopID}");
 
                 var shopData = dtShopData.AsEnumerable().First();
                 var merchantKey = shopData.GetValue<string>("MerchantKey");
@@ -130,19 +132,19 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var qrPayload = new
                     {
                         shopKey = shopKey,
-                        shopID = req.ShopId,
+                        shopID = payment.ShopID,
                         shopCode = shopCode,
                         shopName = shopName,
-                        computerID = req.ComputerId,
-                        tranKey = $"{req.TransactionId}:{req.ComputerId}",
-                        tranUUID = $"{req.TransactionId}:{req.ComputerId}",
+                        computerID = payment.ComputerID,
+                        tranKey = $"{payment.TransactionID}:{payment.ComputerID}",
+                        tranUUID = $"{payment.TransactionID}:{payment.ComputerID}",
                         saleDate = saleDate,
-                        staffID = req.StaffId,
+                        staffID = payment.StaffID,
                         staffName = "",
-                        paymentGatewayType = req.PaymentGatewayType,
-                        edcType = req.EdcType,
-                        customerCode = req.CustomerCode,
-                        payAmount = req.PayAmount.ToString()
+                        paymentGatewayType = payment.WalletTypeName,
+                        edcType = payment.EDCType,
+                        customerCode = payment.CustAccountNo,
+                        payAmount = payment.PayAmount.ToString()
                     };
 
                     var reqJson = JsonConvert.SerializeObject(qrPayload);
@@ -177,35 +179,35 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/payments/online/inquiry")]
-        public async Task<IHttpActionResult> InquiryAsync(string orderId, OnlinePaymentRequest req)
+        public async Task<IHttpActionResult> InquiryAsync(string reqId, string orderId, PaymentData paymentData)
         {
             var result = new HttpActionResult<object>(Request);
             using (var httpClient = new HttpClient())
             {
-                httpClient.BaseAddress = new Uri(req.PlatformApiUrl);
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", req.AccessToken);
+                httpClient.BaseAddress = new Uri(paymentData.PlatformApiUrl);
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", paymentData.Token);
 
                 var qrPayload = new
                 {
-                    shopKey = req.ShopKey,
-                    shopID = req.ShopId,
-                    shopCode = req.ShopCode,
-                    shopName = req.ShopName,
-                    computerID = req.ComputerId,
-                    tranKey = $"{req.TransactionId}:{req.ComputerId}",
-                    tranUUID = $"{req.TransactionId}:{req.ComputerId}",
-                    saleDate = req.SaleDate,
-                    staffID = req.StaffId,
+                    shopKey = paymentData.ShopKey,
+                    shopID = paymentData.ShopID,
+                    shopCode = paymentData.ShopCode,
+                    shopName = paymentData.ShopName,
+                    computerID = paymentData.ComputerID,
+                    tranKey = $"{paymentData.TransactionID}:{paymentData.ComputerID}",
+                    tranUUID = $"{paymentData.TransactionID}:{paymentData.ComputerID}",
+                    saleDate = paymentData.SaleDate,
+                    staffID = paymentData.StaffID,
                     staffName = "",
-                    paymentGatewayType = req.PaymentGatewayType,
-                    edcType = req.EdcType,
-                    customerCode = req.CustomerCode,
-                    payAmount = req.PayAmount.ToString()
+                    paymentGatewayType = paymentData.WalletTypeName,
+                    edcType = paymentData.EDCType,
+                    customerCode = paymentData.CustAccountNo,
+                    payAmount = paymentData.PayAmount.ToString()
                 };
 
                 var reqJson = JsonConvert.SerializeObject(qrPayload);
                 var content = new StringContent(reqJson, Encoding.UTF8, "application/json");
-                var resp = await httpClient.PostAsync($"api/POSModule/payment_gateway_QR_Inquiry?req_Id={req.ReqId}&orderId={orderId}&langId=1", content);
+                var resp = await httpClient.PostAsync($"api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1", content);
 
                 try
                 {
@@ -223,9 +225,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             status = "",
                             status_code = "",
                             status_message = "",
-                            amount = 0,
-                            amount_net = 0,
-                            amount_cust_fee = 0,
+                            amount = 0.00M,
+                            amount_net = 0.00M,
+                            amount_cust_fee = 0.00M,
                             currency = "",
                             service_id = "",
                             channel_type = "",
@@ -234,8 +236,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             ref_3 = "",
                             ref_4 = "",
                             ref_5 = "",
-                            meta_data = "",
-                            card = "",
+                            meta_data = (object)null,
+                            card = new
+                            {
+                                card_holder_name = "",
+                                card_no = "",
+                                card_type = "",
+                                card_expire = "",
+                                card_country = (object)null,
+                                card_ref = ""
+                            },
                             installment = (object)null,
                             bank = new
                             {
@@ -251,15 +261,115 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         }
                     };
                     var respStr = await resp.Content.ReadAsStringAsync();
-                    var respObj = JsonConvert.DeserializeAnonymousType(respStr, apiResp);
-                    if (respObj.responseCode == "")
+                    apiResp = JsonConvert.DeserializeAnonymousType(respStr, apiResp);
+                    if (apiResp.responseCode == "")
                     {
-                        //TODO: Finalize bill
+                        result.StatusCode = HttpStatusCode.OK;
+                        result.Body = apiResp;
+
+                        using (var conn = await _database.ConnectAsync())
+                        {
+                            var payTypeId = 0;
+                            if (paymentData.EDCType != 0)
+                            {
+                                var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
+                                cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
+                                using (IDataReader reader = cmd.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        payTypeId = reader.GetValue<int>("PayTypeID");
+                                    }
+                                }
+                                if (payTypeId == 0)
+                                    throw new VtecPOSException($"Not found PayType of EDCType {paymentData.EDCType}");
+
+                                if (!string.IsNullOrEmpty(paymentData.CustAccountNo))
+                                {
+                                    cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName where TransactionID=@tranId and ComputerID=@compId", conn);
+                                    cmd.Parameters.Add(_database.CreateParameter("@memberName", paymentData.CustAccountNo));
+                                    cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
+                                    cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.CustAccountNo));
+                                    await _database.ExecuteNonQueryAsync(cmd);
+                                }
+
+                                var payDetailId = 0;
+                                var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, payTypeId);
+                                if (dtPendingPayment.Rows.Count > 0)
+                                {
+                                    payDetailId = dtPendingPayment.Rows[0].GetValue<int>("PayDetailID");
+                                    await _paymentService.DeletePaymentAsync(conn, payDetailId, paymentData.TransactionID, paymentData.ComputerID);
+                                }
+
+                                await _paymentService.AddPaymentAsync(conn, paymentData);
+                                var posModule = new POSModule();
+                                var respText = "";
+
+                                var success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, respStr, paymentData.TransactionID,
+                                    paymentData.ComputerID, payDetailId.ToString(), paymentData.ShopID, $"'{paymentData.SaleDate}'", paymentData.BrandName,
+                                    paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
+
+                                if (success == false)
+                                {
+                                    _log.Error("Payment_Wallet {0}", respText);
+                                    throw new VtecPOSException(respText);
+                                }
+
+                                try
+                                {
+                                    await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
+                                    await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _log.Error(ex, "Error finalize");
+                                    _log.Info("Retry finalize bill again");
+
+                                    try
+                                    {
+                                        await Task.Delay(500);
+                                        using (var conn2 = await _database.ConnectAsync())
+                                        {
+                                            await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
+                                        }
+                                    }
+                                    catch (Exception ex2)
+                                    {
+                                        _log.Error(ex2, "Retry finalize bill failed");
+                                    }
+                                }
+
+                                var printData = new PrintData()
+                                {
+                                    TransactionID = paymentData.TransactionID,
+                                    ComputerID = paymentData.ComputerID,
+                                    ShopID = paymentData.ShopID,
+                                    LangID = paymentData.LangID,
+                                    PrinterIds = paymentData.PrinterIds,
+                                    PrinterNames = paymentData.PrinterNames,
+                                    PaperSize = paymentData.PaperSize
+                                };
+
+                                await _printService.PrintBill(printData);
+                                await _printService.PrintOrder(new TransactionPayload
+                                {
+                                    TransactionID = paymentData.TransactionID,
+                                    ComputerID = paymentData.ComputerID,
+                                    TerminalID = paymentData.ComputerID,
+                                    ShopID = paymentData.ShopID,
+                                    LangID = paymentData.LangID,
+                                    StaffID = paymentData.StaffID,
+                                    PrinterIds = paymentData.PrinterIds,
+                                    PrinterNames = paymentData.PrinterNames
+                                });
+                                _messenger.SendMessage();
+                            }
+                        }
                     }
                     else
                     {
                         result.StatusCode = HttpStatusCode.OK;
-                        result.Body = respObj;
+                        result.Body = apiResp;
                     }
                 }
                 catch (HttpRequestException ex)

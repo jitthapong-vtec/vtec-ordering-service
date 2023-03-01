@@ -17,7 +17,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
     public class PrintService : IPrintService
     {
         static readonly object lockPrint = new object();
-
         static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logordering");
 
         IDatabase _db;
@@ -46,19 +45,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     DataSet dsOrderData = new DataSet();
                     var responseText = "";
 
-                    var ePosPrint = _posRepo.GetPropertyValueAsync(conn, 1010, "ePosPrint", payload.ShopID).Result;
-                    var mobileSummaryPrint = _posRepo.GetPropertyValueAsync(conn, 1010, "MobileSummaryPrint", payload.ShopID).Result;
-
-                    var isSuccess = false;
-                    if (mobileSummaryPrint == "1")
-                    {
-                        isSuccess = posModule.Summary_Print(ref responseText, ref dsSummaryData, "front", payload.ShopID, saleDate,
+                    var isSuccess = posModule.Summary_Print(ref responseText, ref dsSummaryData, "front", payload.ShopID, saleDate,
                             payload.TransactionID, payload.ComputerID, payload.StaffID, payload.TerminalID, payload.PrinterIds, myConn);
 
-                        if (!isSuccess)
-                        {
-                            _log.Error(responseText);
-                        }
+                    if (!isSuccess)
+                    {
+                        _log.Error($"Call Summary_Print {responseText}");
                     }
 
                     int batchId = 0;
@@ -71,12 +63,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                             payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
                         if (!isSuccess)
                         {
-                            _log.Error("An error occurred when Table_PrintSummaryOrderData " + responseText);
+                            _log.Error($"Call Table_PrintSummaryOrderData {responseText}");
                         }
                     }
                     else
                     {
-                        _log.Error("An error occurred when PrintSummaryOrder " + responseText);
+                        _log.Error($"Call PrintSummaryOrder {responseText}");
                     }
 
                     batchId = 0;
@@ -89,47 +81,32 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                             payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
                         if (!isSuccess)
                         {
-                            _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrderDetail" : responseText);
+                            _log.Error($"Call Table_PrintOrderData {responseText}");
                         }
                     }
                     else
                     {
-                        _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrders" : responseText);
+                        _log.Error($"Call Table_PrintOrder Table_PrintOrder {responseText}");
                     }
 
                     posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
                         payload.ShopID, saleDate, payload.LangID, myConn);
 
-                    if (ePosPrint == "1")
+                    try
                     {
-                        var summaryResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryData).Result;
-                        var orderSummaryResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryOrderData).Result;
-                        var orderResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsOrderData).Result;
-                        if (summaryResponse?.Success == false ||
-                            orderSummaryResponse?.Success == false ||
-                            orderResponse?.Success == false)
-                        {
-                            _log.Error($"{summaryResponse?.Message}{orderSummaryResponse?.Message}{orderResponse?.Message}");
-                        }
-                    }
-                    else
-                    {
-                        try
-                        {
-                            CDBUtil dbUtil = new CDBUtil();
-                            PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                                payload.ComputerID, dsSummaryData);
-                            PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                                payload.ComputerID, dsSummaryOrderData);
+                        CDBUtil dbUtil = new CDBUtil();
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                            payload.ComputerID, dsSummaryData);
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                            payload.ComputerID, dsSummaryOrderData);
 
-                            _log.Info($"Call PrintKdsDataFromDataSet with trankey: {payload.TransactionID}:{payload.ComputerID}, Number table in dsOrderData = {dsOrderData.Tables.Count}");
-                            PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                                payload.ComputerID, dsOrderData);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex.Message);
-                        }
+                        _log.Info($"Call PrintKdsDataFromDataSet with tranKey: {payload.TransactionID}:{payload.ComputerID}, Data in dsOrderData = {dsOrderData.Tables.Count}");
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
+                            payload.ComputerID, dsOrderData);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "PrintKdsDataFromDataSet");
                     }
                 }
             }
@@ -147,7 +124,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex.Message);
+                    _log.Error("GetBillDetail {0}", ex.Message);
                 }
             }
         }
@@ -230,6 +207,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     var posModule = new POSModule();
                     if (!string.IsNullOrEmpty(printerNames))
                     {
+                        _log.Info($"Print to {printerNames}");
+
                         PrintingObjLib.PrintLib.PrintDataFromDataSet(posModule, shopId,
                             computerId, dsPrintData, printerNames, dbServer, dbName, "3308");
                     }
