@@ -61,8 +61,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var saleDate = await _posRepo.GetSaleDateAsync(conn, payment.ShopID, false);
 
                 var cmd = _database.CreateCommand(
-                "select a.ShopKey, a.ShopCode, a.ShopName, b.MerchantKey, c.BrandKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID join brand_data c on a.MerchantID=c.MerchantID where a.ShopID=@shopId and a.Deleted=0;" +
-                "select * from weborder_token where SaleDate=@saleDate;", conn);
+                "select a.ShopKey, a.ShopCode, a.ShopName, b.MerchantKey, c.BrandKey from shop_data a join merchant_data b on a.MerchantID=b.MerchantID join brand_data c on a.MerchantID=c.MerchantID where a.ShopID=@shopId and a.Deleted=0;", conn);
 
                 cmd.Parameters.Add(_database.CreateParameter("@shopId", payment.ShopID));
                 cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
@@ -70,11 +69,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var ds = new DataSet();
                 var adapter = _database.CreateDataAdapter(cmd);
                 adapter.TableMappings.Add("Table", "ShopData");
-                adapter.TableMappings.Add("Table1", "WebOrderToken");
                 adapter.Fill(ds);
 
                 var dtShopData = ds.Tables["ShopData"];
-                var dtWebOrderToken = ds.Tables["WebOrderToken"];
 
                 if (dtShopData.Rows.Count == 0)
                     throw new VtecPOSException($"Not found shop data {payment.ShopID}");
@@ -86,25 +83,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var shopCode = shopData.GetValue<string>("ShopCode");
                 var shopName = shopData.GetValue<string>("ShopName");
 
-                var reqId = "";
+                var reqId = Guid.NewGuid().ToString();
                 var reqToken = "";
 
                 using (var httpClient = new HttpClient())
                 {
                     var baseUrl = await _posRepo.GetPlatformApiAsync(conn);
                     httpClient.BaseAddress = new Uri(baseUrl);
-
-                    if (dtWebOrderToken?.Rows.Count > 0)
-                    {
-                        var row = dtWebOrderToken.ToEnumerable().FirstOrDefault();
-                        reqId = row.GetValue<string>("MerchantReqId");
-                        reqToken = row.GetValue<string>("AuthenToken");
-                    }
-
-                    if (string.IsNullOrEmpty(reqId))
-                    {
-                        reqId = Guid.NewGuid().ToString();
-                    }
 
                     var merchantUrl = $"api/MerchantInfo/MerchantInfo?reqId={reqId}&WebUrl={merchantKey}";
                     var propertyUrl = $"api/POSModule/PropertyData?reqId={reqId}";
@@ -138,7 +123,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         shopName = shopName,
                         computerID = payment.ComputerID,
                         tranKey = $"{payment.TransactionID}:{payment.ComputerID}",
-                        tranUUID = $"{payment.TransactionID}:{payment.ComputerID}",
+                        tranUUID = Guid.NewGuid().ToString(),
                         saleDate = saleDate,
                         staffID = payment.StaffID,
                         staffName = "",
@@ -180,7 +165,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/payments/online/inquiry")]
-        public async Task<IHttpActionResult> InquiryAsync(string reqId, string orderId, PaymentData paymentData)
+        public async Task<IHttpActionResult> InquiryAsync(string reqId, string orderId, string tranUUID, PaymentData paymentData)
         {
             var result = new HttpActionResult<object>(Request);
             using (var httpClient = new HttpClient())
@@ -196,7 +181,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     shopName = paymentData.ShopName,
                     computerID = paymentData.ComputerID,
                     tranKey = $"{paymentData.TransactionID}:{paymentData.ComputerID}",
-                    tranUUID = $"{paymentData.TransactionID}:{paymentData.ComputerID}",
+                    tranUUID = tranUUID,
                     saleDate = paymentData.SaleDate,
                     staffID = paymentData.StaffID,
                     staffName = "",
@@ -401,6 +386,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     else
                     {
+                        if(apiResp.responseCode == "99")
+                        {
+                            _log.Error($"Inquiry Error {apiResp.responseText}");
+                        }
                         result.StatusCode = HttpStatusCode.OK;
                         result.Body = apiResp;
                     }
