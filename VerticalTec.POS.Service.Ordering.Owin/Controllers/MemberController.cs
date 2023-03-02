@@ -1,4 +1,5 @@
-﻿using MySql.Data.MySqlClient;
+﻿using LoyaltyInterface3;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using System;
 using System.Data;
@@ -23,6 +24,32 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         {
             _database = database;
             _posRepo = new VtecPOSRepo(database);
+        }
+
+        [HttpGet]
+        [Route("v1/greenmile/cardpoint")]
+        public async Task<IHttpActionResult> GreenMileGetCardPointAsync(int shopId, int computerId, string phoneno)
+        {
+            var result = new HttpActionResult<GreenMileObj.MemberInfoResponse>(Request);
+            using (var conn = await _database.ConnectAsync())
+            {
+                var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false);
+                var greenMile = new BCRInterface(shopId, computerId, saleDate, conn as MySqlConnection);
+                var respText = "";
+                var cardData = "";
+                var success = greenMile.GetCardPoint(ref respText, ref cardData, phoneno);
+                if(success)
+                {
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = JsonConvert.DeserializeObject<GreenMileObj.MemberInfoResponse>(cardData);
+                }
+                else
+                {
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = respText;
+                }    
+            }
+            return result;
         }
 
         [HttpGet]

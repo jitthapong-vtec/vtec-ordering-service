@@ -1,5 +1,6 @@
 ﻿using DevExpress.XtraEditors.Controls;
 using Hangfire;
+using LoyaltyInterface3;
 using Microsoft.Owin;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
@@ -283,12 +284,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 if (paymentData.PayTypeID == 0)
                                     throw new VtecPOSException($"Not found PayType of EDCType {paymentData.EDCType}");
 
-                                if (!string.IsNullOrEmpty(paymentData.CustAccountNo))
+                                if (string.IsNullOrEmpty(paymentData.CustAccountNo) == false)
                                 {
                                     cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName where TransactionID=@tranId and ComputerID=@compId", conn);
                                     cmd.Parameters.Add(_database.CreateParameter("@memberName", paymentData.CustAccountNo));
                                     cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
-                                    cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.CustAccountNo));
+                                    cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.ComputerID));
                                     await _database.ExecuteNonQueryAsync(cmd);
                                 }
 
@@ -311,6 +312,40 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 {
                                     _log.Error("Payment_Wallet {0}", respText);
                                     throw new VtecPOSException(respText);
+                                }
+
+                                if (string.IsNullOrEmpty(paymentData.CustAccountNo) == false)
+                                {
+                                    var greenMile = new BCRInterface(paymentData.ShopID, paymentData.ComputerID, paymentData.SaleDate, conn as MySqlConnection);
+                                    success = greenMile.InsertTransPOS(ref respText, paymentData.ShopID, paymentData.SaleDate, paymentData.TransactionID, paymentData.ComputerID, "front", paymentData.CustAccountNo, conn as MySqlConnection);
+                                    if(success == false)
+                                    {
+                                        _log.Error($"Error InsertTransPOS {respText}");
+
+                                        if (respText == "RETRY")
+                                        {
+                                            var totalRetry = 0;
+                                            while (true)
+                                            {
+                                                if (++totalRetry == 3)
+                                                    break;
+
+                                                _log.Info($"Retry InsertTransPOS #{totalRetry}");
+                                                success = greenMile.InsertTransPOS(ref respText, paymentData.ShopID, paymentData.SaleDate, paymentData.TransactionID, paymentData.ComputerID, "front", paymentData.CustAccountNo, conn as MySqlConnection);
+                                                if (success || respText != "RETRY")
+                                                {
+                                                    _log.Info($"Retry InsertTransPOS #{totalRetry} success");
+                                                    break;
+                                                }
+
+                                                await Task.Delay(TimeSpan.FromSeconds(1));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            _log.Error($"Error InsertTransPOS {respText}");
+                                        }
+                                    }
                                 }
 
                                 try
