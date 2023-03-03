@@ -28,7 +28,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpGet]
         [Route("v1/greenmile/cardpoint")]
-        public async Task<IHttpActionResult> GreenMileGetCardPointAsync(int shopId, int computerId, string phoneno)
+        public async Task<IHttpActionResult> GreenMileGetCardPointAsync(int shopId, int transactionId, int computerId, string phoneno)
         {
             var result = new HttpActionResult<GreenMileObj.MemberInfoResponse>(Request);
             using (var conn = await _database.ConnectAsync())
@@ -38,8 +38,23 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var respText = "";
                 var cardData = "";
                 var success = greenMile.GetCardPoint(ref respText, ref cardData, phoneno);
-                if(success)
+                if (success)
                 {
+                    var promotionId = 1063;
+                    var posModule = new POSModule();
+                    success = posModule.OrderPromotionApply(ref respText, transactionId, computerId, shopId, saleDate, promotionId, conn as MySqlConnection);
+                    if (success || string.IsNullOrEmpty(respText))
+                    {
+                        var cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName where TransactionID=@tranId and ComputerID=@compId", conn);
+                        cmd.Parameters.Add(_database.CreateParameter("@memberName", phoneno));
+                        cmd.Parameters.Add(_database.CreateParameter("@tranId", transactionId));
+                        cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
+                        await _database.ExecuteNonQueryAsync(cmd);
+                    }
+                    else
+                    {
+                        _log.Error($"OrderPromotionApply {respText}");
+                    }
                     result.StatusCode = HttpStatusCode.OK;
                     result.Body = JsonConvert.DeserializeObject<GreenMileObj.MemberInfoResponse>(cardData);
                 }
@@ -47,7 +62,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     result.StatusCode = HttpStatusCode.BadRequest;
                     result.Message = respText;
-                }    
+                }
             }
             return result;
         }
