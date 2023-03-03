@@ -40,7 +40,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 var success = greenMile.GetCardPoint(ref respText, ref cardData, phoneno);
                 if (success)
                 {
-                    var promotionId = 1063;
+                    var promotionId = 1175;
                     var posModule = new POSModule();
                     success = posModule.OrderPromotionApply(ref respText, transactionId, computerId, shopId, saleDate, promotionId, conn as MySqlConnection);
                     if (success || string.IsNullOrEmpty(respText))
