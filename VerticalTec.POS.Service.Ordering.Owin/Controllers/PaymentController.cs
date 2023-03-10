@@ -388,7 +388,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     {
                         if(apiResp.responseCode == "99")
                         {
-                            _log.Error($"Inquiry Error {apiResp.responseText}, reqId={reqId}");
+                            _log.Error($"Inquiry api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1, Error {apiResp.responseText}, reqId={reqId}, reqJson={reqJson}");
                         }
                         result.StatusCode = HttpStatusCode.OK;
                         result.Body = apiResp;
