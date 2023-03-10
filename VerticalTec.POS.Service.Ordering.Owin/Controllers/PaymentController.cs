@@ -137,6 +137,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var content = new StringContent(reqJson, Encoding.UTF8, "application/json");
                     var resp = await httpClient.PostAsync($"api/POSModule/payment_gateway_QR_Request?req_Id={reqId}&langId=1", content);
 
+                    _log.Info($"Request Gen QR api/POSModule/payment_gateway_QR_Request?req_Id={reqId}&langId=1, ReqJson={reqJson}");
+
                     try
                     {
                         resp.EnsureSuccessStatusCode();
@@ -155,6 +157,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     catch (HttpRequestException ex)
                     {
+                        _log.Error($"Gen QR Error api/POSModule/payment_gateway_QR_Request?req_Id={reqId}&langId=1, ReqJson={reqJson}");
+
                         result.StatusCode = HttpStatusCode.InternalServerError;
                         result.Message = ex.Message;
                     }
