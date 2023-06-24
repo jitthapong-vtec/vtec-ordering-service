@@ -885,6 +885,10 @@ namespace VerticalTec.POS
 
         public async Task<string> GetSaleDateAsync(IDbConnection conn, int shopId, bool includeSpecialSyntax, bool ignoreOpenDayCheck = false)
         {
+            var checkEndDay = await GetPropertyValueAsync(conn, 2001, "CheckEndDay");
+            if (checkEndDay == "0")
+                ignoreOpenDayCheck = true;
+
             string saleDate = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var cmd = _database.CreateCommand("select SessionDate from sessionenddaydetail " +
                 "where ShopID=@shopId and IsEndDay=@isEndDay order by sessiondate desc limit 1", conn);
