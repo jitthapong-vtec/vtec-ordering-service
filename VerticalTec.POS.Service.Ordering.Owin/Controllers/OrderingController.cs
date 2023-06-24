@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -43,7 +44,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/orders/online")]
-        public IHttpActionResult OnlineOrder(POSObject.OrderObj payload)
+        public IHttpActionResult OnlineOrder(object payload)
         {
             lock (Owner)
             {
@@ -78,7 +79,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var tranKey = "";
                     var isPrint = false;
                     var jsonData = JsonConvert.SerializeObject(payload);
-
+                    //_logger.Info("Online Order: {0}", jsonData);
                     using (var conn = _database.Connect())
                     {
                         var dtShop = _posRepo.GetShopDataAsync(conn).Result;
@@ -122,10 +123,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                         var decimalDigit = _posRepo.GetDefaultDecimalDigitAsync(conn).Result;
 
-                        var success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+                        var success = false;
+
+                        using (var _ = new InvariantCultureScope())
+                        {
+                            success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+                        }
 
                         if (success)
                         {
+                            result.Message = "Success";
+
                             if (isPrint)
                             {
                                 var tableId = 0;
@@ -171,6 +179,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             result.StatusCode = HttpStatusCode.BadRequest;
                             result.Message = responseMsg;
+
+                            _logger.Error("OrderAPI_VTEC: {0}", responseMsg);
                             return result;
                         }
                     }

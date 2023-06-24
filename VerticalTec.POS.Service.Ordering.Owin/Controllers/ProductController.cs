@@ -24,6 +24,86 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _posRepo = new VtecPOSRepo(database);
         }
 
+        [HttpPost]
+        [Route("v1/outlet/productprice")]
+        public async Task<IHttpActionResult> GetProductPrice(GetProductPriceParam data, int saleMode)
+        {
+            var result = new HttpActionResult<object>(Request);
+            try
+            {
+                var clientId = Request.Headers.GetValues("x-client-id").FirstOrDefault();
+                var clientSecret = Request.Headers.GetValues("x-client-secret").FirstOrDefault();
+
+                if (clientId != "vtec-ordering" && clientSecret != "688635a6c68f85e8")
+                {
+                    result.StatusCode = HttpStatusCode.Unauthorized;
+                    result.Message = "Unauthorized";
+                    return result;
+                }
+            }
+            catch
+            {
+                result.StatusCode = HttpStatusCode.Unauthorized;
+                result.Message = "Unauthorized";
+                return result;
+            }
+
+            using (var conn = await _database.ConnectAsync())
+            {
+                var dtShop = _posRepo.GetShopDataAsync(conn).Result;
+                var shopId = dtShop.AsEnumerable().FirstOrDefault()?.GetValue<int>("ShopID") ?? 0;
+                if (shopId == 0)
+                {
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = "Not found shop";
+                    return result;
+                }
+
+                var saleDate = "";
+                try
+                {
+                    saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, false);
+                }
+                catch
+                {
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = "Store is not open";
+                    return result;
+                }
+
+                var cmdText = "select p.ProductID, p.ProductCode, p.ProductName,\r\ncase when mp.ProductPrice is null then md.ProductPrice else mp.ProductPrice end as ProductPrice\r\nfrom products p\r\nleft outer join (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@saleMode) mp on p.ProductID=mp.ProductID\r\nleft outer join (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=1) md on p.ProductID=md.ProductID\r\nwhere p.Deleted=0";
+                var cmd = _database.CreateCommand("", conn);
+                cmd.Parameters.Add(_database.CreateParameter("@saleMode", saleMode));
+                cmd.Parameters.Add(_database.CreateParameter("@fromDate", saleDate));
+                cmd.Parameters.Add(_database.CreateParameter("@toDate", saleDate));
+                if (data.ProductCodes.Length > 0)
+                {
+                    var pCodes = data.ProductCodes.Select(pc => $"'{pc}'").Aggregate((c, n) => $"{c},{n}");
+                    cmdText += $" and p.ProductCode in ({pCodes})";
+                }
+                else if (data.ProductIds?.Length > 0)
+                {
+                    var pIds = data.ProductIds.Select(pi => pi.ToString()).Aggregate((c, n) => $"{c},{n}");
+                    cmdText += $" and p.ProductID in ({pIds})";
+                }
+                cmd.CommandText = cmdText;
+
+                var dtResult = new DataTable();
+                using (var reader = await _database.ExecuteReaderAsync(cmd))
+                {
+                    dtResult.Load(reader);
+                }
+                result.StatusCode = HttpStatusCode.OK;
+                result.Body = dtResult.AsEnumerable().Select(r => new
+                {
+                    ProductID = r["ProductID"],
+                    ProductCode = r["ProductCode"],
+                    ProductPrice = r["ProductPrice"]
+                });
+            }
+            return result;
+        }
+
         [HttpGet]
         [Route("v1/products/favorites")]
         public async Task<IHttpActionResult> GetFavoriteProductAsync(int shopId, int pageType = 2, SaleModes saleMode = SaleModes.DineIn)
