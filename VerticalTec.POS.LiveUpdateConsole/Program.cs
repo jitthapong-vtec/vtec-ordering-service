@@ -58,6 +58,8 @@ namespace VerticalTec.POS.LiveUpdateConsole
             .ConfigureLogging(logging =>
             {
                 logging.ClearProviders();
+                logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Information);
+                logging.AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Information);
                 logging.SetMinimumLevel(LogLevel.Trace);
             })
             .UseNLog();

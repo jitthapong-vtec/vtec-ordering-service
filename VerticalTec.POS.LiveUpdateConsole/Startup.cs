@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NLog;
 using System.Threading.Tasks;
 using Blazored.SessionStorage;
 using CurrieTechnologies.Razor.SweetAlert2;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +25,8 @@ namespace VerticalTec.POS.LiveUpdateConsole
 {
     public class Startup
     {
+        static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -40,7 +45,23 @@ namespace VerticalTec.POS.LiveUpdateConsole
 
             services.AddDevExpressBlazor();
             services.AddRazorPages();
-            services.AddSignalR().AddStackExchangeRedis();
+
+            var redisConStr = Configuration["Cached:Redis"];
+            if (string.IsNullOrEmpty(redisConStr) == false)
+            {
+                services.AddSignalR(opts =>
+                {
+                    opts.EnableDetailedErrors = true;
+                }).AddStackExchangeRedis(redisConStr);
+            }
+            else
+            {
+                services.AddSignalR(opts =>
+                {
+                    opts.EnableDetailedErrors = true;
+                });
+            }
+            
             services.AddServerSideBlazor();
             services.AddSweetAlert2();
             services.AddBlazoredSessionStorage();
@@ -64,6 +85,25 @@ namespace VerticalTec.POS.LiveUpdateConsole
             {
                 app.UseExceptionHandler("/Error");
             }
+
+            app.UseExceptionHandler(configure =>
+            {
+                configure.Run(context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+                    var handler = context.Features.Get<IExceptionHandlerFeature>();
+                    if (handler != null)
+                    {
+                        var ex = handler.Error;
+                        if (handler.Error.InnerException != null)
+                            ex = handler.Error.InnerException;
+
+                        _logger.Error(ex);
+                    }
+                    return Task.CompletedTask;
+                });
+            });
 
             app.UseStaticFiles();
 

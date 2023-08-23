@@ -341,23 +341,55 @@ else
                 }
 
                 var selectedShops = _shops.Where(s => s.Selected).Select(s => s.ShopId).ToList();
-                StringBuilder stringBuilder = new StringBuilder("insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion, InsertDate, UpdateDate) values ");
-                List<string> rows = new List<string>();
+                //StringBuilder stringBuilder = new StringBuilder("insert into Version_LiveUpdate(BatchID, ShopID, ComputerID, ProgramID, ProgramName, UpdateVersion, InsertDate, UpdateDate) values ");
+
+                var dtLiveUpdate = new DataTable();
+                cmd.CommandText = "select * from Version_LiveUpdate where 1=0";
+                cmd.Parameters.Clear();
+                using(var reader = await DbContext.ExecuteReaderAsync(cmd))
+                {
+                    dtLiveUpdate.Load(reader);
+                }
+                //List<string> rows = new List<string>();
 
                 var computersShop = dtComputers.AsEnumerable().Where(r => selectedShops.Contains(r.GetValue<int>("ShopID")))
                     .Select(c => new { ShopId = c.GetValue<int>("ShopID"), ComputerId = c.GetValue<int>("ComputerID") }).ToList();
 
                 foreach (var comp in computersShop)
                 {
-                    rows.Add($"('{versionDeploy.BatchId}', {comp.ShopId}, {comp.ComputerId}, {(int)versionDeploy.ProgramId}, '{versionDeploy.ProgramName}', '{versionDeploy.ProgramVersion}', GETDATE(), GETDATE())");
+                    //rows.Add($"('{versionDeploy.BatchId}', {comp.ShopId}, {comp.ComputerId}, {(int)versionDeploy.ProgramId}, '{versionDeploy.ProgramName}', '{versionDeploy.ProgramVersion}', GETDATE(), GETDATE())");
+                    var row = dtLiveUpdate.NewRow();
+                    row["BatchID"] = versionDeploy.BatchId;
+                    row["ShopID"] = comp.ShopId;
+                    row["ComputerID"] = comp.ComputerId;
+                    row["ProgramID"] = (int)versionDeploy.ProgramId;
+                    row["ProgramName"] = versionDeploy.ProgramName;
+                    row["UpdateVersion"] = versionDeploy.ProgramVersion;
+                    row["FileReceiveStatus"] = 0;
+                    row["BackupStatus"] = 0;
+                    row["RollbackStatus"] = 0;
+                    row["UpdateStatus"] = 0;
+                    row["SyncStatus"] = 0;
+                    row["ReadyToUpdate"] = 0;
+                    row["InsertDate"] = DateTime.Now;
+                    row["UpdateDate"] = DateTime.Now;
+                    dtLiveUpdate.Rows.Add(row);
                 }
 
-                if (rows.Count > 0)
+                if (dtLiveUpdate.Rows.Count > 0)
                 {
-                    stringBuilder.Append(string.Join(",", rows));
-                    stringBuilder.Append(";");
-                    cmd.CommandText = stringBuilder.ToString();
-                    await DbContext.ExecuteNonQueryAsync(cmd);
+                    // stringBuilder.Append(string.Join(",", rows));
+                    // stringBuilder.Append(";");
+                    // cmd.CommandText = stringBuilder.ToString();
+                    // await DbContext.ExecuteNonQueryAsync(cmd);
+
+                    using (var bulkCopy = new System.Data.SqlClient.SqlBulkCopy((System.Data.SqlClient.SqlConnection) conn, 
+                        System.Data.SqlClient.SqlBulkCopyOptions.Default,
+                        (System.Data.SqlClient.SqlTransaction) sqlTransaction))
+                    {
+                        bulkCopy.DestinationTableName = "Version_LiveUpdate";
+                        bulkCopy.WriteToServer(dtLiveUpdate);
+                    }
                 }
                 sqlTransaction?.Commit();
 
