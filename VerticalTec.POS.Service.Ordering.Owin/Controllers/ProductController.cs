@@ -324,7 +324,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                                          ProductName1 = component.GetValue<string>("ProductName1"),
                                                          ProductName2 = component.GetValue<string>("ProductName2"),
                                                          ProductName3 = component.GetValue<string>("ProductName3"),
-                                                         ProductImage = component.GetValue<string>("ProductImage")
+                                                         ProductImage = component.GetValue<string>("ProductImage"),
+                                                         CurrentStock = component.GetValue<double>("CurrentStock"),
+                                                         EnableCountDownStock = component["CurrentStock"] != DBNull.Value
                                                      }).ToList()
                             }).ToList();
                 if (list.Count > 0)
