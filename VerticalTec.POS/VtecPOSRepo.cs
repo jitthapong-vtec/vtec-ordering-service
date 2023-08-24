@@ -716,7 +716,8 @@ namespace VerticalTec.POS
                 " b.ProductName1, b.ProductName2, b.ProductName3, b.ProductTypeID," +
                 " case when c.ProductPrice is not null then c.ProductPrice else" +
                 " case when d.ProductPrice is not null then d.ProductPrice else null end end as ProductPrice, " +
-                " concat(@imageUrlBase, replace(case when b.ProductPictureServer is null then '' else b.ProductPictureServer end, 'UploadImage/Products/', '')) as ProductImage" +
+                " concat(@imageUrlBase, replace(case when b.ProductPictureServer is null then '' else b.ProductPictureServer end, 'UploadImage/Products/', '')) as ProductImage, " +
+                " e.CurrentStock " +
                 " from productcomponent a " +
                 " inner join products b" +
                 " on a.MaterialID=b.ProductID" +
@@ -725,7 +726,10 @@ namespace VerticalTec.POS
                 " on b.ProductID = c.ProductID" +
                 " left join" +
                 " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) d" +
-                " on b.ProductID = d.ProductID" +
+                " on b.ProductID = d.ProductID" + 
+                " left join productcountdownstock e" +
+                " on b.ProductID=e.ProductID" +
+                " and b.ShopID=e.ShopID" +
                 " where a.ProductID=@parentProductId and b.Deleted=0";
 
             var saleDate = await GetSaleDateAsync(conn, shopId, false, true);
