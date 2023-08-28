@@ -23,6 +23,26 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpPost]
+        [Route("v1/staffs/logout")]
+        public async Task<IHttpActionResult> Logout(int staffId, int shopId, int terminalId)
+        {
+            var result = new HttpActionResult<object>(Request);
+            using (IDbConnection conn = await _database.ConnectAsync())
+            {
+                var cmd = new MySqlCommand("delete from computeraccess where LastLoginStaffID=@staffId and ShopID=@shopId and ComputerID=@terminalId", (MySqlConnection)conn);
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddRange(new MySqlParameter[]
+                {
+                    new MySqlParameter("@staffId", staffId),
+                    new MySqlParameter("@shopId", shopId),
+                    new MySqlParameter("@terminalId", terminalId)
+                });
+                await cmd.ExecuteNonQueryAsync();
+            }
+            return result;
+        }
+
+        [HttpPost]
         [Route("v1/staffs/identify")]
         public async Task<IHttpActionResult> IdentifyStaff(string staffCode = "", string password = "", int shopId = 0, int terminalId = 0)
         {
