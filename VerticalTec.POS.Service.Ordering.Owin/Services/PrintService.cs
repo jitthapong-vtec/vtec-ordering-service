@@ -1,4 +1,5 @@
 ﻿using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -125,6 +126,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                             _log.Info($"Call PrintKdsDataFromDataSet with trankey: {payload.TransactionID}:{payload.ComputerID}, Number table in dsOrderData = {dsOrderData.Tables.Count}");
                             PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
                                 payload.ComputerID, dsOrderData);
+
+                            var orderDataJson = JsonConvert.SerializeObject(dsOrderData);
                         }
                         catch (Exception ex)
                         {

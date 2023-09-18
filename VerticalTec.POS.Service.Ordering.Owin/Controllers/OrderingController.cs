@@ -369,55 +369,58 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/orders")]
-        public async Task<IHttpActionResult> AddOrderAsync(OrderTransaction order)
+        public IHttpActionResult AddOrderAsync(OrderTransaction order)
         {
-            _logger.Info($"ADD_ORDER {JsonConvert.SerializeObject(order)}");
-
-            var response = new HttpActionResult<OrderTransaction>(Request);
-            using (var conn = await _database.ConnectAsync())
+            lock (Owner)
             {
-                try
-                {
-                    await _orderingService.AddOrderAsync(conn, order);
-                    //TODO: AddAutoProductSaleMode
-                    //if (order.SaleMode != SaleModes.DineIn)
-                    //{
-                    //    try
-                    //    {
-                    //        var smProId = _orderingService.AutoAddProductBySaleMode(conn, order.TransactionID, order.ComputerID, order.ShopID, order.SaleMode);
-                    //        order.Orders = await _orderingService.GetOrderDetailsAsync(conn, order.TransactionID,
-                    //            order.ComputerID, order.ShopID, order.StaffID, order.LangID);
-                    //        if (!string.IsNullOrEmpty(smProId))
-                    //        {
-                    //            int proId;
-                    //            if (int.TryParse(smProId, out proId))
-                    //            {
-                    //                var query = order.Orders.Where(smOrder => smOrder.ProductID == proId).ToList();
-                    //                foreach (var item in query)
-                    //                {
-                    //                    item.EnableDelete = false;
-                    //                    item.EnableModifyQty = false;
-                    //                }
-                    //            }
-                    //        }
-                    //    }
-                    //    catch (Exception ex)
-                    //    {
-                    //        LogService.Instance.WriteLog(WebApiApplication.LogPrefix, $"ADD_ORDER:AUTO_ADD_SALEMODE {ex.Message}");
-                    //    }
-                    //}
-                    response.StatusCode = HttpStatusCode.OK;
-                    response.Body = order;
-                }
-                catch (VtecPOSException ex)
-                {
-                    _logger.Error(ex.Message);
+                _logger.Info($"ADD_ORDER {JsonConvert.SerializeObject(order)}");
 
-                    response.StatusCode = HttpStatusCode.InternalServerError;
-                    response.Message = ex.Message;
+                var response = new HttpActionResult<OrderTransaction>(Request);
+                using (var conn = _database.ConnectAsync().Result)
+                {
+                    try
+                    {
+                        _orderingService.AddOrderAsync(conn, order).ConfigureAwait(false);
+                        //TODO: AddAutoProductSaleMode
+                        //if (order.SaleMode != SaleModes.DineIn)
+                        //{
+                        //    try
+                        //    {
+                        //        var smProId = _orderingService.AutoAddProductBySaleMode(conn, order.TransactionID, order.ComputerID, order.ShopID, order.SaleMode);
+                        //        order.Orders = await _orderingService.GetOrderDetailsAsync(conn, order.TransactionID,
+                        //            order.ComputerID, order.ShopID, order.StaffID, order.LangID);
+                        //        if (!string.IsNullOrEmpty(smProId))
+                        //        {
+                        //            int proId;
+                        //            if (int.TryParse(smProId, out proId))
+                        //            {
+                        //                var query = order.Orders.Where(smOrder => smOrder.ProductID == proId).ToList();
+                        //                foreach (var item in query)
+                        //                {
+                        //                    item.EnableDelete = false;
+                        //                    item.EnableModifyQty = false;
+                        //                }
+                        //            }
+                        //        }
+                        //    }
+                        //    catch (Exception ex)
+                        //    {
+                        //        LogService.Instance.WriteLog(WebApiApplication.LogPrefix, $"ADD_ORDER:AUTO_ADD_SALEMODE {ex.Message}");
+                        //    }
+                        //}
+                        response.StatusCode = HttpStatusCode.OK;
+                        response.Body = order;
+                    }
+                    catch (VtecPOSException ex)
+                    {
+                        _logger.Error(ex.Message);
+
+                        response.StatusCode = HttpStatusCode.InternalServerError;
+                        response.Message = ex.Message;
+                    }
                 }
+                return response;
             }
-            return response;
         }
 
         [HttpPost]
