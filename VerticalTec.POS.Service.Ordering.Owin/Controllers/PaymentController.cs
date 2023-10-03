@@ -196,8 +196,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 };
 
                 var reqJson = JsonConvert.SerializeObject(qrPayload);
+
+                _log.Info($"Request QR Inquiry api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1, ReqJson={reqJson}");
+
                 var content = new StringContent(reqJson, Encoding.UTF8, "application/json");
                 var resp = await httpClient.PostAsync($"api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1", content);
+
+                var respStr = await resp.Content.ReadAsStringAsync();
+                _log.Info($"Response QR Inquiry api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1, RespJson={respStr}");
 
                 try
                 {
@@ -250,7 +256,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             success_at = ""
                         }
                     };
-                    var respStr = await resp.Content.ReadAsStringAsync();
+
                     apiResp = JsonConvert.DeserializeAnonymousType(respStr, apiResp);
                     if (apiResp.responseCode == "")
                     {
@@ -402,6 +408,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     result.StatusCode = HttpStatusCode.InternalServerError;
                     result.Message = ex.Message;
+
+                    _log.Error($"Inquiry api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1, Error {ex.Message}, reqId={reqId}, reqJson={reqJson}");
                 }
             }
             return result;
