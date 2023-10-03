@@ -281,7 +281,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         var setComputerAccessTask = _posRepo.SetComputerAccessAsync(conn, tranData.TableID, tranData.TerminalID);
                         _messenger.SendMessage();
 
-                        _log.Info($"OPEN_TABLE {JsonConvert.SerializeObject(tranData)}");
+                        _log.Info($"TABLE_DATA {JsonConvert.SerializeObject(tranData)}");
 
                         var tasks = new Task[]
                         {
@@ -290,7 +290,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             updateTableStatusTask,
                             setComputerAccessTask
                         };
-                        Task.WaitAll(tasks);
+                        try
+                        {
+                            Task.WaitAll(tasks);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new VtecPOSException(ex.InnerException?.Message ?? ex.Message, ex.InnerException);
+                        }
 
                         result.StatusCode = HttpStatusCode.OK;
                         result.Body = tranData;
@@ -299,6 +306,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     {
                         result.StatusCode = HttpStatusCode.InternalServerError;
                         result.Message = ex.Message;
+                        _log.Error(ex, $"TABLE_DATA {ex.Message}");
                     }
                 }
                 return result;
