@@ -17,6 +17,7 @@ using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 using VerticalTec.POS.Utils;
+using VtecMessenger;
 using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
@@ -701,8 +702,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 await _orderingService.SubmitOrderAsync(conn, transaction.TransactionID, transaction.ComputerID, transaction.ShopID, transaction.TableID);
 
-                var jobId = BackgroundJob.Enqueue(() => _printService.PrintOrder(transaction));
-                BackgroundJob.ContinueJobWith(jobId, () => _messengerService.SendMessage($"102|101|{transaction.TableID}"));
+                //var jobId = BackgroundJob.Enqueue(() => _printService.PrintOrder(transaction));
+                //BackgroundJob.ContinueJobWith(jobId, () => _messengerService.SendMessage($"102|101|{transaction.TableID}"));
+
+                var saleDate = await _posRepo.GetSaleDateAsync(conn, transaction.ShopID, false);
+                Messenger.Instance.Send(new MessageObject
+                {
+                    MessageText = $"201|{transaction.ShopID}|{saleDate}|{transaction.TransactionID}:{transaction.ComputerID}|{transaction.StaffID}|{transaction.TableID}|1"
+                });
             }
             return result;
         }
