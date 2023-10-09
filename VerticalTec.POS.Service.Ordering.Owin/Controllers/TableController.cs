@@ -363,40 +363,46 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpGet]
         [Route("v1/tables/getaccess")]
-        public async Task<IHttpActionResult> CheckAccessAsync(int tableId)
+        public IHttpActionResult CheckAccessAsync(int tableId)
         {
-            var result = new HttpActionResult<DataTable>(Request);
-            using (var conn = await _database.ConnectAsync())
+            lock (lockObj)
             {
-                var dataTable = new DataTable();
-                string sqlQuery = "select a.*, b.* from tableno a" +
-                    " inner join ComputerName b" +
-                    " on a.CurrentAccessComputer=b.ComputerID" +
-                    " where a.TableID=@tableId";
-                var cmd = _database.CreateCommand(sqlQuery, conn);
-                cmd.Parameters.Add(_database.CreateParameter("@tableId", tableId));
-                using (IDataReader reader = await _database.ExecuteReaderAsync(cmd))
+                var result = new HttpActionResult<DataTable>(Request);
+                using (var conn = _database.Connect())
                 {
-                    dataTable.Load(reader);
+                    var dataTable = new DataTable();
+                    string sqlQuery = "select a.*, b.* from tableno a" +
+                        " inner join ComputerName b" +
+                        " on a.CurrentAccessComputer=b.ComputerID" +
+                        " where a.TableID=@tableId";
+                    var cmd = _database.CreateCommand(sqlQuery, conn);
+                    cmd.Parameters.Add(_database.CreateParameter("@tableId", tableId));
+                    using (IDataReader reader = _database.ExecuteReaderAsync(cmd).Result)
+                    {
+                        dataTable.Load(reader);
+                    }
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = dataTable;
                 }
-                result.StatusCode = HttpStatusCode.OK;
-                result.Body = dataTable;
+                return result;
             }
-            return result;
         }
 
         [HttpPost]
         [Route("v1/tables/setaccess")]
-        public async Task<IHttpActionResult> SetComputerAccessAsync(int tableId, int terminalId)
+        public IHttpActionResult SetComputerAccessAsync(int tableId, int terminalId)
         {
-            var result = new HttpActionResult<string>(Request);
-            using (var conn = await _database.ConnectAsync())
+            lock (lockObj)
             {
-                await _posRepo.SetComputerAccessAsync(conn, tableId, terminalId);
-                result.StatusCode = HttpStatusCode.OK;
-                result.Body = "";
+                var result = new HttpActionResult<string>(Request);
+                using (var conn = _database.Connect())
+                {
+                    _posRepo.SetComputerAccessAsync(conn, tableId, terminalId).Wait();
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = "";
+                }
+                return result;
             }
-            return result;
         }
 
         [HttpPost]
