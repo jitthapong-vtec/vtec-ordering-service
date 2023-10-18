@@ -794,12 +794,19 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(transaction.TableName))
+                    if (!string.IsNullOrEmpty(transaction.TableName) || transaction.TransactionStatus == TransactionStatus.Hold)
                     {
-                        var cmd = _database.CreateCommand("update ordertransactionfront set TableName=@tableName," +
-                            " TransactionStatusID=@status" +
-                            " where TransactionID=@transactionId and ComputerID=@computerId", conn);
-                        cmd.Parameters.Add(_database.CreateParameter("@tableName", transaction.TableName));
+                        var cmdText = "update ordertransactionfront set TransactionStatusID=@status ";
+                        var tableNameNotEmpty = !string.IsNullOrEmpty(transaction.TableName);
+                        if (tableNameNotEmpty)
+                        {
+                            cmdText += ", TableName=@tableName";
+                        }
+                        cmdText += " where TransactionID=@transactionId and ComputerID=@computerId";
+
+                        var cmd = _database.CreateCommand(cmdText, conn);
+                        if (tableNameNotEmpty)
+                            cmd.Parameters.Add(_database.CreateParameter("@tableName", transaction.TableName));
                         cmd.Parameters.Add(_database.CreateParameter("@transactionId", transaction.TransactionID));
                         cmd.Parameters.Add(_database.CreateParameter("@status", transaction.TransactionStatus));
                         cmd.Parameters.Add(_database.CreateParameter("@computerId", transaction.TerminalID));
