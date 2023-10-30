@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Configuration.Install;
+using System.IO;
 using System.Linq;
 using System.ServiceProcess;
 using System.Threading.Tasks;
@@ -17,10 +18,10 @@ namespace VerticalTec.POS.Service.Ordering
         public ProjectInstaller()
         {
             InitializeComponent();
-            AfterInstall += new InstallEventHandler(Service_AfterInstall);
+            AfterInstall += ProjectInstaller_AfterInstall;
         }
 
-        private void Service_AfterInstall(object sender, InstallEventArgs e)
+        private void ProjectInstaller_AfterInstall(object sender, InstallEventArgs e)
         {
             SetFirewallRule();
             StartService();

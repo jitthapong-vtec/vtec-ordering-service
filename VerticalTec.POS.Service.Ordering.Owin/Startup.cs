@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Contexts;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -34,6 +35,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin
 
         private IEnumerable<IDisposable> GetHangfireServers()
         {
+            try
+            {
+                var hangfire = System.IO.Path.Combine(System.Reflection.Assembly.GetExecutingAssembly().Location, "hangfire.db");
+                System.IO.File.Delete(hangfire);
+            }
+            catch { }
+
             GlobalConfiguration.Configuration
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
                 .UseUnityActivator(_container)
@@ -65,7 +73,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             var db = _container.Resolve<IDatabase>();
             DatabaseMigration.CheckAndUpdate(db, AppConfig.Instance.DbName);
 
-            config.EnableSwagger(c => c.SingleApiVersion("v1.0.7", "Vtec Ordering Api")).EnableSwaggerUi();
+            config.EnableSwagger(c => c.SingleApiVersion("v1.0.8", "Vtec Ordering Api")).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
             config.MapHttpAttributeRoutes();
