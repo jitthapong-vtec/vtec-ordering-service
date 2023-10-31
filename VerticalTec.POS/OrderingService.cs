@@ -161,7 +161,7 @@ namespace VerticalTec.POS
             DataSet orderDataSet = await _posRepo.GetOrderDataAsync(conn, transactionId, computerId, langId);
 
             var orders = (from order in orderDataSet.Tables["Orders"].ToEnumerable()
-                          where order.GetValue<int>("OrderDetailLinkID") == parentOrderDetailId
+                          where order.GetValue<int>("OrderDetailLinkID") == parentOrderDetailId && new int[] {1,2}.Contains(order.GetValue<int>("OrderStatusID"))
                           select order).ToList();
 
             var modifierOrder = (from commentProduct in dtComment.ToEnumerable()
