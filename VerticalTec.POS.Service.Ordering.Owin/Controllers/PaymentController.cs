@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
+using System.IO.Ports;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -18,6 +19,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.Service.Ordering.Owin.Exceptions;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 using VerticalTec.POS.Utils;
@@ -49,6 +51,144 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _printService = printService;
             _posRepo = new VtecPOSRepo(database);
         }
+
+        #region BCA
+        [HttpPost]
+        [Route("v1/payments/edc/bca")]
+        public async Task<IHttpActionResult> BCAEdcPayment(PaymentData paymentData)
+        {
+            _log.Info("Call v1/payments/edc/bca");
+
+            var result = new HttpActionResult<object>(Request);
+            try
+            {
+                var respText = "";
+                using (var conn = await _database.ConnectAsync())
+                {
+                    string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
+                    var success = false;
+
+                    if (paymentData.EDCType == 0)
+                        throw new PaymentException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+
+                    var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
+                    cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
+                    using (IDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
+                        }
+                    }
+                    if (paymentData.PayTypeID == 0)
+                        throw new PaymentException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+
+                    EdcObjLib.objCreditCardInfo cardData = new EdcObjLib.objCreditCardInfo();
+
+                    if (paymentData.EDCType == 44)
+                    {
+                        success= EdcObjLib.BCA_V3.ClassEdcLib_BCA_V3_IP_CC.SendEdc_CreditCardPayment(paymentData.EDCIPAddress,
+                            paymentData.EDCTcpPort, paymentData.PayAmount, paymentData.TransactionID, "", "", ref cardData, ref respText);
+                    }
+                    else if (paymentData.EDCType == 45)
+                    {
+                        //call qr
+                    }
+
+                    if (!success)
+                    {
+                        var errCode = ErrorCodes.EDCCreditPayment;
+                        var errMsg = $"Edc credit payment ERROR {respText}";
+
+                        if (paymentData.EDCType == 45)
+                        {
+                            errCode = ErrorCodes.EDCQRPayment;
+                            errMsg = $"Edc qr payment ERROR {respText}";
+                        }
+
+                        _log.Error(errMsg);
+                        throw new PaymentException(errCode, "");
+                    }
+
+                    var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
+                    if (dtPendingPayment.Rows.Count > 0)
+                        await _paymentService.DeletePaymentAsync(conn, dtPendingPayment.Rows[0].GetValue<int>("PayDetailID"), paymentData.TransactionID, paymentData.ComputerID);
+                    await _paymentService.AddPaymentAsync(conn, paymentData);
+
+                    var posModule = new POSModule();
+                    var cardDataJson = JsonConvert.SerializeObject(cardData);
+
+                    success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, cardDataJson, paymentData.TransactionID,
+                        paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, saleDate, paymentData.BrandName,
+                        paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
+
+                    if (!success)
+                    {
+                        throw new PaymentException(ErrorCodes.PaymentFunction, respText);
+                    }
+                    else
+                    {
+                        await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
+                        try
+                        {
+                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, "Error finalize");
+                            _log.Info("Retry finalize bill again");
+                            try
+                            {
+                                await Task.Delay(500);
+                                using (var conn2 = await _database.ConnectAsync())
+                                {
+                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
+                                }
+                            }
+                            catch (Exception ex2)
+                            {
+                                _log.Error(ex2, "Retry finalize bill failed");
+                            }
+                        }
+                        var printData = new PrintData()
+                        {
+                            TransactionID = paymentData.TransactionID,
+                            ComputerID = paymentData.ComputerID,
+                            ShopID = paymentData.ShopID,
+                            LangID = paymentData.LangID,
+                            PrinterIds = paymentData.PrinterIds,
+                            PrinterNames = paymentData.PrinterNames,
+                            PaperSize = paymentData.PaperSize
+                        };
+                        await _printService.PrintBill(printData);
+                        await _printService.PrintOrder(new TransactionPayload
+                        {
+                            TransactionID = paymentData.TransactionID,
+                            ComputerID = paymentData.ComputerID,
+                            TerminalID = paymentData.ComputerID,
+                            ShopID = paymentData.ShopID,
+                            LangID = paymentData.LangID,
+                            StaffID = paymentData.StaffID,
+                            PrinterIds = paymentData.PrinterIds,
+                            PrinterNames = paymentData.PrinterNames
+                        });
+                        _messenger.SendMessage();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                if (ex is PaymentException apiEx)
+                    result.ErrorCode = apiEx.ErrorCode;
+
+                _log.Error(ex.Message);
+                result.StatusCode = HttpStatusCode.BadRequest;
+            }
+            return result;
+        }
+
+        #endregion
 
         #region OnlinePayment
         [HttpPost]
@@ -313,7 +453,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 {
                                     var greenMile = new BCRInterface(paymentData.ShopID, paymentData.ComputerID, paymentData.SaleDate, conn as MySqlConnection);
                                     success = greenMile.InsertTransPOS(ref respText, paymentData.ShopID, paymentData.SaleDate, paymentData.TransactionID, paymentData.ComputerID, "front", paymentData.CustAccountNo, conn as MySqlConnection);
-                                    if(success == false)
+                                    if (success == false)
                                     {
                                         _log.Error($"Error InsertTransPOS {respText}");
 
@@ -396,7 +536,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     else
                     {
-                        if(apiResp.responseCode == "99")
+                        if (apiResp.responseCode == "99")
                         {
                             _log.Error($"Inquiry api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1, Error {apiResp.responseText}, reqId={reqId}, reqJson={reqJson}");
                         }

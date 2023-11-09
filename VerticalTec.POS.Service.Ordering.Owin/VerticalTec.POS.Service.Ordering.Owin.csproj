@@ -51,8 +51,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\DLLs\DevExpress.XtraEditors.v17.1.dll</HintPath>
     </Reference>
-    <Reference Include="EdcObjLib">
-      <HintPath>..\DLLs\EdcObjLib.dll</HintPath>
+    <Reference Include="EdcObjLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\dlls\EdcObjLib.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf, Version=3.10.1.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
       <HintPath>..\packages\Google.Protobuf.3.10.1\lib\net45\Google.Protobuf.dll</HintPath>
@@ -235,6 +236,7 @@
     <Compile Include="Controllers\StaffController.cs" />
     <Compile Include="Controllers\TableController.cs" />
     <Compile Include="DatabaseMigration.cs" />
+    <Compile Include="Exceptions\PaymentException.cs" />
     <Compile Include="InvariantCultureScope.cs" />
     <Compile Include="Models\ChangeSaleModeOrder.cs" />
     <Compile Include="Models\ErrorCodes.cs" />

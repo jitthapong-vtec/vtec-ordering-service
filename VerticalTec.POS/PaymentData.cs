@@ -50,6 +50,8 @@ namespace VerticalTec.POS
         public string ShopCode { get; set; }
         public string ShopName { get; set; }
         public string Token { get; set; }
+        public string EDCIPAddress { get; set; }
+        public int EDCTcpPort { get; set; }
         public decimal CashChange
         {
             get
