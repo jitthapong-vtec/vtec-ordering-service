@@ -10,6 +10,8 @@ using VerticalTec.POS.Database;
 using VerticalTec.POS.Utils;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
@@ -22,6 +24,123 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         {
             _database = database;
             _posRepo = new VtecPOSRepo(database);
+        }
+
+        [HttpGet]
+        [Route("v1/products/stock")]
+        public async Task<IHttpActionResult> GetProductStock()
+        {
+            var result = new HttpActionResult<object>(Request);
+            try
+            {
+                using (var conn = _database.Connect())
+                {
+                    var dtStock = new DataTable();
+                    var cmd = _database.CreateCommand(@"select b.ProductID, b.ProductGroupID, b.ProductDeptID,b.ProductCode, b.ProductName,
+                                a.CurrentStock, case when a.CurrentStock = 0 then true else false end as IsOutOfStock
+                                from productcountdownstock a join products b on a.ProductID=b.ProductID", conn);
+                    using (var reader = await _database.ExecuteReaderAsync(cmd))
+                    {
+                        dtStock.Load(reader);
+                    }
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = dtStock.AsEnumerable().Select(s => new
+                    {
+                        ProductID = s.GetValue<int>("ProductID"),
+                        ProductGroupID = s.GetValue<int>("ProductGroupID"),
+                        ProductDeptID = s.GetValue<int>("ProductDeptID"),
+                        ProductCode = s.GetValue<string>("ProductCode"),
+                        ProductName = s.GetValue<string>("ProductName"),
+                        CurrentStock = s.GetValue<int>("CurrentStock"),
+                        IsOutOfStock = s.GetValue<bool>("IsOutOfStock")
+                    });
+                }
+            }
+            catch
+            {
+                result.StatusCode = HttpStatusCode.Unauthorized;
+                result.Message = "Unauthorized";
+                return result;
+            }
+            return result;
+        }
+
+        [HttpPost]
+        [Route("v1/outlet/checkstock")]
+        public async Task<IHttpActionResult> CheckStock(object data)
+        {
+            var result = new HttpActionResult<object>(Request);
+            try
+            {
+                var clientId = Request.Headers.GetValues("x-client-id").FirstOrDefault();
+                var clientSecret = Request.Headers.GetValues("x-client-secret").FirstOrDefault();
+
+                if (clientId != "vtec-ordering" && clientSecret != "688635a6c68f85e8")
+                {
+                    result.StatusCode = HttpStatusCode.Unauthorized;
+                    result.Message = "Unauthorized";
+                    return result;
+                }
+
+                var productIds = new int[] { };
+
+                try
+                {
+                    var json = JsonConvert.SerializeObject(data);
+                    productIds = JArray.Parse(json).Select(id => (int)id).ToArray();
+                }
+                catch
+                {
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                    result.Message = "Request parameter is not valid";
+                    return result;
+                }
+
+                if (productIds.Length == 0)
+                {
+                    result.StatusCode = HttpStatusCode.NoContent;
+                    result.Message = "No data";
+                    return result;
+                }
+
+                using (var conn = _database.Connect())
+                {
+                    var dtStock = new DataTable();
+                    var cmd = _database.CreateCommand(@"select b.ProductID, b.ProductGroupID, b.ProductDeptID,b.ProductCode, b.ProductName,
+                                a.CurrentStock, case when a.CurrentStock = 0 then true else false end as IsOutOfStock
+                                from productcountdownstock a join products b on a.ProductID=b.ProductID", conn);
+                    using (var reader = await _database.ExecuteReaderAsync(cmd))
+                    {
+                        dtStock.Load(reader);
+                    }
+                    if (dtStock.Rows.Count > 0)
+                    {
+                        try
+                        {
+                            dtStock = dtStock.AsEnumerable().Where(s => productIds.Contains(s.GetValue<int>("ProductID"))).CopyToDataTable();
+                        }
+                        catch { }
+                    }
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = dtStock.AsEnumerable().Select(s => new
+                    {
+                        ProductID = s.GetValue<int>("ProductID"),
+                        ProductGroupID = s.GetValue<int>("ProductGroupID"),
+                        ProductDeptID = s.GetValue<int>("ProductDeptID"),
+                        ProductCode = s.GetValue<string>("ProductCode"),
+                        ProductName = s.GetValue<string>("ProductName"),
+                        CurrentStock = s.GetValue<int>("CurrentStock"),
+                        IsOutOfStock = s.GetValue<bool>("IsOutOfStock")
+                    });
+                }
+            }
+            catch
+            {
+                result.StatusCode = HttpStatusCode.Unauthorized;
+                result.Message = "Unauthorized";
+                return result;
+            }
+            return result;
         }
 
         [HttpPost]
