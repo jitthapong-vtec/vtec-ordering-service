@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,17 @@ namespace VerticalTec.POS.Service.LiveUpdate
             _hubUrl = hubUrl;
 
             HubConnection = new HubConnectionBuilder()
-                   .WithUrl(hubUrl)
+                   .WithUrl(hubUrl, (opts) =>
+                   {
+                       opts.HttpMessageHandlerFactory = (message) =>
+                       {
+                           if (message is HttpClientHandler clientHandler)
+                               clientHandler.ServerCertificateCustomValidationCallback +=
+                                   (sender, certificate, chain, sslPolicyErrors) => true;
+                           return message;
+                       };
+                       opts.WebSocketConfiguration = wsc => wsc.RemoteCertificateValidationCallback = (sender, certificate, chain, policyErrors) => true;
+                   })
                    .WithAutomaticReconnect()
                    .Build();
             HubConnection.Reconnecting += Reconnecting;
