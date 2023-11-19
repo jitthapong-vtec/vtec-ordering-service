@@ -44,6 +44,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             return result;
         }
 
+        //TODO: 1019 LoginWhenClockin
         [HttpPost]
         [Route("v1/staffs/identify")]
         public IHttpActionResult IdentifyStaff(string staffCode = "", string password = "", int shopId = 0, int terminalId = 0)
@@ -83,6 +84,32 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                             var dtProperty = _posRepo.GetProgramPropertyAsync(conn, 1097).Result;
                             var isSingleLogin = dtProperty.AsEnumerable().Select(r => r.GetValue<int>("PropertyValue") == 1).FirstOrDefault();
+                            dtProperty = _posRepo.GetProgramPropertyAsync(conn, 1019).Result;
+                            var loginWhenClocking = dtProperty.AsEnumerable().Select(r =>
+                                {
+                                    var isEnabled = r.GetValue<int>("PropertyValue") == 1;
+                                    var textValue = (string)r["PropertyTextValue"];
+                                    var loginWhenClockin = textValue.Split(';').Where(key => key.StartsWith("LoginWhenClockIn")).Select(key => key.Split('=')[1]).First();
+                                    return isEnabled && loginWhenClockin == "1";
+                                }).FirstOrDefault();
+                            if (loginWhenClocking)
+                            {
+                                var saleDate = _posRepo.GetSaleDateAsync(conn, shopId, false).Result;
+                                var isClockedIn = MySqlHelper.ExecuteScalar((MySqlConnection)conn, @"SELECT COUNT(*) FROM StaffWorkTimeSession WHERE ShopID=@shopId AND SessionDate=@saleDate AND StaffID=@staffId AND EndTime IS NULL",
+                                    new MySqlParameter[]{
+                                        new MySqlParameter("@shopId", shopId),
+                                        new MySqlParameter("@staffId", staff.StaffID),
+                                        new MySqlParameter("@saleDate", saleDate)
+                                    });
+
+                                result.StatusCode = HttpStatusCode.OK;
+                                result.Body = new
+                                {
+                                    Code = "USER_NOT_YET_CLOCKIN"
+                                };
+                                return result;
+                            }
+
                             if (isSingleLogin)
                             {
                                 var dtComputerAccess = new DataTable();
