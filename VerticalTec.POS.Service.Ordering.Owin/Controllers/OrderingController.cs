@@ -381,7 +381,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     try
                     {
-                        _orderingService.AddOrderAsync(conn, order).ConfigureAwait(false);
+                        _orderingService.AddOrderAsync(conn, order).Wait();
                         //TODO: AddAutoProductSaleMode
                         //if (order.SaleMode != SaleModes.DineIn)
                         //{
@@ -414,10 +414,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     catch (VtecPOSException ex)
                     {
-                        _logger.Error(ex.Message);
+                        var errMsg = ex.Message;
+                        if (ex.InnerException != null)
+                            errMsg = ex.InnerException.Message;
+                        _logger.Error(errMsg);
 
                         response.StatusCode = HttpStatusCode.InternalServerError;
-                        response.Message = ex.Message;
+                        response.Message = errMsg;
                     }
                 }
                 return response;

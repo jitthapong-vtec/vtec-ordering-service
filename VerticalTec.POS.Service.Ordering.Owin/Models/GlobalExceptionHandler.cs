@@ -10,6 +10,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Models
         public override void OnException(HttpActionExecutedContext actionExecutedContext)
         {
             var msg = actionExecutedContext.Exception.Message;
+            if (actionExecutedContext.Exception.InnerException != null)
+                msg = actionExecutedContext.Exception.InnerException.Message;
+
             var body = new ErrorDetail()
             {
                 Message = msg
