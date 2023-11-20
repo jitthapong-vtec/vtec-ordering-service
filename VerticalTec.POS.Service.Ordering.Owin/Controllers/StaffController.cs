@@ -102,12 +102,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                         new MySqlParameter("@saleDate", saleDate)
                                     });
 
-                                result.StatusCode = HttpStatusCode.OK;
-                                result.Body = new
+                                if (isClockedIn != null && Convert.ToInt32(isClockedIn) == 0)
                                 {
-                                    Code = "USER_NOT_YET_CLOCKIN"
-                                };
-                                return result;
+                                    result.StatusCode = HttpStatusCode.OK;
+                                    result.Body = new
+                                    {
+                                        Code = "USER_NOT_YET_CLOCKIN"
+                                    };
+                                    return result;
+                                }
                             }
 
                             if (isSingleLogin)
