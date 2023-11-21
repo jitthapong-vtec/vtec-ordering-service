@@ -22,6 +22,7 @@ using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
+    [BasicAuthenActionFilter]
     public class OrderingController : ApiController
     {
         public static readonly object Owner = new object();

@@ -269,6 +269,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         {
             lock (lockObj)
             {
+                _log.Info($"OPEN_TABLE {JsonConvert.SerializeObject(tranData)}");
+
                 var result = new HttpActionResult<OrderTransaction>(Request);
                 using (var conn = _database.Connect())
                 {
