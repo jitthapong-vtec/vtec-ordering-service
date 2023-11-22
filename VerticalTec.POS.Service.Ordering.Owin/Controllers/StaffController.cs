@@ -11,6 +11,7 @@ using System;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
+    [BasicAuthenActionFilter]
     public class StaffController : ApiController
     {
         public static readonly object Owner = new object();
