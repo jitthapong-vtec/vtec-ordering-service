@@ -18,6 +18,7 @@ using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
+    [BasicAuthenActionFilter]
     public class TableController : ApiController
     {
         public static object lockObj = new object();
