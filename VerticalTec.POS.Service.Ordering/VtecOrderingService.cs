@@ -29,10 +29,12 @@ namespace VerticalTec.POS.Service.Ordering
             var dbServer = ServiceConfig.GetDatabaseServer();
             var dbName = ServiceConfig.GetDatabaseName();
             var apiPort = ServiceConfig.GetApiPort();
+            var apiUser = ServiceConfig.GetApiUser();
+            var apiPassword = ServiceConfig.GetApiPassword();
             string baseAddress = $"http://+:{apiPort}/";
 
             var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
-            _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName, hangfireConStr).Configuration(appBuilder));
+            _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName, hangfireConStr, apiUser: apiUser, apiPass: apiPassword).Configuration(appBuilder));
         }
 
         protected override void OnStop()
