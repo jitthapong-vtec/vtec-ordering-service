@@ -10,7 +10,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 {
     public interface IPrintService
     {
-        Task<bool> PrintOrder(TransactionPayload payload);
+        Task<bool> PrintOrder(TransactionPayload payload, bool updateTalbeStatus=true);
         Task PrintBill(PrintData payload);
         Task PrintCheckBill(TransactionPayload payload);
         Task KioskPrintCheckBill(TransactionPayload payload);

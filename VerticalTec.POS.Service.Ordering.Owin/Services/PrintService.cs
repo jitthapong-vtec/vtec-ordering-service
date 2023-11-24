@@ -32,7 +32,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             _posRepo = new VtecPOSRepo(database);
         }
 
-        public Task<bool> PrintOrder(TransactionPayload payload)
+        public Task<bool> PrintOrder(TransactionPayload payload, bool updateTalbeStatus = true)
         {
             lock (lockPrint)
             {
@@ -98,8 +98,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                         _log.Error(string.IsNullOrEmpty(responseText) ? "An error ocurred at PrintOrders" : responseText);
                     }
 
-                    posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
-                        payload.ShopID, saleDate, payload.LangID, myConn);
+                    if (updateTalbeStatus)
+                        posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
+                            payload.ShopID, saleDate, payload.LangID, myConn);
 
                     if (ePosPrint == "1")
                     {
