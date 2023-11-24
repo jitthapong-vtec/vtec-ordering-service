@@ -166,7 +166,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 try
                                 {
                                     _orderingService.SubmitOrderAsync(conn, transactionId, computerId, shopId, tableId).ConfigureAwait(false);
-                                    _printService.PrintOrder(transPayload).ConfigureAwait(false);
+                                    _printService.PrintOrder(transPayload, false).ConfigureAwait(false);
                                     _messengerService.SendMessage($"102|101|{transPayload.TableID}");
                                 }
                                 catch (Exception ex)
@@ -706,7 +706,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 await _orderingService.SubmitOrderAsync(conn, transaction.TransactionID, transaction.ComputerID, transaction.ShopID, transaction.TableID);
 
-                var jobId = BackgroundJob.Enqueue(() => _printService.PrintOrder(transaction));
+                var jobId = BackgroundJob.Enqueue(() => _printService.PrintOrder(transaction, true));
                 BackgroundJob.ContinueJobWith(jobId, () => _messengerService.SendMessage($"102|101|{transaction.TableID}"));
             }
             return result;
