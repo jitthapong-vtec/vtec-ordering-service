@@ -726,7 +726,7 @@ namespace VerticalTec.POS
                 " on b.ProductID = c.ProductID" +
                 " left join" +
                 " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) d" +
-                " on b.ProductID = d.ProductID" + 
+                " on b.ProductID = d.ProductID" +
                 " left join productcountdownstock e" +
                 " on b.ProductID=e.ProductID" +
                 " and b.ShopID=e.ShopID" +
@@ -1059,9 +1059,22 @@ namespace VerticalTec.POS
 
         public async Task<string> GetBackofficeHQPathAsync(IDbConnection conn, int shopId)
         {
-            var rootDir = await GetPropertyValueAsync(conn, 1011, "RootWebDir", shopId);
-            var backoffice = await GetPropertyValueAsync(conn, 1011, "BackOfficePath", shopId);
-            return $"{rootDir}/{backoffice}/";
+            var kioskImgLocal = false;
+            try
+            {
+                kioskImgLocal = await GetPropertyValueAsync(conn, 2001, "KioskImgLocal", shopId) == "1";
+            }
+            catch { }
+            if (kioskImgLocal)
+            {
+                return "";
+            }
+            else
+            {
+                var rootDir = await GetPropertyValueAsync(conn, 1011, "RootWebDir", shopId);
+                var backoffice = await GetPropertyValueAsync(conn, 1011, "BackOfficePath", shopId);
+                return $"{rootDir}/{backoffice}/";
+            }
         }
 
         public async Task<string> GetPropertyValueAsync(IDbConnection conn, int propertyId, string param, int shopId = 0, int computerId = 0)
