@@ -74,6 +74,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             appBuilder.UseHangfireAspNet(GetHangfireServers);
             appBuilder.UseHangfireDashboard("/jobs");
             appBuilder.UseWebApi(config);
+            appBuilder.UseStaticFiles();
         }
     }
 }
