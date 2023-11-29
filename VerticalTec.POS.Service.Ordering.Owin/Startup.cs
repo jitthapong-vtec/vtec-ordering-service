@@ -73,7 +73,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             var db = _container.Resolve<IDatabase>();
             DatabaseMigration.CheckAndUpdate(db, AppConfig.Instance.DbName);
 
-            config.EnableSwagger(c => c.SingleApiVersion("v1.0.9", "Vtec Ordering Api")).EnableSwaggerUi();
+            config.EnableSwagger(c => c.SingleApiVersion("v1.0.10", "Vtec Ordering Api")).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
             config.MapHttpAttributeRoutes();
