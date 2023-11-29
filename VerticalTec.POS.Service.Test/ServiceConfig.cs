@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Configuration;
 
-namespace VerticalTec.POS.Service.Ordering
+namespace VerticalTec.POS.Service.Test
 {
     public class ServiceConfig
     {

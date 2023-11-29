@@ -26,11 +26,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin
     {
         IUnityContainer _container;
 
-        public Startup(string dbServer, string dbName, string hangfileConnStr)
+        public Startup(string dbServer, string dbName, string hangfileConnStr, string apiUser = "", string apiPass = "")
         {
             AppConfig.Instance.DbServer = dbServer;
             AppConfig.Instance.DbName = dbName;
             AppConfig.Instance.HangfileConnStr = hangfileConnStr;
+            AppConfig.Instance.ApiUser = apiUser;
+            AppConfig.Instance.ApiPass = apiPass;
         }
 
         private IEnumerable<IDisposable> GetHangfireServers()
@@ -59,9 +61,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             config.EnableCors(cors);
 
             _container = new UnityContainer();
-            _container.RegisterType<IDatabase, MySqlDatabase>(new TransientLifetimeManager(), 
-                new InjectionConstructor(AppConfig.Instance.DbServer, 
-                AppConfig.Instance.DbName, 
+            _container.RegisterType<IDatabase, MySqlDatabase>(new TransientLifetimeManager(),
+                new InjectionConstructor(AppConfig.Instance.DbServer,
+                AppConfig.Instance.DbName,
                 AppConfig.Instance.DbPort));
             _container.RegisterType<IOrderingService, OrderingService>(new TransientLifetimeManager());
             _container.RegisterType<IPaymentService, PaymentService>(new TransientLifetimeManager());
@@ -73,7 +75,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             var db = _container.Resolve<IDatabase>();
             DatabaseMigration.CheckAndUpdate(db, AppConfig.Instance.DbName);
 
-            config.EnableSwagger(c => c.SingleApiVersion("v1.0.10", "Vtec Ordering Api")).EnableSwaggerUi();
+            config.EnableSwagger(c =>
+            {
+                c.SingleApiVersion("v1.0.10", "Vtec Ordering Api");
+            }).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
             config.MapHttpAttributeRoutes();

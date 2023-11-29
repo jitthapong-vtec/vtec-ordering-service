@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
+    [BasicAuthenActionFilter]
     public class ProductController : ApiController
     {
         IDatabase _database;

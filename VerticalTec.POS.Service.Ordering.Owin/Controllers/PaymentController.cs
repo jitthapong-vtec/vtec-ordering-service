@@ -18,6 +18,7 @@ using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
+    [BasicAuthenActionFilter]
     public class PaymentController : ApiController
     {
         static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logpayment");

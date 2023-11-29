@@ -13,6 +13,7 @@ using VerticalTec.POS.Service.Ordering.Owin.Services;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
+    [BasicAuthenActionFilter]
     [RoutePrefix("v1/devices")]
     public class DeviceController : ApiController
     {

@@ -22,6 +22,7 @@ using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
+    [BasicAuthenActionFilter]
     public class OrderingController : ApiController
     {
         public static readonly object Owner = new object();
@@ -705,7 +706,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 await _orderingService.SubmitOrderAsync(conn, transaction.TransactionID, transaction.ComputerID, transaction.ShopID, transaction.TableID);
 
-                var jobId = BackgroundJob.Enqueue(() => _printService.PrintOrder(transaction,true));
+                var jobId = BackgroundJob.Enqueue(() => _printService.PrintOrder(transaction, true));
                 BackgroundJob.ContinueJobWith(jobId, () => _messengerService.SendMessage($"102|101|{transaction.TableID}"));
             }
             return result;
