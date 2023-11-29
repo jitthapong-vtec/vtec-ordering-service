@@ -77,7 +77,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
 
             config.EnableSwagger(c =>
             {
-                c.SingleApiVersion("v1.0.9", "Vtec Ordering Api");
+                c.SingleApiVersion("v1.0.10", "Vtec Ordering Api");
             }).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
