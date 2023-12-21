@@ -54,10 +54,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         #region BCA
         [HttpPost]
-        [Route("v1/payments/edc/bca")]
-        public async Task<IHttpActionResult> BCAEdcPayment(PaymentData paymentData)
+        [Route("v1/payments/edc")]
+        public async Task<IHttpActionResult> EdcPayment(PaymentData paymentData)
         {
-            _log.Info("Call v1/payments/edc/bca");
+            _log.Info("Call v1/payments/edc");
 
             var result = new HttpActionResult<object>(Request);
             try
@@ -85,26 +85,23 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     EdcObjLib.objCreditCardInfo cardData = new EdcObjLib.objCreditCardInfo();
 
-                    if (paymentData.EDCType == 44)
+                    if (paymentData.EDCType == 22)
+                    {
+                        var edcPort = paymentData.EDCPort;
+                        var timeout = 120;
+                        success = EdcObjLib.Mandiri.ClassEdcLib_Mandiri_EDC_CC.SendEdc_CreditCardPayment(paymentData.EDCPort, timeout, paymentData.PayAmount,
+                            paymentData.TransactionID, "", "", ref cardData, ref respText);
+                    }
+                    else if (paymentData.EDCType == 44)
                     {
                         success = EdcObjLib.BCA_V3.ClassEdcLib_BCA_V3_IP_CC.SendEdc_CreditCardPayment(paymentData.EDCIPAddress,
                             paymentData.EDCTcpPort, paymentData.PayAmount, paymentData.TransactionID, "", "", ref cardData, ref respText);
-                    }
-                    else if (paymentData.EDCType == 45)
-                    {
-                        //call qr
                     }
 
                     if (!success)
                     {
                         var errCode = ErrorCodes.EDCCreditPayment;
                         var errMsg = $"Edc credit payment ERROR {respText}";
-
-                        if (paymentData.EDCType == 45)
-                        {
-                            errCode = ErrorCodes.EDCQRPayment;
-                            errMsg = $"Edc qr payment ERROR {respText}";
-                        }
 
                         _log.Error(errMsg);
                         throw new PaymentException(errCode, "");

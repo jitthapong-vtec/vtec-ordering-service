@@ -9,6 +9,7 @@ namespace VerticalTec.POS
         public int PayTypeID { get; set; }
         public int PayDetailID { get; set; }
         public int EDCType { get; set; }
+        public string EDCPort { get; set; }
         public int TransactionID { get; set; }
         public int ComputerID { get; set; }
         public int TerminalID { get; set; }
