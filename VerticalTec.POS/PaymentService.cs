@@ -30,6 +30,18 @@ namespace VerticalTec.POS
             var dtPendingPayment = await GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
             bool isUpdate = dtPendingPayment.Rows.Count > 0;
             IDbCommand cmd = _database.CreateCommand(conn);
+
+            cmd.CommandText = "select * from payment_currency where IsMainCurrency=1 and Activated=1 and Deleted=0";
+            var dtMainCurrency = new DataTable();
+            try
+            {
+                using (var reader = await _database.ExecuteReaderAsync(cmd))
+                {
+                    dtMainCurrency.Load(reader);
+                }
+            }
+            catch { }
+
             if (isUpdate)
             {
                 cmd.CommandText = "update orderpaydetailfront " +
@@ -55,6 +67,16 @@ namespace VerticalTec.POS
             }
             else
             {
+                try
+                {
+                    if (dtMainCurrency.Rows.Count > 0)
+                    {
+                        paymentData.CurrencyCode = (string)dtMainCurrency.Rows[0]["CurrencyCode"];
+                        paymentData.CurrencyName = (string)dtMainCurrency.Rows[0]["CurrencyName"];
+                    }
+                }
+                catch { }
+
                 cmd.CommandText = "insert into orderpaydetailfront " +
                     "(PayDetailID, TransactionID, ComputerID, TranKey, PayTypeID, " +
                     "PayAmount, CurrencyCode, CurrencyName, CurrencyRatio, ExchangeRate, CurrencyAmount, " +
@@ -117,7 +139,7 @@ namespace VerticalTec.POS
             int defaultDecimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
             _posModule.OrderDetail_RefreshPromo(ref responseText, "front", transactionId, computerId, defaultDecimalDigit, myConn);
             var result = _posModule.OrderDetail_CalBill(ref responseText, transactionId, computerId, shopId, defaultDecimalDigit, "front", myConn);
-            if(!string.IsNullOrEmpty(result))
+            if (!string.IsNullOrEmpty(result))
                 throw new VtecPOSException($"OrderDetail_CalBill {responseText}");
             var isSuccess = _posModule.OrderDetail_FinalizeBill(ref responseText, "front", transactionId, computerId, defaultDecimalDigit, staffId, terminalId, myConn);
             if (!isSuccess)

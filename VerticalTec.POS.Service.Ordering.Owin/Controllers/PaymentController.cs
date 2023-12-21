@@ -168,6 +168,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 _log.Error(ex2, "Retry finalize bill failed");
                             }
                         }
+
+                        try
+                        {
+                            cmd.CommandText = "update orderpaydetail set CreditCardNo=@cardNo, CreditCardHolderName=@cardHolderName, CCApproveCode=@approveCode where TransactionID=@tranId and ComputerID=@compId and PayDetailID=@payDetailId";
+                            await _database.ExecuteNonQueryAsync(cmd);
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, cmd.CommandText);
+                        }
+
                         var printData = new PrintData()
                         {
                             TransactionID = paymentData.TransactionID,
