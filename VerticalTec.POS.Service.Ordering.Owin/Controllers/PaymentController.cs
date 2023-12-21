@@ -87,7 +87,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     if (paymentData.EDCType == 44)
                     {
-                        success= EdcObjLib.BCA_V3.ClassEdcLib_BCA_V3_IP_CC.SendEdc_CreditCardPayment(paymentData.EDCIPAddress,
+                        success = EdcObjLib.BCA_V3.ClassEdcLib_BCA_V3_IP_CC.SendEdc_CreditCardPayment(paymentData.EDCIPAddress,
                             paymentData.EDCTcpPort, paymentData.PayAmount, paymentData.TransactionID, "", "", ref cardData, ref respText);
                     }
                     else if (paymentData.EDCType == 45)
@@ -117,10 +117,28 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                     var posModule = new POSModule();
                     var cardDataJson = JsonConvert.SerializeObject(cardData);
+                    _log.Info("BCA Card Info {0}", cardDataJson);
 
                     success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, cardDataJson, paymentData.TransactionID,
                         paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, saleDate, paymentData.BrandName,
                         paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
+
+                    try
+                    {
+                        cmd.CommandText = "update orderpaydetailfront set CreditCardNo=@cardNo, CreditCardHolderName=@cardHolderName, CCApproveCode=@approveCode where TransactionID=@tranId and ComputerID=@compId and PayDetailID=@payDetailId";
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.Add(_database.CreateParameter("@cardNo", cardData.szCardNo));
+                        cmd.Parameters.Add(_database.CreateParameter("@cardHolderName", cardData.szCardHolderName));
+                        cmd.Parameters.Add(_database.CreateParameter("@approveCode", cardData.szApprovalCode));
+                        cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
+                        cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.ComputerID));
+                        cmd.Parameters.Add(_database.CreateParameter("@payDetailId", paymentData.PayDetailID));
+                        await _database.ExecuteNonQueryAsync(cmd);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, cmd.CommandText);
+                    }
 
                     if (!success)
                     {
