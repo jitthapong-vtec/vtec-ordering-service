@@ -17,6 +17,7 @@ using System.Net.Http.Headers;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using System.Web.Http;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Exceptions;
@@ -57,161 +58,175 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/edc")]
         public async Task<IHttpActionResult> EdcPayment(PaymentData paymentData)
         {
-            _log.Info("Call v1/payments/edc");
+            _log.Info("Call v1/payments/edc => {0}", JsonConvert.SerializeObject(paymentData));
 
-            var result = new HttpActionResult<object>(Request);
-            try
+            using (var _ = new InvariantCultureScope())
             {
-                var respText = "";
-                using (var conn = await _database.ConnectAsync())
+                var result = new HttpActionResult<object>(Request);
+                try
                 {
-                    string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
-                    var success = false;
-
-                    if (paymentData.EDCType == 0)
-                        throw new PaymentException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
-
-                    var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
-                    cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
-                    using (IDataReader reader = cmd.ExecuteReader())
+                    var respText = "";
+                    using (var conn = await _database.ConnectAsync())
                     {
-                        if (reader.Read())
+                        string saleDate = await _posRepo.GetSaleDateAsync(conn, paymentData.ShopID, true);
+                        var success = false;
+
+                        if (paymentData.EDCType == 0)
+                            throw new PaymentException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+
+                        var cmd = _database.CreateCommand("select PayTypeID from paytype where EDCType=@edcType", conn);
+                        cmd.Parameters.Add(_database.CreateParameter("@edcType", paymentData.EDCType));
+                        using (IDataReader reader = cmd.ExecuteReader())
                         {
-                            paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
-                        }
-                    }
-                    if (paymentData.PayTypeID == 0)
-                        throw new PaymentException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
-
-                    EdcObjLib.objCreditCardInfo cardData = new EdcObjLib.objCreditCardInfo();
-
-                    if (paymentData.EDCType == 22)
-                    {
-                        var edcPort = paymentData.EDCPort;
-                        var timeout = 120;
-                        success = EdcObjLib.Mandiri.ClassEdcLib_Mandiri_EDC_CC.SendEdc_CreditCardPayment(paymentData.EDCPort, timeout, paymentData.PayAmount,
-                            paymentData.TransactionID, "", "", ref cardData, ref respText);
-                    }
-                    else if (paymentData.EDCType == 44)
-                    {
-                        success = EdcObjLib.BCA_V3.ClassEdcLib_BCA_V3_IP_CC.SendEdc_CreditCardPayment(paymentData.EDCIPAddress,
-                            paymentData.EDCTcpPort, paymentData.PayAmount, paymentData.TransactionID, "", "", ref cardData, ref respText);
-                    }
-
-                    if (!success)
-                    {
-                        var errCode = ErrorCodes.EDCCreditPayment;
-                        var errMsg = $"Edc credit payment ERROR {respText}";
-
-                        _log.Error(errMsg);
-                        throw new PaymentException(errCode, "");
-                    }
-
-                    var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
-                    if (dtPendingPayment.Rows.Count > 0)
-                        await _paymentService.DeletePaymentAsync(conn, dtPendingPayment.Rows[0].GetValue<int>("PayDetailID"), paymentData.TransactionID, paymentData.ComputerID);
-                    await _paymentService.AddPaymentAsync(conn, paymentData);
-
-                    var posModule = new POSModule();
-                    var cardDataJson = JsonConvert.SerializeObject(cardData);
-                    _log.Info("BCA Card Info {0}", cardDataJson);
-
-                    success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, cardDataJson, paymentData.TransactionID,
-                        paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, saleDate, paymentData.BrandName,
-                        paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
-
-                    try
-                    {
-                        cmd.CommandText = "update orderpaydetailfront set CreditCardNo=@cardNo, CreditCardHolderName=@cardHolderName, CCApproveCode=@approveCode where TransactionID=@tranId and ComputerID=@compId and PayDetailID=@payDetailId";
-                        cmd.Parameters.Clear();
-                        cmd.Parameters.Add(_database.CreateParameter("@cardNo", cardData.szCardNo));
-                        cmd.Parameters.Add(_database.CreateParameter("@cardHolderName", cardData.szCardHolderName));
-                        cmd.Parameters.Add(_database.CreateParameter("@approveCode", cardData.szApprovalCode));
-                        cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
-                        cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.ComputerID));
-                        cmd.Parameters.Add(_database.CreateParameter("@payDetailId", paymentData.PayDetailID));
-                        await _database.ExecuteNonQueryAsync(cmd);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, cmd.CommandText);
-                    }
-
-                    if (!success)
-                    {
-                        throw new PaymentException(ErrorCodes.PaymentFunction, respText);
-                    }
-                    else
-                    {
-                        await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
-                        try
-                        {
-                            await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Error finalize");
-                            _log.Info("Retry finalize bill again");
-                            try
+                            if (reader.Read())
                             {
-                                await Task.Delay(500);
-                                using (var conn2 = await _database.ConnectAsync())
-                                {
-                                    await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
-                                }
-                            }
-                            catch (Exception ex2)
-                            {
-                                _log.Error(ex2, "Retry finalize bill failed");
+                                paymentData.PayTypeID = reader.GetValue<int>("PayTypeID");
                             }
                         }
+                        if (paymentData.PayTypeID == 0)
+                            throw new PaymentException(ErrorCodes.NoPaymentConfig, $"Not found PayType of EDCType {paymentData.EDCType}");
+
+                        EdcObjLib.objCreditCardInfo cardData = new EdcObjLib.objCreditCardInfo();
+
+                        if (paymentData.EDCType == 22)
+                        {
+                            var edcPort = paymentData.EDCPort;
+                            var timeout = 120;
+                            success = EdcObjLib.Mandiri.ClassEdcLib_Mandiri_EDC_CC.SendEdc_CreditCardPayment(paymentData.EDCPort, timeout, paymentData.PayAmount,
+                                paymentData.TransactionID, "", "", ref cardData, ref respText);
+                        }
+                        else if (paymentData.EDCType == 44)
+                        {
+                            success = EdcObjLib.BCA_V3.ClassEdcLib_BCA_V3_IP_CC.SendEdc_CreditCardPayment(paymentData.EDCIPAddress,
+                                paymentData.EDCTcpPort, paymentData.PayAmount, paymentData.TransactionID, "", "", ref cardData, ref respText);
+                        }
+
+                        if (!success)
+                        {
+                            var errCode = ErrorCodes.EDCCreditPayment;
+                            var errMsg = $"Edc credit payment ERROR {respText}";
+
+                            _log.Error(errMsg);
+                            throw new PaymentException(errCode, "");
+                        }
+
+                        var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
+                        if (dtPendingPayment.Rows.Count > 0)
+                            await _paymentService.DeletePaymentAsync(conn, dtPendingPayment.Rows[0].GetValue<int>("PayDetailID"), paymentData.TransactionID, paymentData.ComputerID);
+                        await _paymentService.AddPaymentAsync(conn, paymentData);
+
+                        var posModule = new POSModule();
+                        var cardDataJson = JsonConvert.SerializeObject(cardData);
+                        _log.Info("EDC Card Info {0}", cardDataJson);
+
+                        success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, cardDataJson, paymentData.TransactionID,
+                            paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, saleDate, paymentData.BrandName,
+                            paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
 
                         try
                         {
-                            cmd.CommandText = "update orderpaydetail set CreditCardNo=@cardNo, CreditCardHolderName=@cardHolderName, CCApproveCode=@approveCode where TransactionID=@tranId and ComputerID=@compId and PayDetailID=@payDetailId";
+                            if (!string.IsNullOrEmpty(paymentData.TableName))
+                            {
+                                cmd.CommandText = "update ordertransactionfront set TableName=@tableName where TransactionID=@transactionId and ComputerID=@computerId";
+                                cmd.Parameters.Clear();
+                                cmd.Parameters.Add(_database.CreateParameter("@tableName", paymentData.TableName));
+                                cmd.Parameters.Add(_database.CreateParameter("@transactionId", paymentData.TransactionID));
+                                cmd.Parameters.Add(_database.CreateParameter("@computerId", paymentData.ComputerID));
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            cmd.CommandText = "update orderpaydetailfront set CreditCardNo=@cardNo, CreditCardHolderName=@cardHolderName, CCApproveCode=@approveCode where TransactionID=@tranId and ComputerID=@compId and PayDetailID=@payDetailId";
+                            cmd.Parameters.Clear();
+                            cmd.Parameters.Add(_database.CreateParameter("@cardNo", cardData.szCardNo));
+                            cmd.Parameters.Add(_database.CreateParameter("@cardHolderName", cardData.szCardHolderName));
+                            cmd.Parameters.Add(_database.CreateParameter("@approveCode", cardData.szApprovalCode));
+                            cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
+                            cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.ComputerID));
+                            cmd.Parameters.Add(_database.CreateParameter("@payDetailId", paymentData.PayDetailID));
                             await _database.ExecuteNonQueryAsync(cmd);
                         }
                         catch (Exception ex)
                         {
-                            _log.Error(ex, cmd.CommandText);
+                            _log.Error($"{cmd.CommandText} => {ex.Message}");
                         }
 
-                        var printData = new PrintData()
+                        if (!success)
                         {
-                            TransactionID = paymentData.TransactionID,
-                            ComputerID = paymentData.ComputerID,
-                            ShopID = paymentData.ShopID,
-                            LangID = paymentData.LangID,
-                            PrinterIds = paymentData.PrinterIds,
-                            PrinterNames = paymentData.PrinterNames,
-                            PaperSize = paymentData.PaperSize
-                        };
-                        await _printService.PrintBill(printData);
-                        await _printService.PrintOrder(new TransactionPayload
+                            throw new PaymentException(ErrorCodes.PaymentFunction, respText);
+                        }
+                        else
                         {
-                            TransactionID = paymentData.TransactionID,
-                            ComputerID = paymentData.ComputerID,
-                            TerminalID = paymentData.ComputerID,
-                            ShopID = paymentData.ShopID,
-                            LangID = paymentData.LangID,
-                            StaffID = paymentData.StaffID,
-                            PrinterIds = paymentData.PrinterIds,
-                            PrinterNames = paymentData.PrinterNames
-                        });
-                        _messenger.SendMessage();
+                            await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
+                            try
+                            {
+                                await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Error("Error finalize => {0}", ex.Message);
+                                _log.Info("Retry finalize bill again");
+                                try
+                                {
+                                    await Task.Delay(1000);
+                                    using (var conn2 = await _database.ConnectAsync())
+                                    {
+                                        await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
+                                    }
+                                }
+                                catch (Exception ex2)
+                                {
+                                    _log.Error("Retry finalize bill failed => {0}", ex2.Message);
+                                }
+                            }
+
+                            try
+                            {
+                                cmd.CommandText = "update orderpaydetail set CreditCardNo=@cardNo, CreditCardHolderName=@cardHolderName, CCApproveCode=@approveCode where TransactionID=@tranId and ComputerID=@compId and PayDetailID=@payDetailId";
+                                await _database.ExecuteNonQueryAsync(cmd);
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Error($"{cmd.CommandText} => {ex.Message}");
+                            }
+
+                            await _printService.PrintOrder(new TransactionPayload
+                            {
+                                TransactionID = paymentData.TransactionID,
+                                ComputerID = paymentData.ComputerID,
+                                TerminalID = paymentData.ComputerID,
+                                ShopID = paymentData.ShopID,
+                                LangID = paymentData.LangID,
+                                StaffID = paymentData.StaffID,
+                                PrinterIds = paymentData.PrinterIds,
+                                PrinterNames = paymentData.PrinterNames
+                            });
+
+                            var printData = new PrintData()
+                            {
+                                TransactionID = paymentData.TransactionID,
+                                ComputerID = paymentData.ComputerID,
+                                ShopID = paymentData.ShopID,
+                                LangID = paymentData.LangID,
+                                PrinterIds = paymentData.PrinterIds,
+                                PrinterNames = paymentData.PrinterNames,
+                                PaperSize = paymentData.PaperSize
+                            };
+                            await _printService.PrintBill(printData);
+                            _messenger.SendMessage();
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message;
-                if (ex is PaymentException apiEx)
-                    result.ErrorCode = apiEx.ErrorCode;
+                catch (Exception ex)
+                {
+                    result.Message = ex.Message;
+                    if (ex is PaymentException apiEx)
+                        result.ErrorCode = apiEx.ErrorCode;
 
-                _log.Error(ex.Message);
-                result.StatusCode = HttpStatusCode.BadRequest;
+                    _log.Error(ex.Message);
+                    result.StatusCode = HttpStatusCode.BadRequest;
+                }
+                return result;
             }
-            return result;
         }
 
         #endregion

@@ -1,4 +1,5 @@
 ﻿using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -38,7 +39,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 {
                     var myConn = conn as MySqlConnection;
                     var posModule = new POSModule();
-                    CDBUtil dbUtil = new CDBUtil();
                     int defaultDecimalDigit = _posRepo.GetDefaultDecimalDigitAsync(conn).Result;
                     string saleDate = _posRepo.GetSaleDateAsync(conn, payload.ShopID, true).Result;
                     DataSet dsSummaryData = new DataSet();
@@ -47,24 +47,43 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     var responseText = "";
 
                     var isSuccess = posModule.Summary_Print(ref responseText, ref dsSummaryData, "front", payload.ShopID, saleDate,
-                            payload.TransactionID, payload.ComputerID, payload.StaffID, payload.TerminalID, payload.PrinterIds, myConn);
+                            payload.TransactionID, payload.ComputerID, payload.StaffID, payload.TerminalID, myConn);
 
-                    if (isSuccess)
+                    _log.Info("DataSet from Summary_Print => {0}", JsonConvert.SerializeObject(dsSummaryData));
+
+                    if (!isSuccess)
                     {
-                        try
-                        {
-                            if (PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                                payload.ComputerID, dsSummaryData))
-                                _log.Info("Summary_Print success");
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Summary_Print");
-                        }
+                        _log.Error("Call Summary_Print => {0}", responseText);
                     }
-                    else
+
+                    var isSummaryPrint = _posRepo.GetPropertyValueAsync(conn, 1009, "SummaryPrint").Result == "1";
+                    if (isSummaryPrint)
                     {
-                        _log.Error($"Call Summary_Print {responseText}");
+                        var receiptStr = "";
+                        var copyStr = "";
+                        var noCopy = 0;
+                        var dsBillDetail = new DataSet();
+
+                        isSuccess = posModule.BillDetail(ref responseText, ref receiptStr, ref copyStr, ref noCopy, ref dsBillDetail, 1, payload.TransactionID, payload.ComputerID, "front", payload.LangID, myConn);
+                        if (isSuccess)
+                        {
+                            try
+                            {
+                                using (var conn2 = _db.ConnectAsync().Result)
+                                {
+                                    CDBUtil dbUtil = new CDBUtil();
+                                    PrintingObjLib.PrintLib.ThreadPrintKitchenDatatFromDataSet(conn2 as MySqlConnection, dbUtil, posModule, payload.ShopID, payload.ComputerID, dsBillDetail);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Error("Call ThreadPrintKitchenDatatFromDataSet => {0}", ex.Message);
+                            }
+                        }
+                        else
+                        {
+                            _log.Error("Call BillDetail => {0}", responseText);
+                        }
                     }
 
                     int batchId = 0;
@@ -75,20 +94,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     {
                         isSuccess = posModule.Table_PrintSummaryOrderData(ref responseText, ref dsSummaryOrderData, batchId, "front",
                             payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
-                        if (isSuccess)
-                        {
-                            try
-                            {
-                                if (PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                                    payload.ComputerID, dsSummaryOrderData))
-                                    _log.Info("Table_PrintSummaryOrderData success");
-                            }
-                            catch (Exception ex)
-                            {
-                                _log.Error(ex, "Table_PrintSummaryOrderData");
-                            }
-                        }
-                        else
+                        if (!isSuccess)
                         {
                             _log.Error($"Call Table_PrintSummaryOrderData {responseText}");
                         }
@@ -106,20 +112,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     {
                         isSuccess = posModule.Table_PrintOrderData(ref responseText, ref dsOrderData, batchId, "front",
                             payload.TransactionID, payload.ComputerID, payload.ShopID, saleDate, payload.LangID, myConn);
-                        if (isSuccess)
-                        {
-                            try
-                            {
-                                if (PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID,
-                                payload.ComputerID, dsOrderData))
-                                    _log.Info("Table_PrintOrderData success");
-                            }
-                            catch (Exception ex)
-                            {
-                                _log.Error(ex, "Table_PrintOrderData");
-                            }
-                        }
-                        else
+                        if (!isSuccess)
                         {
                             _log.Error($"Call Table_PrintOrderData {responseText}");
                         }
@@ -131,6 +124,18 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 
                     posModule.Table_UpdateStatus(ref responseText, "front", payload.TransactionID, payload.ComputerID,
                         payload.ShopID, saleDate, payload.LangID, myConn);
+
+                    try
+                    {
+                        CDBUtil dbUtil = new CDBUtil();
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID, payload.ComputerID, dsSummaryData);
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID, payload.ComputerID, dsSummaryOrderData);
+                        PrintingObjLib.PrintLib.PrintKdsDataFromDataSet(myConn, dbUtil, posModule, payload.ShopID, payload.ComputerID, dsOrderData);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error("PrintKdsDataFromDataSet => {0}", ex.Message);
+                    }
                 }
             }
             return Task.FromResult(true);

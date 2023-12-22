@@ -378,7 +378,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    await _orderingService.AddOrderAsync(conn, order);
+                    using (var _ = new InvariantCultureScope())
+                    {
+                        await _orderingService.AddOrderAsync(conn, order);
+                    }
                     //TODO: AddAutoProductSaleMode
                     //if (order.SaleMode != SaleModes.DineIn)
                     //{
