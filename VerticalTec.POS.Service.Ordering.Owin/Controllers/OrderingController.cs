@@ -247,20 +247,31 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         public async Task<IHttpActionResult> UpdateOrderSaleModeCharge(int shopId, int transactionId, int computerId, int saleMode)
         {
             var result = new HttpActionResult<object>(Request);
-            using (var conn = await _database.ConnectAsync())
+            try
             {
-                var posModule = new POSModule();
-                var responseText = "";
-                var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
-                var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
-                var success = posModule.OrderDetail_SaleModeCharge(ref responseText, transactionId, computerId, saleDate,
-                    shopId, saleMode, decimalDigit, "front", conn as MySqlConnection);
-
-                if (!success)
+                using (var conn = await _database.ConnectAsync())
                 {
-                    result.StatusCode = HttpStatusCode.InternalServerError;
-                    result.Message = responseText;
+                    var posModule = new POSModule();
+                    var responseText = "";
+                    var saleDate = await _posRepo.GetSaleDateAsync(conn, shopId, true);
+                    var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
+
+                    using (var _ = new InvariantCultureScope())
+                    {
+                        var success = posModule.OrderDetail_SaleModeCharge(ref responseText, transactionId, computerId, saleDate,
+                        shopId, saleMode, decimalDigit, "front", conn as MySqlConnection);
+
+                        if (!success)
+                        {
+                            result.StatusCode = HttpStatusCode.InternalServerError;
+                            result.Message = responseText;
+                        }
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("OrderDetail_SaleModeCharge => {0}", ex.Message);
             }
             return result;
         }
