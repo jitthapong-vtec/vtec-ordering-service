@@ -445,17 +445,20 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    await _orderingService.ModifyOrderAsync(conn, orderDetail);
-                    var dtStock = await _posRepo.GetCurrentStockAsync(conn, orderDetail.ProductID, orderDetail.ShopID);
-                    if (dtStock.Rows.Count > 0)
+                    using (var _ = new InvariantCultureScope())
                     {
-                        orderDetail.EnableCountDownStock = true;
-                        orderDetail.CurrentStock = dtStock.Rows[0].GetValue<double>("CurrentStock");
-                    }
-                    else
-                    {
-                        orderDetail.EnableCountDownStock = false;
-                        orderDetail.CurrentStock = 1;
+                        await _orderingService.ModifyOrderAsync(conn, orderDetail);
+                        var dtStock = await _posRepo.GetCurrentStockAsync(conn, orderDetail.ProductID, orderDetail.ShopID);
+                        if (dtStock.Rows.Count > 0)
+                        {
+                            orderDetail.EnableCountDownStock = true;
+                            orderDetail.CurrentStock = dtStock.Rows[0].GetValue<double>("CurrentStock");
+                        }
+                        else
+                        {
+                            orderDetail.EnableCountDownStock = false;
+                            orderDetail.CurrentStock = 1;
+                        }
                     }
                     response.StatusCode = HttpStatusCode.OK;
                     response.Body = orderDetail;
@@ -480,9 +483,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    await _orderingService.DeleteOrdersAsync(conn, orderTransaction.Orders);
-                    await _orderingService.AddOrderAsync(conn, orderTransaction);
-
+                    using (var _ = new InvariantCultureScope())
+                    {
+                        await _orderingService.DeleteOrdersAsync(conn, orderTransaction.Orders);
+                        await _orderingService.AddOrderAsync(conn, orderTransaction);
+                    }
                     response.StatusCode = HttpStatusCode.OK;
                     response.Body = orderTransaction;
                 }
@@ -533,46 +538,50 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    var dtChildOrder = await _orderingService.GetChildOrderAsync(conn, transactionId, computerId, orderDetailId);
-                    var dtCurrentStock = await _posRepo.GetCurrentStockAsync(conn, 0, shopId);
-                    var orderHaveStock = (from childOrder in dtChildOrder.AsEnumerable()
-                                          join stock in dtCurrentStock.AsEnumerable()
-                                          on childOrder.GetValue<int>("ProductID") equals stock.GetValue<int>("ProductID")
-                                          select new
-                                          {
-                                              ProductID = childOrder.GetValue<int>("ProductID"),
-                                              TotalQty = childOrder.GetValue<double>("TotalQty")
-                                          });
-                    var totalStock = orderHaveStock.GroupBy(p => p.ProductID).Select(p => new { ProductID = p.First().ProductID, TotalQty = p.Sum(o => o.TotalQty) });
-                    await _orderingService.DeleteChildComboAsync(conn, transactionId, computerId, orderDetailId);
-                    foreach (var stock in totalStock)
+                    using (var _ = new InvariantCultureScope())
                     {
-                        var cmd = _database.CreateCommand(conn);
-                        cmd.CommandText = "update productcountdownstock set CurrentStock=CurrentStock+@stock, UpdateDate=Now() where ProductID=@productId and ShopID=@shopId";
-                        cmd.Parameters.Add(_database.CreateParameter("@stock", stock.TotalQty));
-                        cmd.Parameters.Add(_database.CreateParameter("@productId", stock.ProductID));
-                        cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
-                        await _database.ExecuteNonQueryAsync(cmd);
+                        var dtChildOrder = await _orderingService.GetChildOrderAsync(conn, transactionId, computerId, orderDetailId);
+                        var dtCurrentStock = await _posRepo.GetCurrentStockAsync(conn, 0, shopId);
+                        var orderHaveStock = (from childOrder in dtChildOrder.AsEnumerable()
+                                              join stock in dtCurrentStock.AsEnumerable()
+                                              on childOrder.GetValue<int>("ProductID") equals stock.GetValue<int>("ProductID")
+                                              select new
+                                              {
+                                                  ProductID = childOrder.GetValue<int>("ProductID"),
+                                                  TotalQty = childOrder.GetValue<double>("TotalQty")
+                                              });
+                        var totalStock = orderHaveStock.GroupBy(p => p.ProductID).Select(p => new { ProductID = p.First().ProductID, TotalQty = p.Sum(o => o.TotalQty) });
+                        await _orderingService.DeleteChildComboAsync(conn, transactionId, computerId, orderDetailId);
+                        foreach (var stock in totalStock)
+                        {
+                            var cmd = _database.CreateCommand(conn);
+                            cmd.CommandText = "update productcountdownstock set CurrentStock=CurrentStock+@stock, UpdateDate=Now() where ProductID=@productId and ShopID=@shopId";
+                            cmd.Parameters.Add(_database.CreateParameter("@stock", stock.TotalQty));
+                            cmd.Parameters.Add(_database.CreateParameter("@productId", stock.ProductID));
+                            cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+                            await _database.ExecuteNonQueryAsync(cmd);
+                        }
+
+                        foreach (var childOrder in childOrders.Where(o => !new int[] { 14, 15 }.Contains(o.ProductTypeID)))
+                        {
+                            childOrder.OrderDetailLinkID = orderDetailId;
+                        }
+                        var tranData = new OrderTransaction()
+                        {
+                            TransactionID = transactionId,
+                            ComputerID = computerId,
+                            ShopID = shopId,
+                            Orders = childOrders
+                        };
+
+                        _logger.Info($"EDIT_COMBO {JsonConvert.SerializeObject(tranData)}");
+
+                        await _orderingService.AddOrderAsync(conn, tranData);
+                        var orderDetails = await _orderingService.GetOrderDetailsAsync(conn, transactionId, computerId, shopId);
+
+                        response.StatusCode = HttpStatusCode.OK;
+                        response.Body = orderDetails;
                     }
-
-                    foreach (var childOrder in childOrders.Where(o => !new int[] { 14, 15 }.Contains(o.ProductTypeID)))
-                    {
-                        childOrder.OrderDetailLinkID = orderDetailId;
-                    }
-                    var tranData = new OrderTransaction()
-                    {
-                        TransactionID = transactionId,
-                        ComputerID = computerId,
-                        ShopID = shopId,
-                        Orders = childOrders
-                    };
-
-                    _logger.Info($"EDIT_COMBO {JsonConvert.SerializeObject(tranData)}");
-
-                    await _orderingService.AddOrderAsync(conn, tranData);
-                    var orderDetails = await _orderingService.GetOrderDetailsAsync(conn, transactionId, computerId, shopId);
-                    response.StatusCode = HttpStatusCode.OK;
-                    response.Body = orderDetails;
                 }
                 catch (Exception ex)
                 {
