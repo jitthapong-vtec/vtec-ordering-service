@@ -48,10 +48,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         var shopId = dtTerminal.Rows[0].GetValue<int>("ShopID");
                         string imageBaseUrl = await _posRepo.GetKioskAdsImageBaseUrlAsync(conn, shopId);
 
+                        var payTypeList = "";
+                        cmd.CommandText = "select PayTypeList from computername where DeviceCode=@deviceCode";
+                        using (var reader = await _database.ExecuteReaderAsync(cmd))
+                        {
+                            if (reader.Read())
+                                payTypeList = (string)reader["PayTypeList"];
+                        }
                         cmd.CommandText =
                             " select * from programpropertyvalue;" +
                             " select Id, concat('" + imageBaseUrl + "', ImageName) as ImageName, ChangeDuration from advertisement;" +
-                            " select * from paytype where PayTypeID in (select PayTypeList from computername where DeviceCode=@deviceCode);" +
+                            " select * from paytype where PayTypeID in (" + payTypeList + ");" +
                             " select * from salemode where deleted=0;" +
                             " select a.*, c.*, d.*, case when b.ProductVATPercent is null then 7.00 else b.ProductVATPercent end as VATPercent from shop_data a " +
                             " left join (select * from productvat where Deleted=0) b on a.VATCode=b.ProductVATCode " +
