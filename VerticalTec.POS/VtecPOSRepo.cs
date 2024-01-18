@@ -658,7 +658,7 @@ namespace VerticalTec.POS
                 " and a.ShopID=d.ShopID" +
                 " where a.ProductTypeID in (" + productType + ")" +
                 " and a.Deleted = @deleted" +
-                " and a.ProductActivate = @activate";
+                " and a.ProductActivate = @activate and if (a.ProductExpireDateTime is null, now(), a.ProductExpireDateTime) > @saleDate";
 
             var cmd = _database.CreateCommand(conn);
 
@@ -730,7 +730,7 @@ namespace VerticalTec.POS
             " left join productcountdownstock e" +
             " on b.ProductID=e.ProductID" +
             " and b.ShopID=e.ShopID" +
-            " where a.ProductID=@parentProductId and b.Deleted=0";
+            " where a.ProductID=@parentProductId and b.Deleted=0 and if (b.ProductExpireDateTime is null, now(), b.ProductExpireDateTime) > @saleDate";
 
             var saleDate = await GetSaleDateAsync(conn, shopId, false, true);
             var dtDefaultSaleMode = await GetDefaultSaleModeAsync(conn);
