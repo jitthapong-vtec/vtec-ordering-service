@@ -5,8 +5,10 @@ using Owin;
 using Swashbuckle.Application;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Remoting.Contexts;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,6 +35,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             AppConfig.Instance.HangfileConnStr = hangfileConnStr;
             AppConfig.Instance.ApiUser = apiUser;
             AppConfig.Instance.ApiPass = apiPass;
+        }
+
+        public string Version
+        {
+            get
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                var fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+                var version = fvi.ProductVersion;
+                return $"v{version}";
+            }
         }
 
         private IEnumerable<IDisposable> GetHangfireServers()
@@ -77,7 +90,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
 
             config.EnableSwagger(c =>
             {
-                c.SingleApiVersion("v1.0.10", "Vtec Ordering Api");
+                c.SingleApiVersion(Version, "Vtec Ordering Api");
             }).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
