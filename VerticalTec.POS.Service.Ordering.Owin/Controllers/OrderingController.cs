@@ -618,7 +618,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     var cmd = _database.CreateCommand("select * from productdept a" +
                         " inner join productgroup b" +
                         " on a.ProductGroupID = b.ProductGroupID" +
-                        " where a.Deleted = 0 " +
+                        " where a.Deleted = 0 and b.IsComment=1" +
                         " and a.ProductDeptActivate = 1", conn);
 
                     var commentDeptIds = modifierOrder.AsEnumerable().GroupBy(m => m.GetValue<int>("ProductDeptID")).Select(m => m.Key).ToList();

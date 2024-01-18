@@ -685,13 +685,16 @@ namespace VerticalTec.POS
             {
                 sqlQuery += " and a.ProductID in (" + productIds + ")";
             }
-            if (saleMode == SaleModes.DineIn)
+            if (productType.Contains("14,15,16") == false)
             {
-                sqlQuery += " and a.SaleMode1=1";
-            }
-            else if (saleMode == SaleModes.TakeAway)
-            {
-                sqlQuery += " and a.SaleMode2=1";
+                if (saleMode == SaleModes.DineIn)
+                {
+                    sqlQuery += " and a.SaleMode1=1";
+                }
+                else if (saleMode == SaleModes.TakeAway)
+                {
+                    sqlQuery += " and a.SaleMode2=1";
+                }
             }
             sqlQuery += " order by a.ProductOrdering, a.ProductName, a.ProductCode";
             cmd.CommandText = sqlQuery;
