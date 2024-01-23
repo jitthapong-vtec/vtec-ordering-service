@@ -615,24 +615,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     var modifierOrder = await _orderingService.GetModifierOrderAsync(conn, shopId, transactionId, computerId, parentOrderDetailId, productCode);
 
-                    var cmd = _database.CreateCommand("select * from productdept a" +
-                        " inner join productgroup b" +
-                        " on a.ProductGroupID = b.ProductGroupID" +
-                        " where a.Deleted = 0 and b.IsComment=1" +
-                        " and a.ProductDeptActivate = 1", conn);
-
-                    var commentDeptIds = modifierOrder.AsEnumerable().GroupBy(m => m.GetValue<int>("ProductDeptID")).Select(m => m.Key).ToList();
-                    if (commentDeptIds.Count > 0)
-                    {
-                        var deptIds = "";
-                        for (var i = 0; i < commentDeptIds.Count; i++)
-                        {
-                            deptIds += commentDeptIds[i];
-                            if (i < commentDeptIds.Count - 1)
-                                deptIds += ",";
-                        }
-                        cmd.CommandText += " and a.ProductDeptID in (" + deptIds + ")";
-                    }
+                    var cmd = _database.CreateCommand("select b.* from productgroup a join productdept b on a.ProductGroupID=b.ProductGroupID where a.IsComment=1 and a.Deleted=0 and ProductGroupActivate=1 order by b.ProductDeptOrdering, b.ProductDeptName", conn);
 
                     DataTable dtModifierDept = new DataTable();
                     using (var reader = await _database.ExecuteReaderAsync(cmd))
@@ -641,13 +624,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     var modifierData = new
                     {
-                        ModifierDepts = (from dept in dtModifierDept.AsEnumerable()
-                                         select new
-                                         {
-                                             ProductDeptID = dept.GetValue<int>("ProductDeptID"),
-                                             ProductDeptName = dept.GetValue<string>("ProductDeptName"),
-                                             DisplayMobile = dept.GetValue<int>("DisplayMobile")
-                                         }),
+                        ModifierDepts = dtModifierDept.AsEnumerable().Select(dept =>
+                                        new
+                                        {
+                                            ProductDeptID = dept.GetValue<int>("ProductDeptID"),
+                                            ProductDeptName = dept.GetValue<string>("ProductDeptName"),
+                                            DisplayMobile = dept.GetValue<int>("DisplayMobile")
+                                        }),
                         Modifiers = modifierOrder
                     };
                     result.StatusCode = HttpStatusCode.OK;
