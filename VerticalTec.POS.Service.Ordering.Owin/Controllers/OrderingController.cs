@@ -615,7 +615,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 {
                     var modifierOrder = await _orderingService.GetModifierOrderAsync(conn, shopId, transactionId, computerId, parentOrderDetailId, productCode);
 
-                    var cmd = _database.CreateCommand("select b.* from productgroup a join productdept b on a.ProductGroupID=b.ProductGroupID where a.IsComment=1 and a.Deleted=0 and ProductGroupActivate=1 order by b.ProductDeptOrdering, b.ProductDeptName", conn);
+                    var cmd = _database.CreateCommand("select b.* from productgroup a join productdept b on a.ProductGroupID=b.ProductGroupID where a.IsComment=1 and a.Deleted=0 and a.ProductGroupActivate=1 and b.ProductDeptActivate=1 and b.Deleted=0 order by b.ProductDeptOrdering, b.ProductDeptName", conn);
 
                     DataTable dtModifierDept = new DataTable();
                     using (var reader = await _database.ExecuteReaderAsync(cmd))
