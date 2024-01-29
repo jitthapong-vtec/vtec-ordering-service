@@ -216,9 +216,8 @@
     <Reference Include="VtecMessenger">
       <HintPath>..\DLLs\VtecMessenger.dll</HintPath>
     </Reference>
-    <Reference Include="vtecPOS, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\DLLs\vtecPOS.dll</HintPath>
+    <Reference Include="vtecPOS">
+      <HintPath>..\dlls\vtecPOS.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
