@@ -236,6 +236,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/online/qr")]
         public async Task<IHttpActionResult> GetQrCodeAsync(PaymentData payment)
         {
+            try
+            {
+                _log.Info($"GetQrCodeAsync Payload={JsonConvert.SerializeObject(payment)}");
+            }
+            catch { }
+
             var result = new HttpActionResult<object>(Request);
             using (var conn = await _database.ConnectAsync())
             {
@@ -286,7 +292,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             throw new VtecPOSException(ex.Message);
                         }
                     }
-                    httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {reqToken}");
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", reqToken);
 
                     var merchantResponse = await httpClient.GetAsync(merchantUrl);
                     if (!merchantResponse.IsSuccessStatusCode)
@@ -352,6 +358,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("v1/payments/online/inquiry")]
         public async Task<IHttpActionResult> InquiryAsync(string reqId, string orderId, string tranUUID, PaymentData paymentData)
         {
+            try
+            {
+                _log.Info($"InquiryAsync ReqId={reqId},OrderId={orderId},Payload={JsonConvert.SerializeObject(paymentData)}");
+            }
+            catch { }
+
             var result = new HttpActionResult<object>(Request);
             using (var httpClient = new HttpClient())
             {
