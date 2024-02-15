@@ -341,6 +341,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             reqData = qrPayload,
                             qrData = JsonConvert.DeserializeObject(respStr)
                         };
+
+                        _log.Info($"Resp from api/POSModule/payment_gateway_QR_Request?req_Id={reqId}&langId=1, ReqJson={respStr}");
                     }
                     catch (HttpRequestException ex)
                     {
