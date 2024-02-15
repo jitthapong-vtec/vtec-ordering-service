@@ -317,7 +317,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         paymentGatewayType = payment.WalletTypeName,
                         edcType = payment.EDCType,
                         customerCode = payment.CustAccountNo,
-                        payAmount = payment.PayAmount.ToString()
+                        payAmount = payment.PayAmount.ToString("0.00")
                     };
 
                     var reqJson = JsonConvert.SerializeObject(qrPayload);
@@ -387,7 +387,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     paymentGatewayType = paymentData.WalletTypeName,
                     edcType = paymentData.EDCType,
                     customerCode = paymentData.CustAccountNo,
-                    payAmount = paymentData.PayAmount.ToString()
+                    payAmount = paymentData.PayAmount.ToString("0.00")
                 };
 
                 var reqJson = JsonConvert.SerializeObject(qrPayload);
