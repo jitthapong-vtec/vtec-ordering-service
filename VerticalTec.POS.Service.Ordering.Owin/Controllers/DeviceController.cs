@@ -58,13 +58,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         cmd.CommandText =
                             " select * from programpropertyvalue;" +
                             " select Id, concat('" + imageBaseUrl + "', ImageName) as ImageName, ChangeDuration from advertisement;" +
-                            " select * from paytype where PayTypeID in (" + payTypeList + ");" +
+                            " select * from paytype where FIND_IN_SET (PayTypeID, @payTypes);" +
                             " select * from salemode where deleted=0;" +
                             " select a.*, c.*, d.*, case when b.ProductVATPercent is null then 7.00 else b.ProductVATPercent end as VATPercent from shop_data a " +
                             " left join (select * from productvat where Deleted=0) b on a.VATCode=b.ProductVATCode " +
                             " join brand_data c on a.BrandID=c.BrandID" +
                             " join merchant_data d on a.MerchantID=c.MerchantID where a.ShopID=@shopId;";
-                        cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+                        cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId)); 
+                        cmd.Parameters.Add(_database.CreateParameter("@payTypes", payTypeList));
 
                         adapter = _database.CreateDataAdapter(cmd);
                         adapter.TableMappings.Add("Table", "Property");
