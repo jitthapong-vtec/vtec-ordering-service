@@ -227,9 +227,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             {
                 try
                 {
-                    var dataSet = await _orderingService.GetOrderDataAsync(conn, transactionId, computerId, shopId, langId);
-                    result.StatusCode = HttpStatusCode.OK;
-                    result.Body = dataSet;
+                    using (var _ = new InvariantCultureScope())
+                    {
+                        var dataSet = await _orderingService.GetOrderDataAsync(conn, transactionId, computerId, shopId, langId);
+                        result.StatusCode = HttpStatusCode.OK;
+                        result.Body = dataSet;
+                    }
                 }
                 catch (VtecPOSException ex)
                 {
