@@ -3,6 +3,7 @@ using Hangfire;
 using LoyaltyInterface3;
 using Microsoft.Owin;
 using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
 using ResCenterObjLib;
 using System;
@@ -410,48 +411,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             responseCode = "",
                             responseText = "",
-                            responseObj = new
-                            {
-                                order_id = "",
-                                merchant_id = "",
-                                txn_id = "",
-                                status = "",
-                                status_code = "",
-                                status_message = "",
-                                amount = 0.00M,
-                                amount_net = 0.00M,
-                                amount_cust_fee = 0.00M,
-                                currency = "",
-                                service_id = "",
-                                channel_type = "",
-                                ref_1 = "",
-                                ref_2 = "",
-                                ref_3 = "",
-                                ref_4 = "",
-                                ref_5 = "",
-                                meta_data = (object)null,
-                                card = new
-                                {
-                                    card_holder_name = "",
-                                    card_no = "",
-                                    card_type = "",
-                                    card_expire = "",
-                                    card_country = (object)null,
-                                    card_ref = ""
-                                },
-                                installment = (object)null,
-                                bank = new
-                                {
-                                    account_last_digits = (object)null,
-                                    account_name = "",
-                                    bank_code = "",
-                                },
-                                rlp = (object)null,
-                                rmb_flag = (object)null,
-                                sof_txn_id = "",
-                                created_at = "",
-                                success_at = ""
-                            }
+                            responseObj = (object)null
                         };
 
                         apiResp = JsonConvert.DeserializeAnonymousType(respStr, apiResp);
@@ -476,15 +436,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     if (paymentData.PayTypeID == 0)
                                         throw new VtecPOSException($"Not found PayType of EDCType {paymentData.EDCType}");
 
-                                    if (string.IsNullOrEmpty(paymentData.CustAccountNo) == false)
-                                    {
-                                        cmd = _database.CreateCommand("update ordertransactionfront set MemberName=@memberName where TransactionID=@tranId and ComputerID=@compId", conn);
-                                        cmd.Parameters.Add(_database.CreateParameter("@memberName", paymentData.CustAccountNo));
-                                        cmd.Parameters.Add(_database.CreateParameter("@tranId", paymentData.TransactionID));
-                                        cmd.Parameters.Add(_database.CreateParameter("@compId", paymentData.ComputerID));
-                                        await _database.ExecuteNonQueryAsync(cmd);
-                                    }
-
                                     var dtPendingPayment = await _paymentService.GetPendingPaymentAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.PayTypeID);
                                     if (dtPendingPayment.Rows.Count > 0)
                                     {
@@ -493,10 +444,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     }
 
                                     await _paymentService.AddPaymentAsync(conn, paymentData);
+
                                     var posModule = new POSModule();
                                     var respText = "";
+                                    var cardData = new EdcObjLib.objCreditCardInfo()
+                                    {
+                                        szApprovalCode= apiResp.responseObj?.ToString()
+                                    };
+                                    var cardDataJson = JsonConvert.SerializeObject(cardData);
 
-                                    var success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, respStr, paymentData.TransactionID,
+                                    var success = posModule.Payment_Wallet(ref respText, paymentData.WalletType, cardDataJson, paymentData.TransactionID,
                                         paymentData.ComputerID, paymentData.PayDetailID.ToString(), paymentData.ShopID, $"'{paymentData.SaleDate}'", paymentData.BrandName,
                                         paymentData.WalletStoreId, paymentData.WalletDeviceId, conn as MySqlConnection);
 
@@ -504,40 +461,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     {
                                         _log.Error("Payment_Wallet {0}", respText);
                                         throw new VtecPOSException(respText);
-                                    }
-
-                                    if (string.IsNullOrEmpty(paymentData.CustAccountNo) == false)
-                                    {
-                                        var greenMile = new BCRInterface(paymentData.ShopID, paymentData.ComputerID, paymentData.SaleDate, conn as MySqlConnection);
-                                        success = greenMile.InsertTransPOS(ref respText, paymentData.ShopID, paymentData.SaleDate, paymentData.TransactionID, paymentData.ComputerID, "front", paymentData.CustAccountNo, conn as MySqlConnection);
-                                        if (success == false)
-                                        {
-                                            _log.Error($"Error InsertTransPOS {respText}");
-
-                                            if (respText == "RETRY")
-                                            {
-                                                var totalRetry = 0;
-                                                while (true)
-                                                {
-                                                    if (++totalRetry == 3)
-                                                        break;
-
-                                                    _log.Info($"Retry InsertTransPOS #{totalRetry}");
-                                                    success = greenMile.InsertTransPOS(ref respText, paymentData.ShopID, paymentData.SaleDate, paymentData.TransactionID, paymentData.ComputerID, "front", paymentData.CustAccountNo, conn as MySqlConnection);
-                                                    if (success || respText != "RETRY")
-                                                    {
-                                                        _log.Info($"Retry InsertTransPOS #{totalRetry} success");
-                                                        break;
-                                                    }
-
-                                                    await Task.Delay(TimeSpan.FromSeconds(1));
-                                                }
-                                            }
-                                            else
-                                            {
-                                                _log.Error($"Error InsertTransPOS {respText}");
-                                            }
-                                        }
                                     }
 
                                     try
@@ -601,7 +524,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             result.Body = apiResp;
                         }
                     }
-                    catch (HttpRequestException ex)
+                    catch (Exception ex)
                     {
                         result.StatusCode = HttpStatusCode.InternalServerError;
                         result.Message = ex.Message;
