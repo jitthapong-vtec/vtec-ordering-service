@@ -518,6 +518,18 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             if (apiResp.responseCode == "99")
                             {
+                                if (paymentData.EDCType == 47)
+                                {
+                                    if (apiResp.responseText?.Contains("Response status code does not indicate success: 401 (Unauthorized).") == true)
+                                    {
+                                        apiResp = new
+                                        {
+                                            responseCode = "98",
+                                            responseText = apiResp.responseText,
+                                            responseObj = apiResp.responseObj
+                                        };
+                                    }
+                                }
                                 _log.Error($"Inquiry api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1, Error {apiResp.responseText}, reqId={reqId}, reqJson={reqJson}");
                             }
                             result.StatusCode = HttpStatusCode.OK;
