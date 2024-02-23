@@ -449,7 +449,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     var respText = "";
                                     var cardData = new EdcObjLib.objCreditCardInfo()
                                     {
-                                        szApprovalCode= apiResp.responseObj?.ToString()
+                                        szApprovalCode = apiResp.responseObj?.ToString()
                                     };
                                     var cardDataJson = JsonConvert.SerializeObject(cardData);
 
@@ -461,6 +461,23 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     {
                                         _log.Error("Payment_Wallet {0}", respText);
                                         throw new VtecPOSException(respText);
+                                    }
+
+                                    try
+                                    {
+                                        if (!string.IsNullOrEmpty(paymentData.TableName))
+                                        {
+                                            cmd.CommandText = "update ordertransactionfront set TableName=@tableName where TransactionID=@transactionId and ComputerID=@computerId";
+                                            cmd.Parameters.Clear();
+                                            cmd.Parameters.Add(_database.CreateParameter("@tableName", paymentData.TableName));
+                                            cmd.Parameters.Add(_database.CreateParameter("@transactionId", paymentData.TransactionID));
+                                            cmd.Parameters.Add(_database.CreateParameter("@computerId", paymentData.ComputerID));
+                                            cmd.ExecuteNonQuery();
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _log.Error($"{cmd.CommandText} => {ex.Message}");
                                     }
 
                                     try
