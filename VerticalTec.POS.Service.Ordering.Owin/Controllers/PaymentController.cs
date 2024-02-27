@@ -127,7 +127,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         {
                             if (!string.IsNullOrEmpty(paymentData.TableName))
                             {
-                                cmd.CommandText = "update ordertransactionfront set TableName=@tableName where TransactionID=@transactionId and ComputerID=@computerId";
+                                cmd.CommandText = "update ordertransactionfront set TableName=@tableName, QueueName=@tableName where TransactionID=@transactionId and ComputerID=@computerId";
                                 cmd.Parameters.Clear();
                                 cmd.Parameters.Add(_database.CreateParameter("@tableName", paymentData.TableName));
                                 cmd.Parameters.Add(_database.CreateParameter("@transactionId", paymentData.TransactionID));
@@ -467,7 +467,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     {
                                         if (!string.IsNullOrEmpty(paymentData.TableName))
                                         {
-                                            cmd.CommandText = "update ordertransactionfront set TableName=@tableName where TransactionID=@transactionId and ComputerID=@computerId";
+                                            cmd.CommandText = "update ordertransactionfront set TableName=@tableName, QueueName=@tableName where TransactionID=@transactionId and ComputerID=@computerId";
                                             cmd.Parameters.Clear();
                                             cmd.Parameters.Add(_database.CreateParameter("@tableName", paymentData.TableName));
                                             cmd.Parameters.Add(_database.CreateParameter("@transactionId", paymentData.TransactionID));
