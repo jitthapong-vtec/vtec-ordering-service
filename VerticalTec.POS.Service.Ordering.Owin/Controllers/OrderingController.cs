@@ -44,6 +44,226 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _posRepo = new VtecPOSRepo(database);
         }
 
+        #region NEC
+        [HttpGet]
+        [Route("v1/orders/thirdparty/inquiry")]
+        public async Task<IHttpActionResult> ThirdPartyOrderInquiryAsync(string orderId)
+        {
+            var result = new HttpActionResult<object>(Request);
+            try
+            {
+                using (var conn = await _database.ConnectAsync())
+                {
+                    var cmd = _database.CreateCommand(conn);
+                    cmd.CommandText = @"select TransactionUUID as OrderID, OrderStateStatus as OrderStatus,
+                        case 
+                        when OrderStateStatus = 0 then ""OnProcess""
+                        when OrderStateStatus = 1 then ""Received Order""
+                        when OrderStateStatus = 2 then ""Cooking""
+                        when OrderStateStatus = 3 then ""Finish""
+                        when OrderStateStatus = 99 then ""Cancelled""
+                        end as OrderStatusText
+                        from ordertransactionfront where TransactionUUID=@orderId and OrderStateStatus in (0,1,2,3,99)";
+                    cmd.Parameters.Add(_database.CreateParameter("@orderId", orderId));
+
+                    var dt = new DataTable();
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        dt.Load(reader);
+                    }
+
+                    if (dt.Rows.Count > 0)
+                    {
+                        result.Body = new
+                        {
+                            Code = "200.000",
+                            Data = dt.AsEnumerable().Select(r => new
+                            {
+                                OrderID = r["OrderID"],
+                                OrderStatus = r["OrderStatus"],
+                                OrderStatusText = r["OrderStatusText"]
+                            }).FirstOrDefault()
+                        };
+                    }
+                    else
+                    {
+                        result.Body = new
+                        {
+                            Code = "404.001",
+                            Message = $"Not found order {orderId}"
+                        };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.StatusCode = HttpStatusCode.OK;
+                result.Body = new
+                {
+                    Code = "500.000",
+                    Message = ex.Message
+                };
+            }
+            return result;
+        }
+
+        [HttpPost]
+        [Route("v1/orders/thirdparty")]
+        public IHttpActionResult ThirdPartyOrder(POSObject.OrderObj payload)
+        {
+            lock (Owner)
+            {
+                var result = new HttpActionResult<object>(Request);
+                try
+                {
+                    var posModule = new POSModule();
+                    var responseMsg = "";
+                    var transactionId = 0;
+                    var computerId = 0;
+                    var staffId = 2;
+                    var tranKey = "";
+                    var isPrint = false;
+                    var jsonData = JsonConvert.SerializeObject(payload);
+                    _logger.Info("Thirdparty Order: {0}", jsonData);
+                    using (var conn = _database.Connect())
+                    {
+                        var dtShop = _posRepo.GetShopDataAsync(conn).Result;
+                        var shopId = dtShop.AsEnumerable().FirstOrDefault()?.GetValue<int>("ShopID") ?? 0;
+                        if (shopId == 0)
+                        {
+                            result.StatusCode = HttpStatusCode.OK;
+                            result.Body = new
+                            {
+                                Code = "404.001",
+                                Message = $"There is no shop {shopId} in system!"
+                            };
+                            return result;
+                        }
+
+                        var saleDate = "";
+                        try
+                        {
+                            saleDate = _posRepo.GetSaleDateAsync(conn, shopId, false, true).Result;
+                        }
+                        catch
+                        {
+                            result.StatusCode = HttpStatusCode.OK;
+                            result.Body = new
+                            {
+                                Code = "403.001",
+                                Message = $"Store is not open!"
+                            };
+                            return result;
+                        }
+
+                        var sessionId = 0;
+                        var terminalId = 0;
+                        var cmd = _database.CreateCommand("select SessionID, ComputerID from session where CloseStaffId=0 order by SessionDate desc limit 1", conn);
+                        using (var reader = _database.ExecuteReaderAsync(cmd).Result)
+                        {
+                            if (reader.Read())
+                            {
+                                sessionId = reader.GetValue<int>("SessionID");
+                                terminalId = reader.GetValue<int>("ComputerID");
+                            }
+                        }
+                        if (sessionId == 0)
+                        {
+                            result.StatusCode = HttpStatusCode.OK;
+                            result.Message = "There is no open session";
+                            result.Body = new
+                            {
+                                Code = "403.002",
+                                Message = $"POS cashier must be open session first!"
+                            };
+                            return result;
+                        }
+
+                        var decimalDigit = _posRepo.GetDefaultDecimalDigitAsync(conn).Result;
+
+                        var success = false;
+
+                        using (var _ = new InvariantCultureScope())
+                        {
+                            success = posModule.OrderAPI_VTEC(ref responseMsg, ref transactionId, ref computerId, ref tranKey, ref isPrint, jsonData, shopId, $"'{saleDate}'", sessionId, terminalId, staffId, decimalDigit, conn as MySqlConnection);
+                        }
+
+                        if (success)
+                        {
+                            if (isPrint)
+                            {
+                                var tableId = 0;
+                                cmd.CommandText = "select TableID from order_tablefront where TransactionID=@transId and ComputerID=@compId and SaleDate=@saleDate and ShopID=@shopId";
+                                cmd.Parameters.Add(_database.CreateParameter("@transId", transactionId));
+                                cmd.Parameters.Add(_database.CreateParameter("@compId", computerId));
+                                cmd.Parameters.Add(_database.CreateParameter("@saleDate", saleDate));
+                                cmd.Parameters.Add(_database.CreateParameter("@shopId", shopId));
+
+                                using (var reader = _database.ExecuteReaderAsync(cmd).Result)
+                                {
+                                    if (reader.Read())
+                                    {
+                                        tableId = reader.GetValue<int>("TableID");
+                                    }
+                                }
+
+                                var transPayload = new TransactionPayload()
+                                {
+                                    TransactionID = transactionId,
+                                    ComputerID = computerId,
+                                    ShopID = shopId,
+                                    TerminalID = terminalId,
+                                    TableID = tableId,
+                                    StaffID = staffId
+                                };
+
+                                try
+                                {
+                                    _orderingService.SubmitOrderAsync(conn, transactionId, computerId, shopId, tableId).ConfigureAwait(false);
+                                    _printService.PrintOrder(transPayload, false).ConfigureAwait(false);
+                                    _messengerService.SendMessage($"102|101|{transPayload.TableID}");
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.Error(ex, "Submit order process");
+                                }
+                            }
+
+                            result.Body = new
+                            {
+                                Code = "200.000",
+                                Message = $"POS received your orders"
+                            };
+                        }
+                        else
+                        {
+                            result.StatusCode = HttpStatusCode.OK;
+                            result.Body = new
+                            {
+                                Code = "400.000",
+                                Message = responseMsg
+                            };
+
+                            _logger.Error("OrderAPI_VTEC: {0}", responseMsg);
+                            return result;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result.StatusCode = HttpStatusCode.OK;
+                    result.Body = new
+                    {
+                        Code = "500.000",
+                        Message = ex.Message
+                    };
+                }
+                return result;
+            }
+        }
+        #endregion
+
+        #region Desty
         [HttpPost]
         [Route("v1/orders/online")]
         public IHttpActionResult OnlineOrder(object payload)
@@ -195,6 +415,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 return result;
             }
         }
+        #endregion
 
         [HttpGet]
         [Route("v1/orders")]
