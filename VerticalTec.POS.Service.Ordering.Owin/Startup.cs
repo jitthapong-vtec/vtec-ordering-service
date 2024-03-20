@@ -59,6 +59,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             _container.RegisterType<IPaymentService, PaymentService>(new TransientLifetimeManager());
             _container.RegisterSingleton<IMessengerService, MessengerService>();
             _container.RegisterSingleton<IPrintService, PrintService>();
+            _container.RegisterSingleton<AOTRCAgentService>();
 
             config.DependencyResolver = new UnityResolver(_container);
 
