@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RCAgentAOTRR;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -60,6 +61,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 
             var rcCode = rcAgent.RequestRcCode(rc);
             return rcCode;
+        }
+
+        public dynamic ConfirmPrintRcCode(string rcCode)
+        {
+            var assembly = GetRCAgentAssembly();
+            var rcConfig = CreateRCConfig(assembly);
+
+            //dynamic rcAgent = Activator.CreateInstance(assembly.GetType("RCAgentAOTRR.RCAgent"), rcConfig);
+            var rcAgent = new RCAgentAOTRR.RCAgent(new RCAgentAOTRR.RCConfig { });
+            var resp = rcAgent.ConfirmPrintRcCode(rcCode);
+            return resp;
         }
 
         public dynamic CreateRCConfig(Assembly assembly)
