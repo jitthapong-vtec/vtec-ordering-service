@@ -14,63 +14,56 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
     {
         public const string RCAgentPath = @"C:\Program Files (x86)\admin\RCAgentInstaller\AIRPORTS OF THAILAND\RC Agent";
 
+        private Assembly _assembly;
+        private dynamic _rcAgent;
+        private dynamic _rcConfig;
+
         public AOTRCAgentService()
         {
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.AssemblyResolve += new ResolveEventHandler(AssemblyResolveEventHandler);
+
+            _assembly = GetRCAgentAssembly();
+            _rcConfig = CreateRCConfig(_assembly);
+
+            _rcAgent = Activator.CreateInstance(_assembly.GetType("RCAgentAOTRR.RCAgent"), _rcConfig);
         }
 
         public dynamic SendLoginStatus()
         {
-            var assembly = GetRCAgentAssembly();
-            var rcConfig = CreateRCConfig(assembly);
-
-            dynamic rcAgent = Activator.CreateInstance(assembly.GetType("RCAgentAOTRR.RCAgent"), rcConfig);
-            var loginResp = rcAgent.SendLoginStatus(DateTime.Now);
+            var loginResp = _rcAgent.SendLoginStatus(DateTime.Now);
             return loginResp;
         }
 
         public dynamic SendLogoutStatus()
         {
-            var assembly = GetRCAgentAssembly();
-            var rcConfig = CreateRCConfig(assembly);
-
-            dynamic rcAgent = Activator.CreateInstance(assembly.GetType("RCAgentAOTRR.RCAgent"), rcConfig);
-            var logoutResp = rcAgent.SendLogoutStatus();
+            var logoutResp = _rcAgent.SendLogoutStatus();
             return logoutResp;
         }
 
         public dynamic RequestRcCode(OrderTransaction order)
         {
-            var assembly = GetRCAgentAssembly();
-            var rcConfig = CreateRCConfig(assembly);
-
-            dynamic rcAgent = Activator.CreateInstance(assembly.GetType("RCAgentAOTRR.RCAgent"), rcConfig);
-            //var rcAgent = new RCAgentAOTRR.RCAgent(new RCAgentAOTRR.RCConfig { });
-            dynamic rc = Activator.CreateInstance(assembly.GetType("RCAgentAOTRR.Receipt"));
+            dynamic rc = Activator.CreateInstance(_assembly.GetType("RCAgentAOTRR.Receipt"));
             //var rc = new RCAgentAOTRR.Receipt();
-            rc.companyCode = rcConfig.companyCode;
-            rc.ipAddress = rcConfig.posIPAddress;
-            rc.posName = rcConfig.posName;
-            rc.rdId = rcConfig.rdId;
-            rc.shopId = "";
+            rc.companyCode = _rcConfig.companyCode;
+            rc.ipAddress = _rcConfig.posIPAddress;
+            rc.posName = _rcConfig.posName;
+            rc.rdId = _rcConfig.rdId;
+            rc.shopId = _rcConfig.rdId;
             rc.transactionDatetime = DateTime.Now;
             rc.receiptDate = DateTime.Today;
             rc.receiptType = "1";
             rc.receiptStatus = "1";
+            rc.taxInvoice = "1234";
+            rc.refNo = "1234";
 
-            var rcCode = rcAgent.RequestRcCode(rc);
+            var rcCode = _rcAgent.RequestRcCode(rc);
             return rcCode;
         }
 
         public dynamic ConfirmPrintRcCode(string rcCode)
         {
-            var assembly = GetRCAgentAssembly();
-            var rcConfig = CreateRCConfig(assembly);
-
-            //dynamic rcAgent = Activator.CreateInstance(assembly.GetType("RCAgentAOTRR.RCAgent"), rcConfig);
-            var rcAgent = new RCAgentAOTRR.RCAgent(new RCAgentAOTRR.RCConfig { });
-            var resp = rcAgent.ConfirmPrintRcCode(rcCode);
+            var resp = _rcAgent.ConfirmPrintRcCode(rcCode);
             return resp;
         }
 
