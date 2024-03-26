@@ -11,6 +11,11 @@
         <GroupBox Header="Settings" VerticalAlignment="Center" HorizontalAlignment="Center" 
                   MinWidth="400" Padding="10" Margin="10">
             <Grid>
+                <Grid.Resources>
+                    <Style TargetType="TextBox">
+                        <Setter Property="Margin" Value="0,0,0,2"/>
+                    </Style>
+                </Grid.Resources>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -35,8 +40,8 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="txtRCAgentPath" Grid.Column="0" IsReadOnly="True" HorizontalAlignment="Stretch"/>
-                    <Button x:Name="btnBrowse" Grid.Column="1" Content="Browser" Height="26" VerticalAlignment="Top"
-                            Click="btnBrowse_Click"/>
+                    <Button x:Name="btnBrowse" Grid.Column="1" Content="Browse" Padding="4,0" Height="26" VerticalAlignment="Top"
+                            Margin="2,0,0,2" Click="btnBrowse_Click"/>
                 </Grid>
                 <Button x:Name="btnSave" Grid.Row="4" Grid.Column="1" Content="Save" Click="btnSave_Click" Height="30"
                         Margin="0,4"/>
