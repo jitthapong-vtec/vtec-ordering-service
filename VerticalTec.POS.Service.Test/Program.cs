@@ -17,7 +17,8 @@ namespace VerticalTec.POS.Service.Test
             try
             {
                 var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
-                using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.Ordering.Owin.Startup("192.168.1.35", "demo_itn", hangfireConStr).Configuration(appBuilder)))
+                var rcAgentPath = @"C:\Program Files (x86)\admin\RCAgentInstaller\AIRPORTS OF THAILAND\RC Agent";
+                using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.Ordering.Owin.Startup("192.168.1.145", "400_demo", hangfireConStr, rcAgentPath).Configuration(appBuilder)))
                 {
                     Console.ReadLine();
                 }

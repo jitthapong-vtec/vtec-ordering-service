@@ -22,6 +22,11 @@ namespace VerticalTec.POS.Service.Ordering
             var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
             return config.AppSettings.Settings["ApiPort"].Value;
         }
+        public static string GetRCAgentPath()
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
+            return config.AppSettings.Settings["RCAgentPath"].Value;
+        }
 
         public static string GetExecPath()
         {

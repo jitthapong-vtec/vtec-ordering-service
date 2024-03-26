@@ -32,6 +32,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             AppConfig.Instance.HangfileConnStr = hangfileConnStr;
         }
 
+        public Startup(string dbServer, string dbName, string hangfileConnStr, string rcAgentPath)
+        {
+            AppConfig.Instance.DbServer = dbServer;
+            AppConfig.Instance.DbName = dbName;
+            AppConfig.Instance.HangfileConnStr = hangfileConnStr;
+            AppConfig.Instance.RCAgentPath = rcAgentPath;
+        }
+
         private IEnumerable<IDisposable> GetHangfireServers()
         {
             GlobalConfiguration.Configuration

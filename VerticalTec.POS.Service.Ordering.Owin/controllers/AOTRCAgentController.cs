@@ -17,7 +17,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("SendLoginStatus")]
         public IHttpActionResult SendLoginStatus(int shopId, int computerId, int staffId)
         {
-            var loginResp = _rcAgentService.SendLoginStatus();
+            var loginResp = _rcAgentService.SendLoginStatus(shopId, computerId, staffId);
             return Ok(loginResp);
         }
 
@@ -25,7 +25,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("SendLogoutStatus")]
         public IHttpActionResult SendLogoutStatus(int shopId, int computerId, int staffId)
         {
-            var loginResp =_rcAgentService.SendLogoutStatus();
+            var loginResp =_rcAgentService.SendLogoutStatus(shopId, computerId, staffId);
             return Ok(loginResp);
         }
 
@@ -33,7 +33,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("RequestRcCode")]
         public IHttpActionResult RequestRcCode(int shopId, int transactionId, int computerId)
         {
-            var resp = _rcAgentService.RequestRcCode(new OrderTransaction());
+            var resp = _rcAgentService.RequestRcCode(shopId, transactionId, computerId);
             return Ok(resp);
         }
 

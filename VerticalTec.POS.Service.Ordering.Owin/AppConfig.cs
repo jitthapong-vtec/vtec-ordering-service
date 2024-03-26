@@ -24,5 +24,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin
         public string DbName { get; set; }
         public string DbPort { get; set; } = "3308";
         public string HangfileConnStr { get; set; }
+        public string RCAgentPath { get; set; }
     }
 }
