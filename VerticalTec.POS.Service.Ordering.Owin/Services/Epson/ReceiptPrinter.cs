@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Threading.Tasks;
+using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Printer.Epson
 {

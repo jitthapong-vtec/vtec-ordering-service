@@ -1,19 +1,15 @@
-﻿using RCAgentAOTRR;
+﻿using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
+using RCAgentAOTRR;
 using System;
-using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Http;
 using VerticalTec.POS.Database;
-using MySql.Data.MySqlClient;
-using System.Data;
-using System.Web.Http.Results;
-using DevExpress.Data.Linq;
+using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Services
 {
@@ -21,13 +17,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
     {
         static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logpayment");
 
-        public string RCAgentPath => AppConfig.Instance.RCAgentPath; //@"C:\Program Files (x86)\admin\RCAgentInstaller\AIRPORTS OF THAILAND\RC Agent";
+        public string RCAgentPath => AppConfig.Instance.RCAgentPath;
 
         private readonly IDatabase _database;
         private readonly VtecPOSRepo _vtecPOSRepo;
-        private Assembly _assembly;
-        private dynamic _rcAgent;
-        private dynamic _rcConfig;
+        private RCAgent _rcAgent;
+        private RCConfig _rcConfig;
 
         public AOTRCAgentService(IDatabase database)
         {
@@ -35,8 +30,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             currentDomain.AssemblyResolve += new ResolveEventHandler(AssemblyResolveEventHandler);
 
             _database = database;
-            _assembly = GetRCAgentAssembly();
-
             _vtecPOSRepo = new VtecPOSRepo(database);
         }
 
@@ -60,34 +53,101 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             {
                 var ds = GetTransactionData(transactionId, computerId, conn, "front");
                 var dtTrans = ds.Tables["OrderTransaction"];
+                var dtOrderDetail = ds.Tables["OrderDetail"];
+                var dtPayDetail = ds.Tables["OrderPayDetail"];
+
                 if (dtTrans.Rows.Count == 0)
                 {
                     ds = GetTransactionData(transactionId, computerId, conn, "");
                     dtTrans = ds.Tables["OrderTransaction"];
+                    dtOrderDetail = ds.Tables["OrderDetail"];
+                    dtPayDetail = ds.Tables["OrderPayDetail"];
                 }
 
-                if(dtTrans.Rows.Count == 0)
+                if (dtTrans.Rows.Count == 0)
                 {
                     var errMsg = $"No data of TransactionID={transactionId}, ComputerID={computerId}";
                     _log.Error(errMsg);
                     throw new Exception(errMsg);
                 }
 
-                //dynamic rc = Activator.CreateInstance(_assembly.GetType("RCAgentAOTRR.Receipt"));
+                var orderTran = dtTrans.AsEnumerable().Select(r => new
+                {
+                    ReceiptNumber = r.GetValue<string>("ReceiptNumber"),
+                    SaleDate = r.GetValue<DateTime>("SaleDate"),
+                    PaidTime = r.GetValue<DateTime>("PaidTime"),
+                    TransactionVAT = r.GetValue<decimal>("TransactionVAT"),
+                    TransactionVATable = r.GetValue<decimal>("TransactionVATable"),
+                    TranBeforeVAT = r.GetValue<decimal>("TranBeforeVAT"),
+                    VATPercent = r.GetValue<decimal>("VATPercent"),
+                    ProductVAT = r.GetValue<decimal>("ProductVAT"),
+                    ServiceChargePercent = r.GetValue<decimal>("ServiceChargePercent"),
+                    ServiceCharge = r.GetValue<decimal>("ServiceCharge"),
+                    ServiceChargeVAT = r.GetValue<decimal>("ServiceChargeVAT"),
+                    ServiceChargeBeforeVAT = r.GetValue<decimal>("SCBeforeVAT"),
+                    ReceiptTotalQty = r.GetValue<double>("ReceiptTotalQty"),
+                    ReceiptRetailPrice = r.GetValue<decimal>("ReceiptRetailPrice"),
+                    ReceiptDiscount = r.GetValue<decimal>("ReceiptDiscount"),
+                    ReceiptSalePrice = r.GetValue<decimal>("ReceiptSalePrice"),
+                    ReceiptNetSale = r.GetValue<decimal>("ReceiptNetSale"),
+                    ReceiptPayPrice = r.GetValue<decimal>("ReceiptPayPrice"),
+                    ReceiptRoudingBill = r.GetValue<decimal>("ReceiptRoundingBill"),
+                    DiscountItem = r.GetValue<decimal>("DiscountItem"),
+                    DiscountBill = r.GetValue<decimal>("DiscountBill"),
+                    DiscountOther = r.GetValue<decimal>("DiscountOther"),
+                    TotalDiscount = r.GetValue<decimal>("TotalDiscount"),
+                    ReferenceNo = r.GetValue<string>("ReferenceNo"),
+                    TransactionStatusID = r.GetValue<int>("TransactionStatusID"),
+                }).First();
+
+                var receiptStatus = "1";
+                if (orderTran.TransactionStatusID == 9)
+                    receiptStatus = "2";
+
                 var rc = new RCAgentAOTRR.Receipt();
                 rc.companyCode = _rcConfig.companyCode;
                 rc.ipAddress = _rcConfig.posIPAddress;
                 rc.posName = _rcConfig.posName;
                 rc.rdId = _rcConfig.rdId;
                 rc.shopId = _rcConfig.rdId;
-                rc.transactionDatetime = DateTime.Now;
-                rc.receiptDate = DateTime.Today;
+                rc.transactionDatetime = orderTran.PaidTime;
+                rc.receiptDate = orderTran.SaleDate;
                 rc.receiptType = "1";
-                rc.receiptStatus = "1";
-                rc.taxInvoice = "1234";
-                rc.refNo = "1234";
+                rc.receiptStatus = receiptStatus;
+                rc.taxInvoice = orderTran.ReceiptNumber;
+                rc.refNo = orderTran.ReferenceNo;
+                rc.totalExcVat = (double)orderTran.TranBeforeVAT;
+                rc.totalVat = (double)orderTran.TransactionVAT;
+                rc.totalIncVat = (double)(orderTran.TranBeforeVAT + orderTran.TransactionVAT);
+                rc.receiptItems = dtOrderDetail.AsEnumerable().Select(r => new ReceiptItem
+                {
+                    itemNo = r.GetValue<int>("OrderDetailID"),
+                    productCode = r.GetValue<string>("ProductCode"),
+                    productName = r.GetValue<string>("ProductName"),
+                    quantity = r.GetValue<double>("TotalQty"),
+                    serviceCharge = r.GetValue<double>("SCAmount"),
+                    vatType = r.GetValue<string>("VATType"),
+                    vatRate = r.GetValue<double>("ProductVATPercent"),
+                    unitDiscountPercent = r.GetValue<double>("DiscPercent"),
+                    unitPriceIncVat = r.GetValue<double>("PricePerUnit"),
+                    unitPriceVat = r.GetValue<double>("ProductVAT"),
+                    totalDiscountIncVat = r.GetValue<double>("TotalDiscount"),
+                    totalIncVat = r.GetValue<double>("NetSale"),
+
+                }).ToList();
+                rc.receiptPayments = dtPayDetail.AsEnumerable().Select(r => new ReceiptPayment
+                {
+                    paymentNo = r.GetValue<int>("PayDetailID"),
+                    paymentCurrency = r.GetValue<string>("CurrencyCode"),
+                    paymentAmount = r.GetValue<double>("PayAmount"),
+                    paymentType = r.GetValue<string>("PayTypeName")
+                }).ToList();
+
+                _log.Log(NLog.LogLevel.Info, $"RequestRcCode => {JsonConvert.SerializeObject(rc)}");
 
                 var rcCode = _rcAgent.RequestRcCode(rc);
+
+                _log.Log(NLog.LogLevel.Info, $"Response RequestRcCode => {JsonConvert.SerializeObject(rcCode)}");
                 return rcCode;
             }
         }
@@ -95,7 +155,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         private DataSet GetTransactionData(int transactionId, int computerId, MySqlConnection conn, string tableSubfix = "front")
         {
             var cmd = new MySqlCommand($@"select * from ordertransaction{tableSubfix} where TransactionID=@tid and ComputerID=@cid;
-            select * from orderpaydetail{tableSubfix} where TransactionID=@tid and ComputerID=@cid;", conn);
+            select a.*, b.ProductCode, b.ProductName from orderdetail{tableSubfix} a left outer join products b on a.ProductID=b.ProductID where a.TransactionID=@tid and a.ComputerID=@cid and OrderStatusID=2;
+            select a.*, b.PayTypeName from orderpaydetail{tableSubfix} a left outer join paytype b on a.PayTypeID=b.PayTypeID where a.TransactionID=@tid and a.ComputerID=@cid;", conn);
             cmd.Parameters.Add(new MySqlParameter("@tid", transactionId));
             cmd.Parameters.Add(new MySqlParameter("@cid", computerId));
 
@@ -103,7 +164,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             var adapter = new MySqlDataAdapter(cmd);
             adapter.Fill(ds);
             ds.Tables[0].TableName = "OrderTransaction";
-            ds.Tables[1].TableName = "OrderPayDetail";
+            ds.Tables[1].TableName = "OrderDetail";
+            ds.Tables[2].TableName = "OrderPayDetail";
             return ds;
         }
 
@@ -111,11 +173,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         {
             var resp = _rcAgent.ConfirmPrintRcCode(rcCode);
             return resp;
-        }
-
-        public Assembly GetRCAgentAssembly()
-        {
-            return Assembly.LoadFile(Path.Combine(RCAgentPath, "RCAgent.dll"));
         }
 
         private void InitRCAgent(int shopId, int computerId)
@@ -132,7 +189,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 var host = Dns.GetHostEntry(Dns.GetHostName());
                 var ipAddress = host.AddressList.Where(ip => ip.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault()?.ToString();
 
-                _rcConfig = Activator.CreateInstance(_assembly.GetType("RCAgentAOTRR.RCConfig"));
+                _rcConfig = new RCConfig();
                 _rcConfig.companyCode = companyCode.Result;
                 _rcConfig.posIPAddress = "117.117.117.001";
                 _rcConfig.posName = posName.Result;
@@ -142,12 +199,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 _rcConfig.clientSecret = clientSecret.Result;
             }
 
-            if (_rcAgent == null)
-                _rcAgent = Activator.CreateInstance(_assembly.GetType("RCAgentAOTRR.RCAgent"), _rcConfig);
+            _rcAgent = new RCAgent(_rcConfig);
         }
 
         private Assembly AssemblyResolveEventHandler(object sender, ResolveEventArgs args)
         {
+            if (string.IsNullOrEmpty(RCAgentPath))
+                throw new Exception("Please config path to RCAgent!!!");
             var assemblyName = new AssemblyName(args.Name);
             return Assembly.LoadFile(Path.Combine(RCAgentPath, $"{assemblyName.Name}.dll"));
         }

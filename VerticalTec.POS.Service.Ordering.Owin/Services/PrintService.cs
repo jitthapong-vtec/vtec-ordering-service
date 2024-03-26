@@ -7,6 +7,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.Printer;
+using VerticalTec.POS.Printer.Epson;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
@@ -189,11 +191,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 var isIPFormat = IPAddress.TryParse(printerNames, out ip);
                 if (isIPFormat)
                 {
-                    Device.Printer.Epson.EpsonResponse response = null;
-                    var size = Device.Printer.Epson.PaperSizes.Size80;
+                    EpsonResponse response = null;
+                    var size = PaperSizes.Size80;
                     if (paperSize == 58)
-                        size = Device.Printer.Epson.PaperSizes.Size58;
-                    response = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintBillDetail(
+                        size = PaperSizes.Size58;
+                    response = await EpsonPrintManager.Instance.PrintBillDetail(
                         dsPrintData, printerIds, printerNames, size);
                     if (response != null && response.Success == false)
                         _log.Error($"Printer error => {response.Message}");

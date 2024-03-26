@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Printer.Epson
 {
@@ -28,7 +29,7 @@ namespace VerticalTec.POS.Printer.Epson
             var dtKitchenPrintData = data.Tables["KitchenPrintData"];
             if (dtKitchenData == null || dtKitchenPrintData == null)
             {
-                LogManager.Instance.WriteLog("Not found kitchen data", LogManager.LogTypes.Error);
+                LogManager.Instance.WriteLog("Not found kitchen data");
                 return false;
             }
 
