@@ -35,7 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>orderingservice.ico</ApplicationIcon>
+    <ApplicationIcon>Disk.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Owin, Version=4.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -120,10 +120,14 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\Icon\orderingservice.ico" />
+    <Resource Include="Resources\Icon\Settings-36.png" />
+    <Resource Include="Resources\Icon\Shutdown-40.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="orderingservice.ico" />
+    <Resource Include="Resources\Icon\Disk.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Disk.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

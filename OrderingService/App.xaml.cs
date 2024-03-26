@@ -42,18 +42,32 @@ namespace OrderingService
 
             try
             {
-                var resourceStream = GetResourceStream(new Uri("pack://application:,,,/OrderingService;component/Resources/Icon/orderingservice.ico"));
+                var resourceStream = GetResourceStream(new Uri("pack://application:,,,/OrderingService;component/Resources/Icon/Disk.ico"));
                 _notifyIcon.Icon = new System.Drawing.Icon(resourceStream.Stream);
+                _notifyIcon.BalloonTipIcon = Form.ToolTipIcon.Info;
             }
             catch { }
 
-            _menuSetting = new Form.ToolStripMenuItem("Settings", null, ShowSettingWindow, "SettingMenu");
-            _menuExit = new Form.ToolStripMenuItem("Exit", null, ExitApp, "ExitMenu");
+            System.Drawing.Image settingImg = null;
+            try
+            {
+                var res = GetResourceStream(new Uri("pack://application:,,,/OrderingService;component/Resources/Icon/Settings-36.png"));
+                settingImg = new System.Drawing.Bitmap(res.Stream);
+            }
+            catch { }
 
-            var menus = new[] {
-                _menuSetting,
-                _menuExit
-            };
+            System.Drawing.Image exitImg = null;
+            try
+            {
+                var res = GetResourceStream(new Uri("pack://application:,,,/OrderingService;component/Resources/Icon/Shutdown-40.png"));
+                exitImg = new System.Drawing.Bitmap(res.Stream);
+            }
+            catch { }
+
+            _menuSetting = new Form.ToolStripMenuItem("Settings", settingImg, ShowSettingWindow, "SettingMenu");
+            _menuExit = new Form.ToolStripMenuItem("Exit", exitImg, ExitApp, "ExitMenu");
+
+            var menus = new[] { _menuSetting, _menuExit };
             _notifyIcon.ContextMenuStrip.Items.AddRange(menus);
         }
 
@@ -86,6 +100,8 @@ namespace OrderingService
         {
             base.OnStartup(e);
             RunOrderingApi();
+
+            _notifyIcon.ShowBalloonTip(5000, "vTec Ordering Service", "vTec ordering service is running", Form.ToolTipIcon.Info);
         }
 
         private void RunOrderingApi()
