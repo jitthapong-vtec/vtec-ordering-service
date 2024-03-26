@@ -5,8 +5,10 @@ using Owin;
 using Swashbuckle.Application;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -38,6 +40,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             AppConfig.Instance.DbName = dbName;
             AppConfig.Instance.HangfileConnStr = hangfileConnStr;
             AppConfig.Instance.RCAgentPath = rcAgentPath;
+        }
+
+        public string Version
+        {
+            get
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                var fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+                var version = fvi.ProductVersion;
+                return $"v{version}";
+            }
         }
 
         private IEnumerable<IDisposable> GetHangfireServers()
@@ -74,7 +87,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             var db = _container.Resolve<IDatabase>();
             DatabaseMigration.CheckAndUpdate(db, AppConfig.Instance.DbName);
 
-            config.EnableSwagger(c => c.SingleApiVersion("v1.0.3", "Vtec Ordering Api")).EnableSwaggerUi();
+            config.EnableSwagger(c => c.SingleApiVersion(Version, "Vtec Ordering Api")).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
             config.MapHttpAttributeRoutes();

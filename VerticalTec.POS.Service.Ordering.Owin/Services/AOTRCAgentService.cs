@@ -197,6 +197,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 _rcConfig.shopCode = shopCode.Result;
                 _rcConfig.clientId = clientId.Result;
                 _rcConfig.clientSecret = clientSecret.Result;
+
+                _log.Log(NLog.LogLevel.Info, $"RCConfig => {JsonConvert.SerializeObject(_rcConfig)}");
             }
 
             _rcAgent = new RCAgent(_rcConfig);
