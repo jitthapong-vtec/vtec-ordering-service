@@ -187,7 +187,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 var clientId = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotClientID", shopId: shopId, computerId: computerId);
                 var clientSecret = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotClientSecret", shopId: shopId, computerId: computerId);
                 var ipAddress = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotPosIPAddress", shopId: shopId, computerId: computerId);
-                
+
                 //var host = Dns.GetHostEntry(Dns.GetHostName());
                 //var ipAddress = host.AddressList.Where(ip => ip.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault()?.ToString();
 

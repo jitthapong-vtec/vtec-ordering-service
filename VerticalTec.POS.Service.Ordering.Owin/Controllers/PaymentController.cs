@@ -316,7 +316,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 {
                                     var greenMile = new BCRInterface(paymentData.ShopID, paymentData.ComputerID, paymentData.SaleDate, conn as MySqlConnection);
                                     success = greenMile.InsertTransPOS(ref respText, paymentData.ShopID, paymentData.SaleDate, paymentData.TransactionID, paymentData.ComputerID, "front", paymentData.CustAccountNo, conn as MySqlConnection);
-                                    if(success == false)
+                                    if (success == false)
                                     {
                                         _log.Error($"Error InsertTransPOS {respText}");
 
@@ -354,24 +354,20 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                         .Where(r => r.GetValue<int>("KEYID") == paymentData.ComputerID && r.GetValue<int>("PropertyValue") == 1)?.Any() == true;
                                 }
 
-                                if (isEnableAOTRcCode)
-                                {
-                                    _aotService.SendLoginStatus(paymentData.ShopID, paymentData.TerminalID, 2);
-
-                                    var rcCode = _aotService.RequestRcCode(paymentData.ShopID, paymentData.TransactionID, paymentData.ComputerID);
-                                    if(rcCode.status == "1")
-                                    {
-                                        cmd = _database.CreateCommand("update ordertransactionfront set ReferenceNo=@rcCode where TransactionID=@tid and ComputerID=@cid", conn);
-                                        cmd.Parameters.Add(_database.CreateParameter("@tid", paymentData.TransactionID));
-                                        cmd.Parameters.Add(_database.CreateParameter("@cid", paymentData.ComputerID));
-                                        await _database.ExecuteReaderAsync(cmd);
-                                    }
-                                }
-
                                 try
                                 {
                                     await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _log.Error(ex, "SubmitOrder");
+                                }
+
+                                var isFinalizeSuccess = false;
+                                try
+                                {
                                     await _paymentService.FinalizeBillAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
+                                    isFinalizeSuccess = true;
                                 }
                                 catch (Exception ex)
                                 {
@@ -384,6 +380,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                         using (var conn2 = await _database.ConnectAsync())
                                         {
                                             await _paymentService.FinalizeBillAsync(conn2, paymentData.TransactionID, paymentData.ComputerID, paymentData.ComputerID, paymentData.ShopID, paymentData.StaffID);
+                                            isFinalizeSuccess = true;
                                         }
                                     }
                                     catch (Exception ex2)
@@ -393,8 +390,36 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 }
                                 finally
                                 {
-                                    if (isEnableAOTRcCode)
-                                        _aotService.SendLogoutStatus(paymentData.ShopID, paymentData.TerminalID, 2);
+                                    if (isEnableAOTRcCode && isFinalizeSuccess)
+                                    {
+                                        try
+                                        {
+                                            var loginResult = _aotService.SendLoginStatus(paymentData.ShopID, paymentData.ComputerID, 2);
+                                            if (loginResult.error == "1")
+                                                _log.Info($"Error from SendLoginStatus => {JsonConvert.SerializeObject(loginResult)}");
+
+                                            var rcCode = _aotService.RequestRcCode(paymentData.ShopID, paymentData.TransactionID, paymentData.ComputerID);
+                                            if (rcCode.status == "1")
+                                            {
+                                                cmd = _database.CreateCommand("update ordertransactionfront set ReferenceNo=@rcCode where TransactionID=@tid and ComputerID=@cid", conn);
+                                                cmd.Parameters.Add(_database.CreateParameter("@tid", paymentData.TransactionID));
+                                                cmd.Parameters.Add(_database.CreateParameter("@cid", paymentData.ComputerID));
+                                                cmd.Parameters.Add(_database.CreateParameter("@rcCode", rcCode.rcCode));
+                                                await _database.ExecuteNonQueryAsync(cmd);
+
+                                                cmd.CommandText = "update ordertransaction set ReferenceNo=@rcCode where TransactionID=@tid and ComputerID=@cid";
+                                                await _database.ExecuteNonQueryAsync(cmd);
+
+                                                _aotService.ConfirmPrintRcCode(rcCode.rcCode);
+                                            }
+
+                                            var logoutResult = _aotService.SendLogoutStatus(paymentData.ShopID, paymentData.ComputerID, 2);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            _log.Error(ex, "AOTRcAgent");
+                                        }
+                                    }
                                 }
 
                                 var printData = new PrintData()
@@ -426,7 +451,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     }
                     else
                     {
-                        if(apiResp.responseCode == "99")
+                        if (apiResp.responseCode == "99")
                         {
                             _log.Error($"Inquiry api/POSModule/payment_gateway_QR_Inquiry?reqId={reqId}&orderId={orderId}&langId=1, Error {apiResp.responseText}, reqId={reqId}, reqJson={reqJson}");
                         }
