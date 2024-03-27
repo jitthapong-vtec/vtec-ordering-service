@@ -42,8 +42,8 @@ namespace OrderingService
 
             try
             {
-                var resourceStream = GetResourceStream(new Uri("pack://application:,,,/OrderingService;component/Resources/Icon/Disk.ico"));
-                _notifyIcon.Icon = new System.Drawing.Icon(resourceStream.Stream);
+                var res = GetResourceStream(new Uri("pack://application:,,,/OrderingService;component/Resources/Icon/Disk.ico"));
+                _notifyIcon.Icon = new System.Drawing.Icon(res.Stream);
                 _notifyIcon.BalloonTipIcon = Form.ToolTipIcon.Info;
             }
             catch { }

@@ -12,15 +12,17 @@
                   MinWidth="400" Padding="10" Margin="10">
             <Grid>
                 <Grid.Resources>
-                    <Style TargetType="TextBox">
-                        <Setter Property="Margin" Value="0,0,0,2"/>
-                    </Style>
+                    
                 </Grid.Resources>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -29,22 +31,21 @@
                 </Grid.ColumnDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="Database Server"/>
                 <TextBox x:Name="txtDbServer" Grid.Row="0" Grid.Column="1"/>
-                <Label Grid.Row="1" Grid.Column="0" Content="Database Name"/>
-                <TextBox x:Name="txtDbName" Grid.Row="1" Grid.Column="1"/>
-                <Label Grid.Row="2" Grid.Column="0" Content="API Port"/>
-                <TextBox x:Name="txtApiPort" Grid.Row="2" Grid.Column="1"/>
-                <Label Grid.Row="3" Grid.Column="0" Content="RCAgent Path"/>
-                <Grid Grid.Row="3" Grid.Column="1">
+                <Label Grid.Row="2" Grid.Column="0" Content="Database Name"/>
+                <TextBox x:Name="txtDbName" Grid.Row="2" Grid.Column="1"/>
+                <Label Grid.Row="4" Grid.Column="0" Content="API Port"/>
+                <TextBox x:Name="txtApiPort" Grid.Row="4" Grid.Column="1"/>
+                <Label Grid.Row="6" Grid.Column="0" Content="RCAgent Path"/>
+                <Grid Grid.Row="6" Grid.Column="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBox x:Name="txtRCAgentPath" Grid.Column="0" IsReadOnly="True" HorizontalAlignment="Stretch"/>
+                    <TextBox x:Name="txtRCAgentPath" Grid.Column="0" IsReadOnly="True" Margin="0,0,2,0"/>
                     <Button x:Name="btnBrowse" Grid.Column="1" Content="Browse" Padding="4,0" Height="26" VerticalAlignment="Top"
-                            Margin="2,0,0,2" Click="btnBrowse_Click"/>
+                            Click="btnBrowse_Click"/>
                 </Grid>
-                <Button x:Name="btnSave" Grid.Row="4" Grid.Column="1" Content="Save" Click="btnSave_Click" Height="30"
-                        Margin="0,4"/>
+                <Button x:Name="btnSave" Grid.Row="8" Grid.Column="1" Content="Save" Click="btnSave_Click" Height="30"/>
             </Grid>
         </GroupBox>
     </Grid>
