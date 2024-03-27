@@ -10,6 +10,7 @@ using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using vtecPOS.GlobalFunctions;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
+using System.Linq;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {

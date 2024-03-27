@@ -1,6 +1,7 @@
 ﻿using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using RCAgentAOTRR;
+using RCAgentAOTRR.Response;
 using System;
 using System.Data;
 using System.IO;
@@ -33,7 +34,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             _vtecPOSRepo = new VtecPOSRepo(database);
         }
 
-        public dynamic SendLoginStatus(int shopId, int computerId, int staffId)
+        public ReturnOfSendLoginStatus SendLoginStatus(int shopId, int computerId, int staffId)
         {
             InitRCAgent(shopId, computerId);
 
@@ -41,13 +42,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             return loginResp;
         }
 
-        public dynamic SendLogoutStatus(int shopId, int computerId, int staffId)
+        public ReturnOfSendLogoutStatus SendLogoutStatus(int shopId, int computerId, int staffId)
         {
             var logoutResp = _rcAgent.SendLogoutStatus();
             return logoutResp;
         }
 
-        public dynamic RequestRcCode(int shopId, int transactionId, int computerId)
+        public ReturnOfRequestRcCode RequestRcCode(int shopId, int transactionId, int computerId)
         {
             using (var conn = (MySqlConnection)_database.Connect())
             {
@@ -169,7 +170,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             return ds;
         }
 
-        public dynamic ConfirmPrintRcCode(string rcCode)
+        public ReturnOfConfirmPrintRcCode ConfirmPrintRcCode(string rcCode)
         {
             var resp = _rcAgent.ConfirmPrintRcCode(rcCode);
             return resp;
@@ -185,13 +186,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 var shopCode = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotShopCode", shopId: shopId, computerId: computerId);
                 var clientId = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotClientID", shopId: shopId, computerId: computerId);
                 var clientSecret = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotClientSecret", shopId: shopId, computerId: computerId);
-
-                var host = Dns.GetHostEntry(Dns.GetHostName());
-                var ipAddress = host.AddressList.Where(ip => ip.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault()?.ToString();
+                var ipAddress = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotPosIPAddress", shopId: shopId, computerId: computerId);
+                
+                //var host = Dns.GetHostEntry(Dns.GetHostName());
+                //var ipAddress = host.AddressList.Where(ip => ip.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault()?.ToString();
 
                 _rcConfig = new RCConfig();
                 _rcConfig.companyCode = companyCode.Result;
-                _rcConfig.posIPAddress = "117.117.117.001";
+                _rcConfig.posIPAddress = ipAddress.Result;
                 _rcConfig.posName = posName.Result;
                 _rcConfig.posId = posId.Result;
                 _rcConfig.shopCode = shopCode.Result;

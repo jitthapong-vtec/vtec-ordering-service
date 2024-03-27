@@ -1,4 +1,5 @@
 ﻿using DevExpress.XtraEditors.Controls;
+using DevExpress.XtraPrinting.Shape.Native;
 using Hangfire;
 using LoyaltyInterface3;
 using Microsoft.Owin;
@@ -37,10 +38,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         IMessengerService _messenger;
         IPrintService _printService;
         VtecPOSRepo _posRepo;
+        AOTRCAgentService _aotService;
 
         public PaymentController(IDatabase database, IPaymentService paymentService,
             IOrderingService orderingService, IMessengerService messenger,
-            IPrintService printService)
+            IPrintService printService, AOTRCAgentService aotService)
         {
             _database = database;
             _paymentService = paymentService;
@@ -48,6 +50,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _messenger = messenger;
             _printService = printService;
             _posRepo = new VtecPOSRepo(database);
+            _aotService = aotService;
         }
 
         #region OnlinePayment
@@ -343,6 +346,28 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     }
                                 }
 
+                                var prop = await _posRepo.GetProgramPropertyAsync(conn, 1153);
+                                var isEnableAOTRcCode = false;
+                                if (prop.Rows.Count > 0)
+                                {
+                                    isEnableAOTRcCode = prop.AsEnumerable()
+                                        .Where(r => r.GetValue<int>("KEYID") == paymentData.ComputerID && r.GetValue<int>("PropertyValue") == 1)?.Any() == true;
+                                }
+
+                                if (isEnableAOTRcCode)
+                                {
+                                    _aotService.SendLoginStatus(paymentData.ShopID, paymentData.TerminalID, 2);
+
+                                    var rcCode = _aotService.RequestRcCode(paymentData.ShopID, paymentData.TransactionID, paymentData.ComputerID);
+                                    if(rcCode.status == "1")
+                                    {
+                                        cmd = _database.CreateCommand("update ordertransactionfront set ReferenceNo=@rcCode where TransactionID=@tid and ComputerID=@cid", conn);
+                                        cmd.Parameters.Add(_database.CreateParameter("@tid", paymentData.TransactionID));
+                                        cmd.Parameters.Add(_database.CreateParameter("@cid", paymentData.ComputerID));
+                                        await _database.ExecuteReaderAsync(cmd);
+                                    }
+                                }
+
                                 try
                                 {
                                     await _orderingService.SubmitOrderAsync(conn, paymentData.TransactionID, paymentData.ComputerID, paymentData.ShopID, 0);
@@ -365,6 +390,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     {
                                         _log.Error(ex2, "Retry finalize bill failed");
                                     }
+                                }
+                                finally
+                                {
+                                    if (isEnableAOTRcCode)
+                                        _aotService.SendLogoutStatus(paymentData.ShopID, paymentData.TerminalID, 2);
                                 }
 
                                 var printData = new PrintData()
