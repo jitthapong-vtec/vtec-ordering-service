@@ -5,7 +5,6 @@ using LoyaltyInterface3;
 using Microsoft.Owin;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using ResCenterObjLib;
 using System;
 using System.Collections.Generic;
 using System.Data;

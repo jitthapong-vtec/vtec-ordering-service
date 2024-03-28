@@ -6,8 +6,6 @@ using System;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Utils;
@@ -56,6 +54,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 var dtTrans = ds.Tables["OrderTransaction"];
                 var dtOrderDetail = ds.Tables["OrderDetail"];
                 var dtPayDetail = ds.Tables["OrderPayDetail"];
+                var dtShopData = ds.Tables["ShopData"];
 
                 if (dtTrans.Rows.Count == 0)
                 {
@@ -71,6 +70,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     _log.Error(errMsg);
                     throw new Exception(errMsg);
                 }
+
+                var shopData = dtShopData.AsEnumerable().Select(r => new
+                {
+                    VATType = r.GetValue<int>("VATType"),
+                    VATPercent = r.GetValue<decimal>("ProductVATPercent")
+                }).First();
 
                 var orderTran = dtTrans.AsEnumerable().Select(r => new
                 {
@@ -105,7 +110,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 if (orderTran.TransactionStatusID == 9)
                     receiptStatus = "2";
 
-                var rc = new RCAgentAOTRR.Receipt();
+                var rc = new Receipt();
                 rc.companyCode = _rcConfig.companyCode;
                 rc.ipAddress = _rcConfig.posIPAddress;
                 rc.posName = _rcConfig.posName;
@@ -120,6 +125,21 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.totalExcVat = (double)orderTran.TranBeforeVAT;
                 rc.totalVat = (double)orderTran.TransactionVAT;
                 rc.totalIncVat = (double)(orderTran.TranBeforeVAT + orderTran.TransactionVAT);
+                rc.discount = (double)orderTran.TotalDiscount;
+                rc.discountIncVat = (double)orderTran.TotalDiscount;
+                rc.discountVat = (double)Math.Round(orderTran.TotalDiscount * orderTran.VATPercent / (100 + orderTran.VATPercent), 2);
+                rc.extraDiscountIncVat = (double)orderTran.DiscountOther;
+                rc.extraDiscountVat = (double)Math.Round(orderTran.DiscountOther * orderTran.VATPercent / (100 + orderTran.VATPercent), 2);
+                rc.serviceCharge = (double)orderTran.ServiceCharge;
+                rc.serviceChargeIncVat = (double)(orderTran.ServiceCharge + orderTran.ServiceChargeVAT);
+                rc.serviceChargeVat = (double)orderTran.ServiceChargeVAT;
+                rc.netIncVat = (double)orderTran.ReceiptNetSale;
+                rc.netVat = (double)orderTran.TransactionVAT;
+                rc.vatRate = (double)orderTran.VATPercent;
+                rc.received = (double)orderTran.ReceiptPayPrice;
+                rc.change = (double)dtPayDetail.AsEnumerable().Sum(r => r.GetValue<decimal>("CashChange"));
+                rc.totalText = ResCenterObjLib.ResCenterLib.AmountThaiBaht(orderTran.ReceiptPayPrice.ToString());
+
                 rc.receiptItems = dtOrderDetail.AsEnumerable().Select(r => new ReceiptItem
                 {
                     itemNo = r.GetValue<int>("OrderDetailID"),
@@ -136,6 +156,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     totalIncVat = r.GetValue<double>("NetSale"),
 
                 }).ToList();
+
                 rc.receiptPayments = dtPayDetail.AsEnumerable().Select(r => new ReceiptPayment
                 {
                     paymentNo = r.GetValue<int>("PayDetailID"),
@@ -157,7 +178,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         {
             var cmd = new MySqlCommand($@"select * from ordertransaction{tableSubfix} where TransactionID=@tid and ComputerID=@cid;
             select a.*, b.ProductCode, b.ProductName from orderdetail{tableSubfix} a left outer join products b on a.ProductID=b.ProductID where a.TransactionID=@tid and a.ComputerID=@cid and OrderStatusID=2;
-            select a.*, b.PayTypeName from orderpaydetail{tableSubfix} a left outer join paytype b on a.PayTypeID=b.PayTypeID where a.TransactionID=@tid and a.ComputerID=@cid;", conn);
+            select a.*, b.PayTypeName from orderpaydetail{tableSubfix} a left outer join paytype b on a.PayTypeID=b.PayTypeID where a.TransactionID=@tid and a.ComputerID=@cid;
+            select * from shop_data a left outer join productvat b on a.VATCode=b.ProductVATCode;", conn);
             cmd.Parameters.Add(new MySqlParameter("@tid", transactionId));
             cmd.Parameters.Add(new MySqlParameter("@cid", computerId));
 
@@ -167,6 +189,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             ds.Tables[0].TableName = "OrderTransaction";
             ds.Tables[1].TableName = "OrderDetail";
             ds.Tables[2].TableName = "OrderPayDetail";
+            ds.Tables[3].TableName = "ShopData";
             return ds;
         }
 
