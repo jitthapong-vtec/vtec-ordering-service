@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="OrderingService.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="DBServer" Type="System.String" Scope="User">
+      <Value Profile="(Default)">127.0.0.1</Value>
+    </Setting>
+    <Setting Name="DBName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">vtecpos</Value>
+    </Setting>
+    <Setting Name="RCAgentPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Program Files (x86)\admin\RCAgentInstaller\AIRPORTS OF THAILAND\RC Agent</Value>
+    </Setting>
+    <Setting Name="APIPort" Type="System.String" Scope="User">
+      <Value Profile="(Default)">9500</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

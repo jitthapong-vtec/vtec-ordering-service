@@ -1,0 +1,52 @@
+﻿<Window x:Class="OrderingService.SettingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OrderingService"
+        mc:Ignorable="d"
+        Title="Settings" Height="254" Width="505"
+        ResizeMode="NoResize">
+    <Grid>
+        <GroupBox Header="Settings" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                  MinWidth="400" Padding="10" Margin="10">
+            <Grid>
+                <Grid.Resources>
+                    
+                </Grid.Resources>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="Database Server"/>
+                <TextBox x:Name="txtDbServer" Grid.Row="0" Grid.Column="1"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="Database Name"/>
+                <TextBox x:Name="txtDbName" Grid.Row="2" Grid.Column="1"/>
+                <Label Grid.Row="4" Grid.Column="0" Content="API Port"/>
+                <TextBox x:Name="txtApiPort" Grid.Row="4" Grid.Column="1"/>
+                <Label Grid.Row="6" Grid.Column="0" Content="RCAgent Path"/>
+                <Grid Grid.Row="6" Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="txtRCAgentPath" Grid.Column="0" IsReadOnly="True" Margin="0,0,2,0"/>
+                    <Button x:Name="btnBrowse" Grid.Column="1" Content="Browse" Padding="4,0" Height="26" VerticalAlignment="Top"
+                            Click="btnBrowse_Click"/>
+                </Grid>
+                <Button x:Name="btnSave" Grid.Row="8" Grid.Column="1" Content="Save" Click="btnSave_Click" Height="30"/>
+            </Grid>
+        </GroupBox>
+    </Grid>
+</Window>
