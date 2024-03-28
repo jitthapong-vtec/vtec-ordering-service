@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.Printer;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Utils;
 using vtecPOS.GlobalFunctions;
@@ -104,9 +105,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 
                     if (ePosPrint == "1")
                     {
-                        var summaryResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryData).Result;
-                        var orderSummaryResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryOrderData).Result;
-                        var orderResponse = Device.Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsOrderData).Result;
+                        var summaryResponse = Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryData).Result;
+                        var orderSummaryResponse =Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsSummaryOrderData).Result;
+                        var orderResponse = Printer.Epson.EpsonPrintManager.Instance.PrintKitcheniOrderAsync(dsOrderData).Result;
                         if (summaryResponse?.Success == false ||
                             orderSummaryResponse?.Success == false ||
                             orderResponse?.Success == false)
@@ -216,11 +217,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 var isIPFormat = IPAddress.TryParse(printerNames, out ip);
                 if (isIPFormat)
                 {
-                    Device.Printer.Epson.EpsonResponse response = null;
-                    var size = Device.Printer.Epson.PaperSizes.Size80;
+                    Printer.Epson.EpsonResponse response = null;
+                    var size = PaperSizes.Size80;
                     if (paperSize == 58)
-                        size = Device.Printer.Epson.PaperSizes.Size58;
-                    response = await Device.Printer.Epson.EpsonPrintManager.Instance.PrintBillDetail(
+                        size = PaperSizes.Size58;
+                    response = await Printer.Epson.EpsonPrintManager.Instance.PrintBillDetail(
                         dsPrintData, printerIds, printerNames, size);
                     if (response != null && response.Success == false)
                         _log.Error($"Printer error => {response.Message}");

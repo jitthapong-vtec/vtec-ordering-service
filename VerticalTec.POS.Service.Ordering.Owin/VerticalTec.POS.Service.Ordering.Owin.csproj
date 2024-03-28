@@ -207,9 +207,6 @@
     <Reference Include="Unity.Container, Version=5.8.6.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
       <HintPath>..\packages\Unity.Container.5.8.6\lib\net46\Unity.Container.dll</HintPath>
     </Reference>
-    <Reference Include="VerticalTec.Device.Printer">
-      <HintPath>..\DLLs\VerticalTec.Device.Printer.dll</HintPath>
-    </Reference>
     <Reference Include="VoucherManagerLib">
       <HintPath>..\DLLs\VoucherManagerLib.dll</HintPath>
     </Reference>
@@ -249,30 +246,86 @@
     <Compile Include="Models\TransactionPayload.cs" />
     <Compile Include="Models\VoucherData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\ComputerTypes.cs" />
+    <Compile Include="Services\CreditCardTypes.cs" />
+    <Compile Include="Services\CurrencyCalculateExtensions.cs" />
+    <Compile Include="Services\DataReaderExtensions.cs" />
+    <Compile Include="Services\DataRowExtensions.cs" />
+    <Compile Include="Services\DataTableToEnumerableExtensions.cs" />
+    <Compile Include="Services\DateTimeExtensions.cs" />
+    <Compile Include="Services\FrontConfigManager.cs" />
+    <Compile Include="Services\HashUtil.cs" />
+    <Compile Include="Services\IDatabase.cs" />
     <Compile Include="Services\IMessengerService.cs" />
+    <Compile Include="Services\IOrderingService.cs" />
+    <Compile Include="Services\IPaymentService.cs" />
     <Compile Include="Services\IPrintService.cs" />
+    <Compile Include="Services\ListToDataTableExtensions.cs" />
+    <Compile Include="Services\LiveUpdate\BackupStatus.cs" />
+    <Compile Include="Services\LiveUpdate\CommandStatus.cs" />
+    <Compile Include="Services\LiveUpdate\FileReceiveStatus.cs" />
+    <Compile Include="Services\LiveUpdate\ILiveUpdateClient.cs" />
+    <Compile Include="Services\LiveUpdate\LiveUpdateCommands.cs" />
+    <Compile Include="Services\LiveUpdate\LiveUpdateDbContext.cs" />
+    <Compile Include="Services\LiveUpdate\ProgramFileVersion.cs" />
+    <Compile Include="Services\LiveUpdate\ProgramTypes.cs" />
+    <Compile Include="Services\LiveUpdate\VersionDeploy.cs" />
+    <Compile Include="Services\LiveUpdate\VersionDeployBatchStatus.cs" />
+    <Compile Include="Services\LiveUpdate\VersionInfo.cs" />
+    <Compile Include="Services\LiveUpdate\VersionLiveUpdate.cs" />
+    <Compile Include="Services\LiveUpdate\VersionLiveUpdateLog.cs" />
+    <Compile Include="Services\LogManager.cs" />
+    <Compile Include="Services\MemberData.cs" />
     <Compile Include="Services\MessengerService.cs" />
+    <Compile Include="Services\MySqlDatabase.cs" />
+    <Compile Include="Services\OrderDetail.cs" />
+    <Compile Include="Services\OrderingService.cs" />
+    <Compile Include="Services\OrderModifyTypes.cs" />
+    <Compile Include="Services\OrdersManagementActions.cs" />
+    <Compile Include="Services\OrderStatus.cs" />
+    <Compile Include="Services\OrderTransaction.cs" />
+    <Compile Include="Services\PaymentCurrency.cs" />
+    <Compile Include="Services\PaymentData.cs" />
+    <Compile Include="Services\PaymentService.cs" />
+    <Compile Include="Services\PaymentTypes.cs" />
+    <Compile Include="Services\Printers\DatabaseManager.cs" />
+    <Compile Include="Services\Printers\Epson\EposWebClient.cs" />
+    <Compile Include="Services\Printers\Epson\EpsonBmpExtensions.cs" />
+    <Compile Include="Services\Printers\Epson\EpsonPrintException.cs" />
+    <Compile Include="Services\Printers\Epson\EpsonPrintManager.cs" />
+    <Compile Include="Services\Printers\Epson\EpsonResponse.cs" />
+    <Compile Include="Services\Printers\Epson\KitchenPrinter.cs" />
+    <Compile Include="Services\Printers\Epson\Printer.cs" />
+    <Compile Include="Services\Printers\Epson\PrinterCommand.cs" />
+    <Compile Include="Services\Printers\Epson\PrinterInfo.cs" />
+    <Compile Include="Services\Printers\Epson\PrinterMonitor.cs" />
+    <Compile Include="Services\Printers\Epson\PrinterStatus.cs" />
+    <Compile Include="Services\Printers\Epson\PrintStatus.cs" />
+    <Compile Include="Services\Printers\Epson\ReceiptPrinter.cs" />
+    <Compile Include="Services\Printers\LogManager.cs" />
+    <Compile Include="Services\Printers\PaperSizes.cs" />
+    <Compile Include="Services\Printers\TextExtensions.cs" />
     <Compile Include="Services\PrintService.cs" />
+    <Compile Include="Services\ProductBase.cs" />
+    <Compile Include="Services\QuestionOption.cs" />
+    <Compile Include="Services\SaleModes.cs" />
+    <Compile Include="Services\ShopType.cs" />
+    <Compile Include="Services\SqlServerDatabase.cs" />
+    <Compile Include="Services\TableManage.cs" />
+    <Compile Include="Services\TextExtensions.cs" />
+    <Compile Include="Services\Transaction.cs" />
+    <Compile Include="Services\TransactionStatus.cs" />
+    <Compile Include="Services\VersionUtil.cs" />
+    <Compile Include="Services\ViewBillTypes.cs" />
+    <Compile Include="Services\VtecPOSEnv.cs" />
+    <Compile Include="Services\VtecPOSException.cs" />
+    <Compile Include="Services\VtecPOSRepo.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="UnityResolver.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\VerticalTec.POS.Database\VerticalTec.POS.Database.csproj">
-      <Project>{e53dd51b-96a1-4c49-a1e7-bd00758bc437}</Project>
-      <Name>VerticalTec.POS.Database</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj">
-      <Project>{eb612948-e7fd-4f3b-9dc6-26e1d631ce11}</Project>
-      <Name>VerticalTec.POS.Utils</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\VerticalTec.POS\VerticalTec.POS.csproj">
-      <Project>{b6cad7a7-3e51-42a0-8243-ead31e1ef5e8}</Project>
-      <Name>VerticalTec.POS</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

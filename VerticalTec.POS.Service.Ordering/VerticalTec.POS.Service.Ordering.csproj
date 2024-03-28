@@ -183,14 +183,6 @@
       <Project>{f47c6806-dfb9-4e2e-bdc9-456166dd7df5}</Project>
       <Name>VerticalTec.POS.Service.Ordering.Owin</Name>
     </ProjectReference>
-    <ProjectReference Include="..\VerticalTec.POS.Utils\VerticalTec.POS.Utils.csproj">
-      <Project>{EB612948-E7FD-4F3B-9DC6-26E1D631CE11}</Project>
-      <Name>VerticalTec.POS.Utils</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\VerticalTec.POS\VerticalTec.POS.csproj">
-      <Project>{b6cad7a7-3e51-42a0-8243-ead31e1ef5e8}</Project>
-      <Name>VerticalTec.POS</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
