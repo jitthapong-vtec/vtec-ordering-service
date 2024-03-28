@@ -151,10 +151,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     vatRate = r.GetValue<double>("ProductVATPercent"),
                     unitDiscountPercent = r.GetValue<double>("DiscPercent"),
                     unitPriceIncVat = r.GetValue<double>("PricePerUnit"),
-                    unitPriceVat = r.GetValue<double>("ProductVAT"),
+                    unitPriceVat = Math.Round(r.GetValue<double>("PricePerUnit") * r.GetValue<double>("ProductVATPercent") / (100 + r.GetValue<double>("ProductVATPercent")), 2),
+                    totalIncVat = r.GetValue<double>("TotalRetailPrice"),
+                    totalVat = r.GetValue<double>("TotalRetailVAT"),
                     totalDiscountIncVat = r.GetValue<double>("TotalDiscount"),
-                    totalIncVat = r.GetValue<double>("NetSale"),
-
+                    totalDiscountVat = r.GetValue<double>("DiscVAT"),
+                    totalNetIncVat = r.GetValue<double>("NetSale"),
+                    totalDisplay = r.GetValue<double>("NetSale"),
+                    totalNetVat = r.GetValue<double>("ProductVAT")
                 }).ToList();
 
                 rc.receiptPayments = dtPayDetail.AsEnumerable().Select(r => new ReceiptPayment
