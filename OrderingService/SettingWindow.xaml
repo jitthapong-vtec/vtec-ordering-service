@@ -5,14 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OrderingService"
         mc:Ignorable="d"
-        Title="Settings" Height="254" Width="505"
+        Title="Settings" Height="240" Width="450"
         ResizeMode="NoResize">
     <Grid>
         <GroupBox Header="Settings" VerticalAlignment="Center" HorizontalAlignment="Center" 
-                  MinWidth="400" Padding="10" Margin="10">
+                  Width="400" Padding="10" Margin="10">
             <Grid>
                 <Grid.Resources>
-                    
+                    <Style TargetType="TextBox">
+                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                    </Style>
                 </Grid.Resources>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -29,14 +31,14 @@
                     <ColumnDefinition Width="100"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Label Grid.Row="0" Grid.Column="0" Content="Database Server"/>
+                <Label Grid.Row="0" Grid.Column="0" Content="Database Server :"/>
                 <TextBox x:Name="txtDbServer" Grid.Row="0" Grid.Column="1"/>
-                <Label Grid.Row="2" Grid.Column="0" Content="Database Name"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="Database Name :"/>
                 <TextBox x:Name="txtDbName" Grid.Row="2" Grid.Column="1"/>
-                <Label Grid.Row="4" Grid.Column="0" Content="API Port"/>
+                <Label Grid.Row="4" Grid.Column="0" Content="API Port :"/>
                 <TextBox x:Name="txtApiPort" Grid.Row="4" Grid.Column="1"/>
-                <Label Grid.Row="6" Grid.Column="0" Content="RCAgent Path"/>
-                <Grid Grid.Row="6" Grid.Column="1">
+                <Label Grid.Row="6" Grid.Column="0" Content="RCAgent Path" Visibility="Collapsed"/>
+                <Grid Grid.Row="6" Grid.Column="1" Visibility="Collapsed">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>

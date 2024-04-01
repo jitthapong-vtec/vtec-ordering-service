@@ -221,6 +221,7 @@
     <Compile Include="AppConfig.cs" />
     <Compile Include="BasicAuthenActionFilter.cs" />
     <Compile Include="Controllers\DeviceController.cs" />
+    <Compile Include="Controllers\KDSController.cs" />
     <Compile Include="Controllers\MemberController.cs" />
     <Compile Include="Controllers\OrderingController.cs" />
     <Compile Include="Controllers\PaymentController.cs" />

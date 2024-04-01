@@ -73,7 +73,11 @@ namespace OrderingService
 
         private void ExitApp(object sender, EventArgs e)
         {
-            Shutdown();
+            var result = MessageBox.Show("Do you want to exit?", "Exit", MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.Yes)
+            {
+                Shutdown();
+            }
         }
 
         private void ShowSettingWindow(object sender, EventArgs e)
