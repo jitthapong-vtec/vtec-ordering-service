@@ -238,6 +238,7 @@
     <Compile Include="Models\GlobalExceptionHandler.cs" />
     <Compile Include="Models\GrcPayload.cs" />
     <Compile Include="Models\GrcPaymentData.cs" />
+    <Compile Include="Models\KDSClient.cs" />
     <Compile Include="Models\SimpleHttpActionResult.cs" />
     <Compile Include="Models\HttpActionResult.cs" />
     <Compile Include="Models\LoyaltyApiResult.cs" />
@@ -261,6 +262,7 @@
     <Compile Include="Services\IOrderingService.cs" />
     <Compile Include="Services\IPaymentService.cs" />
     <Compile Include="Services\IPrintService.cs" />
+    <Compile Include="Services\KDSHub.cs" />
     <Compile Include="Services\ListToDataTableExtensions.cs" />
     <Compile Include="Services\LiveUpdate\BackupStatus.cs" />
     <Compile Include="Services\LiveUpdate\CommandStatus.cs" />
