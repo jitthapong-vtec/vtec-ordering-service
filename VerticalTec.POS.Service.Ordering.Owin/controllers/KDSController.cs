@@ -28,7 +28,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpGet]
-        [Route("KDS_Computer")]
+        [Route("Computer")]
         public async Task<IHttpActionResult> GetKDSComputerAsync()
         {
             using (var conn = (MySqlConnection)await _database.ConnectAsync())
@@ -48,18 +48,18 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpGet]
-        [Route("KDS_Data")]
-        public async Task<IHttpActionResult> GetKDSDataAsync(int kdsId, int shopId, DateTime saleDate)
+        [Route("KitchenData")]
+        public async Task<IHttpActionResult> GetKDSDataAsync(int kdsId, int shopId)
         {
             using (var conn = (MySqlConnection)await _database.ConnectAsync())
             {
                 using (_ = new InvariantCultureScope())
                 {
+                    var saleDate = await _vtecRepo.GetSaleDateAsync(conn, shopId, true, true);
                     var posModule = new POSModule();
                     var respText = "";
                     var ds = new DataSet();
-                    var saleDateStr = "{ d '" + saleDate.ToString("yyyy-MM-dd") + "' }";
-                    var success = posModule.KDS_Data(ref respText, ref ds, kdsId, 0, 0, shopId, saleDateStr, "front", conn);
+                    var success = posModule.KDS_Data(ref respText, ref ds, kdsId, 0, 0, shopId, saleDate, "front", conn);
                     if (success)
                     {
                         return Ok(new
@@ -81,18 +81,18 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpGet]
-        [Route("KDS_Summary_Click")]
-        public async Task<IHttpActionResult> KDSSummaryClickAsync(int transactionId, int computerId, int orderDetailId, int kdsId, int shopId, DateTime saleDate, int staffId)
+        [Route("Checkout")]
+        public async Task<IHttpActionResult> KDSSummaryClickAsync(int transactionId, int computerId, int orderDetailId, int kdsId, int shopId, int staffId)
         {
             using (var conn = (MySqlConnection)await _database.ConnectAsync())
             {
                 using (_ = new InvariantCultureScope())
                 {
+                    var saleDate = await _vtecRepo.GetSaleDateAsync(conn, shopId, true, true);
                     var posModule = new POSModule();
                     var respText = "";
                     var ds = new DataSet();
-                    var saleDateStr = "{ d '" + saleDate.ToString("yyyy-MM-dd") + "' }";
-                    var success = posModule.KDS_SummaryClick(ref respText, ref ds, transactionId, computerId, orderDetailId, kdsId, shopId, saleDateStr, "front", staffId, conn);
+                    var success = posModule.KDS_SummaryClick(ref respText, ref ds, transactionId, computerId, orderDetailId, kdsId, shopId, saleDate, "front", staffId, conn);
                     if (success)
                     {
                         return Ok(new
