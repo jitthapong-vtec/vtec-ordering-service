@@ -96,7 +96,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             config.Filters.Add(new GlobalExceptionHandler());
             config.MapHttpAttributeRoutes();
 
-            appBuilder.MapSignalR("/signalkds", new HubConfiguration());
+            appBuilder.MapSignalR("/signalkds", new HubConfiguration() { EnableDetailedErrors = true });
             appBuilder.UseHangfireAspNet(GetHangfireServers);
             appBuilder.UseHangfireDashboard("/jobs");
             appBuilder.UseWebApi(config);
