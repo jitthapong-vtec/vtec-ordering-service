@@ -61,29 +61,22 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         {
             using (var conn = (MySqlConnection)await _database.ConnectAsync())
             {
-                using (_ = new InvariantCultureScope())
+                try
                 {
-                    var saleDate = await _vtecRepo.GetSaleDateAsync(conn, shopId, true, true);
-                    var posModule = new POSModule();
-                    var respText = "";
-                    var ds = new DataSet();
-                    var success = posModule.KDS_Data(ref respText, ref ds, kdsId, 0, 0, shopId, saleDate, "front", conn);
-                    if (success)
+                    var ds = await GetKDSDataAsync(kdsId, shopId, conn);
+                    return Ok(new
                     {
-                        return Ok(new
-                        {
-                            Status = HttpStatusCode.OK,
-                            Data = ds
-                        });
-                    }
-                    else
+                        Status = HttpStatusCode.OK,
+                        Data = ds
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return Ok(new
                     {
-                        return Ok(new
-                        {
-                            Status = HttpStatusCode.InternalServerError,
-                            Message = respText
-                        });
-                    }
+                        Status = HttpStatusCode.InternalServerError,
+                        Message = ex.Message
+                    });
                 }
             }
         }
@@ -92,7 +85,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("Checkout")]
         public async Task<IHttpActionResult> KDSCheckoutAsync(dynamic[] kdsOrders, int kdsId, int shopId, int staffId = 2)
         {
-            _logger.Info($"KDS_Click => {JsonConvert.SerializeObject(kdsOrders)}");
             using (var conn = (MySqlConnection)await _database.ConnectAsync())
             {
                 using (_ = new InvariantCultureScope())
@@ -120,11 +112,28 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         }
                     }
 
+                    var kdsData = await GetKDSDataAsync(kdsId, shopId, conn);
                     return Ok(new
                     {
-                        Status = HttpStatusCode.OK
+                        Status = HttpStatusCode.OK,
+                        Data = kdsData
                     });
                 }
+            }
+        }
+
+        private async Task<DataSet> GetKDSDataAsync(int kdsId, int shopId, MySqlConnection conn)
+        {
+            using (_ = new InvariantCultureScope())
+            {
+                var saleDate = await _vtecRepo.GetSaleDateAsync(conn, shopId, true, true);
+                var posModule = new POSModule();
+                var respText = "";
+                var ds = new DataSet();
+                var success = posModule.KDS_Data(ref respText, ref ds, kdsId, 0, 0, shopId, saleDate, "front", conn);
+                if (!success)
+                    throw new Exception(respText);
+                return ds;
             }
         }
     }
