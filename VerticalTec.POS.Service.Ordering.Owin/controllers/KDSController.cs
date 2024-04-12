@@ -1,4 +1,5 @@
 ﻿using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
 using VerticalTec.POS.Database;
+using VerticalTec.POS.Service.Ordering.Owin.Services;
 using vtecPOS.GlobalFunctions;
 using vtecPOS.POSControl;
 
@@ -18,12 +20,18 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
     public class KDSController : ApiController
     {
+        static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("logordering");
+
         private IDatabase _database;
         private VtecPOSRepo _vtecRepo;
+        private IPrintService _printService;
+        private IMessengerService _messgerService;
 
-        public KDSController(IDatabase database, VtecPOSRepo vtecRepo)
+        public KDSController(IDatabase database, IPrintService printService, IMessengerService messengerService, VtecPOSRepo vtecRepo)
         {
             _database = database;
+            _printService = printService;
+            _messgerService = messengerService;
             _vtecRepo = vtecRepo;
         }
 
@@ -80,35 +88,42 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("Checkout")]
-        public async Task<IHttpActionResult> KDSSummaryClickAsync(int transactionId, int computerId, int orderDetailId, int kdsId, int shopId, int staffId)
+        public async Task<IHttpActionResult> KDSCheckoutAsync(dynamic[] kdsOrders, int kdsId, int shopId, int staffId = 2)
         {
+            _logger.Info($"KDS_Click => {JsonConvert.SerializeObject(kdsOrders)}");
             using (var conn = (MySqlConnection)await _database.ConnectAsync())
             {
                 using (_ = new InvariantCultureScope())
                 {
                     var saleDate = await _vtecRepo.GetSaleDateAsync(conn, shopId, true, true);
                     var posModule = new POSModule();
-                    var respText = "";
-                    var ds = new DataSet();
-                    var success = posModule.KDS_SummaryClick(ref respText, ref ds, transactionId, computerId, orderDetailId, kdsId, shopId, saleDate, "front", staffId, conn);
-                    if (success)
+
+                    foreach (var order in kdsOrders)
                     {
-                        return Ok(new
+                        var respText = "";
+                        var ds = new DataSet();
+
+                        var tid = (int)order.TransactionID;
+                        var cid = (int)order.ComputerID;
+                        var oid = (int)order.OrderDetailID;
+
+                        var success = posModule.KDS_Click(ref respText, ref ds, tid, cid, oid, kdsId, shopId, saleDate, "front", staffId, conn);
+                        if (success)
                         {
-                            Status = HttpStatusCode.OK,
-                            Data = ds
-                        });
+                            await _printService.PrintAsync(shopId, cid, ds);
+                        }
+                        else
+                        {
+                            _logger.Error($"KDS_Click => {respText}");
+                        }
                     }
-                    else
+
+                    return Ok(new
                     {
-                        return Ok(new
-                        {
-                            Status = HttpStatusCode.InternalServerError,
-                            Message = respText
-                        });
-                    }
+                        Status = HttpStatusCode.OK
+                    });
                 }
             }
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNet.SignalR;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -13,7 +14,21 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         {
             var ip = AppConfig.Instance.DbServer;
             Messenger.Instance.SubscribeConnectionStatusEvent(ConnectionEvent);
+            Messenger.Instance.SubscribeReceiveEvent(ReceivedDataEvent);
             Messenger.Instance.Connect(string.IsNullOrEmpty(ip) ? "127.0.0.1" : ip);
+        }
+
+        private void ReceivedDataEvent(object sender, MessageObject e)
+        {
+            try
+            {
+                if (e.Command == CommandTypes.Refresh)
+                {
+                    IHubContext hubContext = GlobalHost.ConnectionManager.GetHubContext<KDSHub>();
+                    hubContext.Clients.All.RefreshKDSData();
+                }
+            }
+            catch { }
         }
 
         public void SendMessage(string message)
