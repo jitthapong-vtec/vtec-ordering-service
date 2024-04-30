@@ -44,5 +44,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             var resp = _rcAgentService.ConfirmPrintRcCode(rcCode);
             return Ok(resp);
         }
+
+        [HttpGet]
+        [Route("GetLatestAnnouncements")]
+        public IHttpActionResult GetLatestAnnouncements()
+        {
+            var resp = _rcAgentService.GetLatestAnnouncements();
+            return Ok(resp);
+        }
     }
 }

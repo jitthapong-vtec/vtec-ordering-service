@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using RCAgentAOTRR;
 using RCAgentAOTRR.Response;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -36,7 +38,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         {
             InitRCAgent(shopId, computerId);
 
-            var loginResp = _rcAgent.SendLoginStatus(DateTime.Now);
+            var loginResp = _rcAgent.SendLoginStatus(DateTime.Today);
             return loginResp;
         }
 
@@ -178,6 +180,11 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             }
         }
 
+        public List<RCAgentAOTRR.Models.AnnouncementModel> GetLatestAnnouncements()
+        {
+            return _rcAgent.GetLatestAnnouncements();
+        }
+
         private DataSet GetTransactionData(int transactionId, int computerId, MySqlConnection conn, string tableSubfix = "front")
         {
             var cmd = new MySqlCommand($@"select * from ordertransaction{tableSubfix} where TransactionID=@tid and ComputerID=@cid;
@@ -207,6 +214,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         {
             using (var conn = _database.Connect())
             {
+                var aotServerUrl = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotServerUrl", shopId: shopId, computerId: computerId);
                 var companyCode = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotCompanyCode", shopId: shopId, computerId: computerId);
                 var posName = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotPosName", shopId: shopId, computerId: computerId);
                 var posId = _vtecPOSRepo.GetPropertyValueAsync(conn, 1153, "AotPosID", shopId: shopId, computerId: computerId);
@@ -219,6 +227,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 //var ipAddress = host.AddressList.Where(ip => ip.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault()?.ToString();
 
                 _rcConfig = new RCConfig();
+                _rcConfig.rcServerUrl = aotServerUrl.Result;
                 _rcConfig.companyCode = companyCode.Result;
                 _rcConfig.posIPAddress = ipAddress.Result;
                 _rcConfig.posName = posName.Result;
