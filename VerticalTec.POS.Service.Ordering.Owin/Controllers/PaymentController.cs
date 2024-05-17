@@ -416,7 +416,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                         }
                                         catch (Exception ex)
                                         {
-                                            _log.Error(ex, "AOTRcAgent");
+                                            _log.Error(ex, $"AOTRcAgent => {ex.Message}");
                                         }
                                     }
                                 }
