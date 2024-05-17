@@ -35,6 +35,7 @@ namespace OrderingService
             Settings.Default.DBServer = txtDbServer.Text;
             Settings.Default.DBName = txtDbName.Text;
             Settings.Default.APIPort = txtApiPort.Text;
+            Settings.Default.RCAgentPath = txtRCAgentPath.Text;
             Settings.Default.Save();
 
             DialogResult = true;
