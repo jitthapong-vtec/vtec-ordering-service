@@ -7,6 +7,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows;
 using Form = System.Windows.Forms;
@@ -111,8 +112,11 @@ namespace OrderingService
             var apiPort = Settings.Default.APIPort;
             var rcAgentPath = Settings.Default.RCAgentPath;
 
-            //var baseAddress = $"http://+:{apiPort}/";
             var baseAddress = $"http://127.0.0.1:{apiPort}";
+
+            if (IsAdministrator)
+                baseAddress = $"http://+:{apiPort}/";
+
             try
             {
                 var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
@@ -125,6 +129,9 @@ namespace OrderingService
             {
             }
         }
+
+        public bool IsAdministrator => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+
 
         protected override void OnExit(ExitEventArgs e)
         {
