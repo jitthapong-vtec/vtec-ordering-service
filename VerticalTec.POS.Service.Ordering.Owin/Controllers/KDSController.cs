@@ -15,7 +15,6 @@ using vtecPOS.POSControl;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
-    [BasicAuthenActionFilter]
     [RoutePrefix("v1/kds")]
 
     public class KDSController : ApiController
