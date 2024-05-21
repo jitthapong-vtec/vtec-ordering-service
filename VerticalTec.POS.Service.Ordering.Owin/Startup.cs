@@ -55,13 +55,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin
 
         private IEnumerable<IDisposable> GetHangfireServers()
         {
-            try
-            {
-                var hangfire = Path.Combine(Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)), "hangfire.db");
-                System.IO.File.Delete(hangfire);
-            }
-            catch { }
-
             GlobalConfiguration.Configuration
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
                 .UseUnityActivator(_container)
