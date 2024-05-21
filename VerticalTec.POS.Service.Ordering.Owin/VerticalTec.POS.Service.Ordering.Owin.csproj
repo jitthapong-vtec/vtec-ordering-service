@@ -285,6 +285,7 @@
     <Compile Include="Services\IOrderingService.cs" />
     <Compile Include="Services\IPaymentService.cs" />
     <Compile Include="Services\IPrintService.cs" />
+    <Compile Include="Services\KDSHub.cs" />
     <Compile Include="Services\ListToDataTableExtensions.cs" />
     <Compile Include="Services\LogManager.cs" />
     <Compile Include="Services\MemberData.cs" />
