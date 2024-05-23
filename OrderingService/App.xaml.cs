@@ -117,6 +117,10 @@ namespace OrderingService
             if (IsAdministrator)
                 baseAddress = $"http://+:{apiPort}/";
 
+#if DEBUG
+            baseAddress = $"http://+:{apiPort}/";
+#endif
+
             try
             {
                 var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";

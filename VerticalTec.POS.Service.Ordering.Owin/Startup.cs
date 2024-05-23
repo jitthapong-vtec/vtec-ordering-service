@@ -72,9 +72,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             config.EnableCors(cors);
 
             _container = new UnityContainer();
-            _container.RegisterType<IDatabase, MySqlDatabase>(new TransientLifetimeManager(), 
-                new InjectionConstructor(AppConfig.Instance.DbServer, 
-                AppConfig.Instance.DbName, 
+            _container.RegisterType<IDatabase, MySqlDatabase>(new TransientLifetimeManager(),
+                new InjectionConstructor(AppConfig.Instance.DbServer,
+                AppConfig.Instance.DbName,
                 AppConfig.Instance.DbPort));
             _container.RegisterType<IOrderingService, OrderingService>(new TransientLifetimeManager());
             _container.RegisterType<IPaymentService, PaymentService>(new TransientLifetimeManager());
@@ -87,6 +87,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             var db = _container.Resolve<IDatabase>();
             DatabaseMigration.CheckAndUpdate(db, AppConfig.Instance.DbName);
 
+            GlobalHost.DependencyResolver.Register(typeof(KDSHub), () => new KDSHub(db, _container.Resolve<VtecPOSRepo>(), _container.Resolve<IPrintService>()));
+            GlobalHost.Configuration.MaxIncomingWebSocketMessageSize = null;
+
             config.EnableSwagger(c => c.SingleApiVersion(Version, "Vtec Ordering Api")).EnableSwaggerUi();
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
@@ -96,8 +99,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             appBuilder.UseHangfireAspNet(GetHangfireServers);
             appBuilder.UseHangfireDashboard("/jobs");
             appBuilder.UseWebApi(config);
-
-            GlobalHost.Configuration.MaxIncomingWebSocketMessageSize = null;
         }
     }
 }
