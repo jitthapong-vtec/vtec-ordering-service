@@ -87,7 +87,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             var db = _container.Resolve<IDatabase>();
             DatabaseMigration.CheckAndUpdate(db, AppConfig.Instance.DbName);
 
-            GlobalHost.DependencyResolver.Register(typeof(KDSHub), () => new KDSHub(db, _container.Resolve<VtecPOSRepo>(), _container.Resolve<IPrintService>()));
+            GlobalHost.DependencyResolver.Register(typeof(KDSHub), () => 
+                new KDSHub(db, _container.Resolve<VtecPOSRepo>(), 
+                    _container.Resolve<IPrintService>(), 
+                    _container.Resolve<IMessengerService>()));
             GlobalHost.Configuration.MaxIncomingWebSocketMessageSize = null;
 
             config.EnableSwagger(c => c.SingleApiVersion(Version, "Vtec Ordering Api")).EnableSwaggerUi();

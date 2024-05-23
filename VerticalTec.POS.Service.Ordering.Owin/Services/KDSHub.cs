@@ -25,12 +25,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         private IDatabase _database;
         private VtecPOSRepo _vtecRepo;
         private IPrintService _printService;
+        private IMessengerService _messengerService;
 
-        public KDSHub(IDatabase database, VtecPOSRepo vtecRepo, IPrintService printService)
+        public KDSHub(IDatabase database, VtecPOSRepo vtecRepo, IPrintService printService, IMessengerService messengerService)
         {
             _database = database;
             _vtecRepo = vtecRepo;
             _printService = printService;
+            _messengerService = messengerService;
         }
 
         public IEnumerable<object> RegisterClient(string computerId, string computerName)
