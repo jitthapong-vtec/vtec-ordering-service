@@ -826,7 +826,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         var tableNameNotEmpty = !string.IsNullOrEmpty(transaction.TableName);
                         if (tableNameNotEmpty)
                         {
-                            cmdText += ", TableName=@tableName";
+                            cmdText += ", TableName=@tableName,QueueName=@tableName";
                         }
                         cmdText += " where TransactionID=@transactionId and ComputerID=@computerId";
 
