@@ -39,12 +39,22 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
             InitRCAgent(shopId, computerId);
 
             var loginResp = _rcAgent.SendLoginStatus(DateTime.Today);
+            try
+            {
+                _log.Log(NLog.LogLevel.Info, $"SendLoginStatus => {JsonConvert.SerializeObject(loginResp)}");
+            }
+            catch { }
             return loginResp;
         }
 
         public ReturnOfSendLogoutStatus SendLogoutStatus(int shopId, int computerId, int staffId)
         {
             var logoutResp = _rcAgent.SendLogoutStatus();
+            try
+            {
+                _log.Log(NLog.LogLevel.Info, $"SendLogoutStatus => {JsonConvert.SerializeObject(logoutResp)}");
+            }
+            catch { }
             return logoutResp;
         }
 

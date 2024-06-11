@@ -393,9 +393,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                     {
                                         try
                                         {
-                                            var loginResult = _aotService.SendLoginStatus(paymentData.ShopID, paymentData.ComputerID, 2);
-                                            if (loginResult.error == "1")
-                                                _log.Info($"Error from SendLoginStatus => {JsonConvert.SerializeObject(loginResult)}");
+                                            //var loginResult = _aotService.SendLoginStatus(paymentData.ShopID, paymentData.ComputerID, 2);
+                                            //if (loginResult.error == "1")
+                                            //    _log.Info($"Error from SendLoginStatus => {JsonConvert.SerializeObject(loginResult)}");
 
                                             var rcCode = _aotService.RequestRcCode(paymentData.ShopID, paymentData.TransactionID, paymentData.ComputerID);
                                             if (rcCode.status == "1")
@@ -412,7 +412,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                                 _aotService.ConfirmPrintRcCode(rcCode.rcCode);
                                             }
 
-                                            var logoutResult = _aotService.SendLogoutStatus(paymentData.ShopID, paymentData.ComputerID, 2);
+                                            //var logoutResult = _aotService.SendLogoutStatus(paymentData.ShopID, paymentData.ComputerID, 2);
                                         }
                                         catch (Exception ex)
                                         {
