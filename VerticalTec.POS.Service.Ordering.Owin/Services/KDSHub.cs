@@ -1,17 +1,39 @@
 ﻿using Microsoft.AspNet.SignalR;
+using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Http;
+using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
+using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Services
 {
     public class KDSHub : Hub
     {
+        static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("logordering");
+
         private static ConcurrentDictionary<string, KDSClient> KdsClients = new ConcurrentDictionary<string, KDSClient>();
+
+        private IDatabase _database;
+        private VtecPOSRepo _vtecRepo;
+        private IPrintService _printService;
+        private IMessengerService _messengerService;
+
+        public KDSHub(IDatabase database, VtecPOSRepo vtecRepo, IPrintService printService, IMessengerService messengerService)
+        {
+            _database = database;
+            _vtecRepo = vtecRepo;
+            _printService = printService;
+            _messengerService = messengerService;
+        }
 
         public IEnumerable<object> RegisterClient(string computerId, string computerName)
         {
@@ -32,6 +54,65 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 Clients.Client(Context.ConnectionId).RegisterError(ex.Message);
             }
             return null;
+        }
+
+        public async Task<string> GetKDSData(int kdsId, int shopId)
+        {
+            using (var conn = (MySqlConnection)await _database.ConnectAsync())
+            {
+                try
+                {
+                    using (_ = new InvariantCultureScope())
+                    {
+                        var saleDate = await _vtecRepo.GetSaleDateAsync(conn, shopId, true, true);
+                        var posModule = new POSModule();
+                        var respText = "";
+                        var ds = new DataSet();
+                        var success = posModule.KDS_Data(ref respText, ref ds, kdsId, 0, 0, shopId, saleDate, "front", conn);
+                        if (!success)
+                            throw new Exception(respText);
+                        var json = JsonConvert.SerializeObject(ds);
+                        return json;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return ex.Message;
+                }
+            }
+        }
+
+        public async Task<string> KDSCheckout(dynamic[] kdsOrders, int kdsId, int shopId, int staffId = 2)
+        {
+            using (var conn = (MySqlConnection)await _database.ConnectAsync())
+            {
+                using (_ = new InvariantCultureScope())
+                {
+                    var saleDate = await _vtecRepo.GetSaleDateAsync(conn, shopId, true, true);
+                    var posModule = new POSModule();
+
+                    foreach (var order in kdsOrders)
+                    {
+                        var respText = "";
+                        var ds = new DataSet();
+
+                        var tid = (int)order.TransactionID;
+                        var cid = (int)order.ComputerID;
+                        var oid = (int)order.OrderDetailID;
+
+                        var success = posModule.KDS_Click(ref respText, ref ds, tid, cid, oid, kdsId, shopId, saleDate, "front", staffId, conn);
+                        if (success)
+                        {
+                            await _printService.PrintAsync(shopId, cid, ds);
+                        }
+                        else
+                        {
+                            _logger.Error($"KDS_Click => {respText}");
+                        }
+                    }
+                    return await GetKDSData(kdsId, shopId);
+                }
+            }
         }
 
         public override Task OnConnected()
