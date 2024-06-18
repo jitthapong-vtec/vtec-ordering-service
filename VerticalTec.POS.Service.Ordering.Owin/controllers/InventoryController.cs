@@ -151,24 +151,53 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                             if (documentData?.DocDetail?.Any() == true)
                             {
-                                documentData.DocDetail.ForEach(d =>
+                                for (var i = 0; i < documentData.DocDetail.Count; i++)
                                 {
+                                    var d = documentData.DocDetail[i];
                                     var docDetail = new InventObject.DocDetail();
-                                    if (_inventModule.DocDetailObj(ref respText, ref docDetail, d.DocDetailID, documentData.DocHeader.DocumentKey, d.MaterialID, "front", conn) == false)
+                                    if (_inventModule.DocDetailObj(ref respText, ref docDetail, d.DocDetailID, resultDocData.DocHeader.DocumentKey, d.MaterialID, "front", conn) == false)
                                         throw new Exception($"DocDetailObj: {respText}");
 
-                                    var defaultUnit = docDetail.UnitList?.Where(u => u.UnitLargeID == docDetail.UnitLargeID).FirstOrDefault();
-                                    if (defaultUnit == null)
-                                        throw new Exception($"Not found unit for material {docDetail.MaterialID}");
+                                    //var defaultUnit = docDetail.UnitList?.Where(u => u.UnitLargeID == docDetail.UnitLargeID).FirstOrDefault();
+                                    //if (defaultUnit == null)
+                                    //    throw new Exception($"Not found unit for material {docDetail.MaterialID}");
 
-                                    docDetail.UnitName = defaultUnit.UnitName;
-                                    docDetail.UnitSmallID = defaultUnit.UnitSmallID;
-                                    docDetail.UnitLargeID = defaultUnit.UnitLargeID;
-                                    docDetail.UnitRatio = defaultUnit.UnitRatio.ToString();
-                                    docDetail.UnitLargeRatio = defaultUnit.UnitLargeRatio.ToString();
+                                    //docDetail.UnitName = defaultUnit.UnitName;
+                                    //docDetail.UnitSmallID = defaultUnit.UnitSmallID;
+                                    //docDetail.UnitLargeID = defaultUnit.UnitLargeID;
+                                    //docDetail.UnitRatio = defaultUnit.UnitRatio.ToString();
+                                    //docDetail.UnitLargeRatio = defaultUnit.UnitLargeRatio.ToString();
 
-                                    d = docDetail;
-                                });
+                                    if (string.IsNullOrEmpty(docDetail.TotalQty))
+                                        docDetail.TotalQty = d.TotalQty;
+                                    if (string.IsNullOrEmpty(docDetail.PricePerUnit))
+                                        docDetail.PricePerUnit = "0";
+                                    if (string.IsNullOrEmpty(docDetail.CurrentQty))
+                                        docDetail.CurrentQty = "0";
+                                    if (string.IsNullOrEmpty(docDetail.DiffQty))
+                                        docDetail.DiffQty = "0";
+                                    if (string.IsNullOrEmpty(docDetail.DiscBill))
+                                        docDetail.DiscBill = "0";
+                                    if (string.IsNullOrEmpty(docDetail.DiscountValue))
+                                        docDetail.DiscountValue = "0";
+                                    if (string.IsNullOrEmpty(docDetail.ItemDiscountAmt))
+                                        docDetail.ItemDiscountAmt = "0";
+                                    if (string.IsNullOrEmpty(docDetail.GrandTotal))
+                                        docDetail.GrandTotal = "0";
+                                    if (string.IsNullOrEmpty(docDetail.ReqQty))
+                                        docDetail.ReqQty = "0";
+                                    if (string.IsNullOrEmpty(docDetail.SubTotal))
+                                        docDetail.SubTotal = "0";
+                                    if (string.IsNullOrEmpty(docDetail.TRQty))
+                                        docDetail.TRQty = "0";
+                                    if (string.IsNullOrEmpty(docDetail.TotalExtVAT))
+                                        docDetail.TotalExtVAT = "0";
+                                    if (string.IsNullOrEmpty(docDetail.TotalIncVAT))
+                                        docDetail.TotalIncVAT = "0";
+                                    if (string.IsNullOrEmpty(docDetail.TotalVAT))
+                                        docDetail.TotalVAT = "0";
+                                    documentData.DocDetail[i] = docDetail;
+                                }
 
                                 if (_inventModule.DocDetail_Add(ref respText, ref resultDocData, documentData.DocDetail, documentData.DocHeader, conn) == false)
                                     throw new Exception($"DocDetail_Add: {respText}");
