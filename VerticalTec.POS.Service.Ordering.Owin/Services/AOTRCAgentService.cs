@@ -118,8 +118,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     TransactionStatusID = r.GetValue<int>("TransactionStatusID"),
                 }).First();
 
+                var isVoid = new int[] { 9, 99 }.Contains(orderTran.TransactionStatusID);
+
                 var receiptStatus = "1";
-                if (orderTran.TransactionStatusID == 9)
+                if (isVoid)
                     receiptStatus = "2";
 
                 var rc = new Receipt();
@@ -134,11 +136,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.receiptStatus = receiptStatus;
                 rc.taxInvoice = orderTran.ReceiptNumber;
                 rc.refNo = orderTran.ReferenceNo;
-                rc.totalExcVat = (double)orderTran.TranBeforeVAT;
+                rc.totalExcVat = (double)orderTran.TransactionVATable;
+                rc.subtotal = (double)orderTran.TransactionVATable;
+                rc.total = (double)(orderTran.ReceiptRetailPrice);
+                rc.vat = (double)orderTran.TransactionVAT;
                 rc.totalVat = (double)orderTran.TransactionVAT;
-                rc.totalIncVat = (double)(orderTran.TranBeforeVAT + orderTran.TransactionVAT);
-                rc.discount = (double)orderTran.TotalDiscount;
-                rc.discountIncVat = (double)orderTran.TotalDiscount;
+                rc.totalIncVat = (double)(orderTran.ReceiptRetailPrice);
+                rc.discount = (double)orderTran.ReceiptDiscount;
+                rc.discountIncVat = (double)orderTran.ReceiptDiscount;
                 rc.discountVat = (double)Math.Round(orderTran.TotalDiscount * orderTran.VATPercent / (100 + orderTran.VATPercent), 2);
                 rc.extraDiscountIncVat = (double)orderTran.DiscountOther;
                 rc.extraDiscountVat = (double)Math.Round(orderTran.DiscountOther * orderTran.VATPercent / (100 + orderTran.VATPercent), 2);
@@ -147,38 +152,78 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.serviceChargeVat = (double)orderTran.ServiceChargeVAT;
                 rc.netIncVat = (double)orderTran.ReceiptNetSale;
                 rc.netVat = (double)orderTran.TransactionVAT;
+                rc.round = (double)orderTran.ReceiptRoudingBill;
                 rc.vatRate = (double)orderTran.VATPercent;
                 rc.received = (double)orderTran.ReceiptPayPrice;
                 rc.change = (double)dtPayDetail.AsEnumerable().Sum(r => r.GetValue<decimal>("CashChange"));
                 rc.totalText = ResCenterObjLib.ResCenterLib.AmountThaiBaht(orderTran.ReceiptPayPrice.ToString());
 
-                rc.receiptItems = dtOrderDetail.AsEnumerable().Select(r => new ReceiptItem
+                if (isVoid)
                 {
-                    itemNo = r.GetValue<int>("OrderDetailID"),
-                    productCode = r.GetValue<string>("ProductCode"),
-                    productName = r.GetValue<string>("ProductName"),
-                    quantity = r.GetValue<double>("TotalQty"),
-                    serviceCharge = r.GetValue<double>("SCAmount"),
-                    vatType = r.GetValue<string>("VATType"),
-                    vatRate = r.GetValue<double>("ProductVATPercent"),
-                    unitDiscountPercent = r.GetValue<double>("DiscPercent"),
-                    unitPriceIncVat = r.GetValue<double>("PricePerUnit"),
-                    unitPriceVat = Math.Round(r.GetValue<double>("PricePerUnit") * r.GetValue<double>("ProductVATPercent") / (100 + r.GetValue<double>("ProductVATPercent")), 2),
-                    totalIncVat = r.GetValue<double>("TotalRetailPrice"),
-                    totalVat = r.GetValue<double>("TotalRetailVAT"),
-                    totalDiscountIncVat = r.GetValue<double>("TotalDiscount"),
-                    totalDiscountVat = r.GetValue<double>("DiscVAT"),
-                    totalNetIncVat = r.GetValue<double>("NetSale"),
-                    totalDisplay = r.GetValue<double>("NetSale"),
-                    totalNetVat = r.GetValue<double>("ProductVAT")
+                    rc.subtotal = rc.subtotal * -1;
+                    rc.totalIncVat = rc.totalIncVat * -1;
+                    rc.discount = rc.discount * -1;
+                    rc.vat = rc.vat * -1;
+                    rc.totalVat = rc.totalVat * -1;
+                    rc.change = rc.change * -1;
+                }
+
+                rc.receiptItems = dtOrderDetail.AsEnumerable().Select(r =>
+                {
+                    var receiptItem = new ReceiptItem
+                    {
+                        itemNo = r.GetValue<int>("OrderDetailID"),
+                        productCode = r.GetValue<string>("ProductCode"),
+                        productName = r.GetValue<string>("ProductName"),
+                        quantity = r.GetValue<double>("TotalQty"),
+                        price = r.GetValue<double>("PricePerUnit"),
+                        amount = r.GetValue<double>("NetSale"),
+                        vat = r.GetValue<double>("TotalRetailVAT"),
+                        serviceCharge = r.GetValue<double>("SCAmount"),
+                        vatType = r.GetValue<string>("VATType"),
+                        vatRate = r.GetValue<double>("ProductVATPercent"),
+                        unitDiscountPercent = r.GetValue<double>("DiscPercent"),
+                        unitPriceIncVat = r.GetValue<double>("PricePerUnit"),
+                        unitPriceVat = Math.Round(r.GetValue<double>("PricePerUnit") * r.GetValue<double>("ProductVATPercent") / (100 + r.GetValue<double>("ProductVATPercent")), 2),
+                        totalIncVat = r.GetValue<double>("TotalRetailPrice"),
+                        totalVat = r.GetValue<double>("TotalRetailVAT"),
+                        totalDiscountIncVat = r.GetValue<double>("TotalDiscount"),
+                        totalDiscountVat = r.GetValue<double>("DiscVAT"),
+                        totalNetIncVat = r.GetValue<double>("NetSale"),
+                        totalDisplay = r.GetValue<double>("TotalRetailPrice"),
+                        totalNetVat = r.GetValue<double>("ProductVAT")
+                    };
+
+                    if (isVoid)
+                    {
+                        receiptItem.quantity = receiptItem.quantity * -1;
+                        receiptItem.amount = receiptItem.amount * -1;
+                        receiptItem.unitPriceIncVat = receiptItem.unitPriceIncVat * -1;
+                        receiptItem.discount = receiptItem.discount * -1;
+                        receiptItem.vat = receiptItem.vat * -1;
+                        receiptItem.totalVat = receiptItem.totalVat * -1;
+                        receiptItem.serviceCharge = receiptItem.serviceCharge * -1;
+                    }
+
+                    return receiptItem;
                 }).ToList();
 
-                rc.receiptPayments = dtPayDetail.AsEnumerable().Select(r => new ReceiptPayment
+                rc.receiptPayments = dtPayDetail.AsEnumerable().Select(r =>
                 {
-                    paymentNo = r.GetValue<int>("PayDetailID"),
-                    paymentCurrency = r.GetValue<string>("CurrencyCode"),
-                    paymentAmount = r.GetValue<double>("PayAmount"),
-                    paymentType = r.GetValue<string>("PayTypeName")
+                    var receiptPayment = new ReceiptPayment
+                    {
+                        paymentNo = r.GetValue<int>("PayDetailID"),
+                        paymentCurrency = r.GetValue<string>("CurrencyCode"),
+                        paymentAmount = r.GetValue<double>("PayAmount"),
+                        paymentType = r.GetValue<string>("PayTypeName")
+                    };
+
+                    if (isVoid)
+                    {
+                        receiptPayment.paymentAmount = receiptPayment.paymentAmount * -1;
+                    }
+
+                    return receiptPayment;
                 }).ToList();
 
                 _log.Log(NLog.LogLevel.Info, $"RequestRcCode => {JsonConvert.SerializeObject(rc)}");
