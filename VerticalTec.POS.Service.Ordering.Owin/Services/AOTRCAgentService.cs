@@ -161,6 +161,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 if (isVoid)
                 {
                     rc.subtotal = rc.subtotal * -1;
+                    rc.total = rc.total * -1;
                     rc.totalIncVat = rc.totalIncVat * -1;
                     rc.discount = rc.discount * -1;
                     rc.vat = rc.vat * -1;
