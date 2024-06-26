@@ -153,6 +153,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.serviceChargeIncVat = (double)(orderTran.ServiceCharge + orderTran.ServiceChargeVAT);
                 rc.serviceChargeVat = (double)orderTran.ServiceChargeVAT;
                 rc.netIncVat = (double)orderTran.ReceiptNetSale;
+                rc.netExcVat = (double)(orderTran.ReceiptNetSale - orderTran.TransactionVAT);
                 rc.netVat = (double)orderTran.TransactionVAT;
                 rc.round = (double)orderTran.ReceiptRoudingBill;
                 rc.vatRate = (double)orderTran.VATPercent;
