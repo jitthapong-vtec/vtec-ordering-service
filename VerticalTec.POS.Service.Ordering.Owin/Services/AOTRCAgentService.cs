@@ -62,7 +62,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         {
             using (var conn = (MySqlConnection)_database.Connect())
             {
-                var ds = GetTransactionData(transactionId, computerId, conn, "front");
+                var ds = GetTransactionData(transactionId, computerId, conn, "");
                 var dtTrans = ds.Tables["OrderTransaction"];
                 var dtOrderDetail = ds.Tables["OrderDetail"];
                 var dtPayDetail = ds.Tables["OrderPayDetail"];
@@ -70,7 +70,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 
                 if (dtTrans.Rows.Count == 0)
                 {
-                    ds = GetTransactionData(transactionId, computerId, conn, "");
+                    ds = GetTransactionData(transactionId, computerId, conn, "front");
                     dtTrans = ds.Tables["OrderTransaction"];
                     dtOrderDetail = ds.Tables["OrderDetail"];
                     dtPayDetail = ds.Tables["OrderPayDetail"];
@@ -94,6 +94,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     ReceiptNumber = r.GetValue<string>("ReceiptNumber"),
                     SaleDate = r.GetValue<DateTime>("SaleDate"),
                     PaidTime = r.GetValue<DateTime>("PaidTime"),
+                    VoidTime = r.GetValue<DateTime>("VoidTime"),
+                    VoidReason = r.GetValue<string>("VoidReason"),
                     TransactionVAT = r.GetValue<decimal>("TransactionVAT"),
                     TransactionVATable = r.GetValue<decimal>("TransactionVATable"),
                     TranBeforeVAT = r.GetValue<decimal>("TranBeforeVAT"),
@@ -136,12 +138,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.receiptStatus = receiptStatus;
                 rc.taxInvoice = orderTran.ReceiptNumber;
                 rc.refNo = orderTran.ReferenceNo;
-                rc.totalExcVat = (double)orderTran.TransactionVATable;
-                rc.subtotal = (double)orderTran.TransactionVATable;
-                rc.total = (double)(orderTran.ReceiptRetailPrice);
+                rc.totalExcVat = (double)orderTran.TranBeforeVAT;
+                rc.subtotal = (double)orderTran.ReceiptRetailPrice;
+                rc.total = (double)(orderTran.TransactionVATable);
                 rc.vat = (double)orderTran.TransactionVAT;
                 rc.totalVat = (double)orderTran.TransactionVAT;
-                rc.totalIncVat = (double)(orderTran.ReceiptRetailPrice);
+                rc.totalIncVat = (double)(orderTran.TransactionVATable);
                 rc.discount = (double)orderTran.ReceiptDiscount;
                 rc.discountIncVat = (double)orderTran.ReceiptDiscount;
                 rc.discountVat = (double)Math.Round(orderTran.TotalDiscount * orderTran.VATPercent / (100 + orderTran.VATPercent), 2);
@@ -160,12 +162,17 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
 
                 if (isVoid)
                 {
+                    rc.cancelTaxInvoice = orderTran.ReceiptNumber;
+                    rc.cancelTaxInvoiceDate = orderTran.VoidTime;
+                    rc.cancelTaxInvoicePosName = rc.posName;
+                    rc.voidReason = orderTran.VoidReason;
                     rc.subtotal = rc.subtotal * -1;
                     rc.total = rc.total * -1;
                     rc.totalIncVat = rc.totalIncVat * -1;
                     rc.discount = rc.discount * -1;
                     rc.vat = rc.vat * -1;
                     rc.totalVat = rc.totalVat * -1;
+                    rc.received = rc.received * -1;
                     rc.change = rc.change * -1;
                 }
 
@@ -227,7 +234,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     return receiptPayment;
                 }).ToList();
 
-                _log.Log(NLog.LogLevel.Info, $"RequestRcCode => {JsonConvert.SerializeObject(rc)}");
+                var reqJson = JsonConvert.SerializeObject(rc);
+                _log.Log(NLog.LogLevel.Info, $"RequestRcCode => {reqJson}");
 
                 var rcCode = _rcAgent.RequestRcCode(rc);
 
