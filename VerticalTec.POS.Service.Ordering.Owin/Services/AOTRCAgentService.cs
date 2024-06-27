@@ -126,6 +126,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 if (isVoid)
                     receiptStatus = "2";
 
+                var totalIncVat = orderTran.ReceiptRetailPrice;
+                var totalVat = (totalIncVat * orderTran.VATPercent / (100 + orderTran.VATPercent));
+                var totalExcVat = totalIncVat - totalVat;
+                var discountIncVat = orderTran.ReceiptDiscount;
+                var discountVat = orderTran.ReceiptDiscount * orderTran.VATPercent / (100 + orderTran.VATPercent);
+                var discountExcVat = discountIncVat - discountVat;
+                var extraDiscountIncVat = orderTran.DiscountOther;
+                var extraDiscountVat = orderTran.DiscountOther * orderTran.VATPercent / (100 + orderTran.VATPercent);
+                var extraDiscountExcVat = extraDiscountIncVat - extraDiscountVat;
+
                 var rc = new Receipt();
                 rc.companyCode = _rcConfig.companyCode;
                 rc.ipAddress = _rcConfig.posIPAddress;
@@ -138,18 +148,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.receiptStatus = receiptStatus;
                 rc.taxInvoice = orderTran.ReceiptNumber;
                 rc.refNo = orderTran.ReferenceNo;
-                rc.totalExcVat = (double)orderTran.TranBeforeVAT;
-                //rc.subtotal = (double)orderTran.ReceiptRetailPrice;
-                //rc.total = (double)(orderTran.TransactionVATable);
-                //rc.vat = (double)orderTran.TransactionVAT;
-                rc.totalVat = (double)orderTran.TransactionVAT;
-                rc.totalIncVat = (double)(orderTran.TransactionVATable);
-                //rc.discount = (double)orderTran.ReceiptDiscount;
-                rc.discountIncVat = (double)orderTran.ReceiptDiscount;
-                rc.discountVat = (double)Math.Round(orderTran.TotalDiscount * orderTran.VATPercent / (100 + orderTran.VATPercent), 2);
-                rc.extraDiscountIncVat = (double)orderTran.DiscountOther;
-                rc.extraDiscountVat = (double)Math.Round(orderTran.DiscountOther * orderTran.VATPercent / (100 + orderTran.VATPercent), 2);
-                //rc.serviceCharge = (double)orderTran.ServiceCharge;
+                rc.totalExcVat = (double)Math.Round(totalExcVat, 2);
+                rc.totalVat = (double)Math.Round(totalVat, 2);
+                rc.totalIncVat = (double)totalIncVat;
+                rc.discountIncVat = (double)discountIncVat;
+                rc.discountVat = (double)Math.Round(discountVat, 2);
+                rc.discountExcVat = (double)Math.Round(discountExcVat, 2);
+                rc.extraDiscountIncVat = (double)extraDiscountIncVat;
+                rc.extraDiscountVat = (double)Math.Round(extraDiscountVat, 2);
+                rc.extraDiscountExcVat = (double)Math.Round(extraDiscountExcVat, 2);
                 rc.serviceChargeIncVat = (double)(orderTran.ServiceCharge + orderTran.ServiceChargeVAT);
                 rc.serviceChargeVat = (double)orderTran.ServiceChargeVAT;
                 rc.netIncVat = (double)orderTran.ReceiptNetSale;
@@ -167,11 +174,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     rc.cancelTaxInvoiceDate = orderTran.VoidTime;
                     rc.cancelTaxInvoicePosName = rc.posName;
                     rc.voidReason = orderTran.VoidReason;
-                    rc.subtotal = rc.subtotal * -1;
-                    //rc.total = rc.total * -1;
                     rc.totalIncVat = rc.totalIncVat * -1;
-                    rc.discount = rc.discount * -1;
-                    //rc.vat = rc.vat * -1;
                     rc.totalVat = rc.totalVat * -1;
                     rc.received = rc.received * -1;
                     rc.change = rc.change * -1;
@@ -185,9 +188,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                         productCode = r.GetValue<string>("ProductCode"),
                         productName = r.GetValue<string>("ProductName"),
                         quantity = r.GetValue<double>("TotalQty"),
-                        //price = r.GetValue<double>("PricePerUnit"),
-                        //amount = r.GetValue<double>("NetSale"),
-                        //vat = r.GetValue<double>("TotalRetailVAT"),
                         serviceCharge = r.GetValue<double>("SCAmount"),
                         vatType = r.GetValue<string>("VATType"),
                         vatRate = r.GetValue<double>("ProductVATPercent"),
@@ -206,10 +206,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     if (isVoid)
                     {
                         receiptItem.quantity = receiptItem.quantity * -1;
-                        //receiptItem.amount = receiptItem.amount * -1;
                         receiptItem.unitPriceIncVat = receiptItem.unitPriceIncVat * -1;
-                        //receiptItem.discount = receiptItem.discount * -1;
-                        //receiptItem.vat = receiptItem.vat * -1;
                         receiptItem.totalVat = receiptItem.totalVat * -1;
                         receiptItem.serviceCharge = receiptItem.serviceCharge * -1;
                     }
