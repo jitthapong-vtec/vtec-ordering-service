@@ -139,12 +139,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.taxInvoice = orderTran.ReceiptNumber;
                 rc.refNo = orderTran.ReferenceNo;
                 rc.totalExcVat = (double)orderTran.TranBeforeVAT;
-                rc.subtotal = (double)orderTran.ReceiptRetailPrice;
+                //rc.subtotal = (double)orderTran.ReceiptRetailPrice;
                 //rc.total = (double)(orderTran.TransactionVATable);
                 //rc.vat = (double)orderTran.TransactionVAT;
                 rc.totalVat = (double)orderTran.TransactionVAT;
                 rc.totalIncVat = (double)(orderTran.TransactionVATable);
-                rc.discount = (double)orderTran.ReceiptDiscount;
+                //rc.discount = (double)orderTran.ReceiptDiscount;
                 rc.discountIncVat = (double)orderTran.ReceiptDiscount;
                 rc.discountVat = (double)Math.Round(orderTran.TotalDiscount * orderTran.VATPercent / (100 + orderTran.VATPercent), 2);
                 rc.extraDiscountIncVat = (double)orderTran.DiscountOther;
