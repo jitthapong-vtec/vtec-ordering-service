@@ -135,6 +135,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 var extraDiscountIncVat = orderTran.DiscountOther;
                 var extraDiscountVat = orderTran.DiscountOther * orderTran.VATPercent / (100 + orderTran.VATPercent);
                 var extraDiscountExcVat = extraDiscountIncVat - extraDiscountVat;
+                var payAmount = (double)dtPayDetail.AsEnumerable().Sum(r => r.GetValue<decimal>("PayAmount"));
+                var cashChange = (double)dtPayDetail.AsEnumerable().Sum(r => r.GetValue<decimal>("CashChange"));
+                var received = payAmount + cashChange;
 
                 var rc = new Receipt();
                 rc.companyCode = _rcConfig.companyCode;
@@ -164,9 +167,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.netVat = (double)orderTran.TransactionVAT;
                 rc.round = (double)orderTran.ReceiptRoudingBill;
                 rc.vatRate = (double)orderTran.VATPercent;
-                rc.received = (double)orderTran.ReceiptPayPrice;
-                rc.change = (double)dtPayDetail.AsEnumerable().Sum(r => r.GetValue<decimal>("CashChange"));
-                rc.totalText = ResCenterObjLib.ResCenterLib.AmountThaiBaht(orderTran.ReceiptPayPrice.ToString());
+                rc.received = received;
+                rc.change = cashChange;
+                rc.totalText = ResCenterObjLib.ResCenterLib.AmountThaiBaht(received.ToString());
 
                 if (isVoid)
                 {
