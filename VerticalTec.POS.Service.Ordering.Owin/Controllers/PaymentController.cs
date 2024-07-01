@@ -5,6 +5,7 @@ using LoyaltyInterface3;
 using Microsoft.Owin;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -110,7 +111,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {reqToken}");
 
                     var merchantResponse = await httpClient.GetAsync(merchantUrl);
-                    var merchantRespStr = await merchantResponse.Content.ReadAsStringAsync();
                     if (!merchantResponse.IsSuccessStatusCode)
                         throw new VtecPOSException($"GetMerchant {merchantResponse.ReasonPhrase}");
 
@@ -148,6 +148,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         result.StatusCode = HttpStatusCode.OK;
 
                         var respStr = await resp.Content.ReadAsStringAsync();
+
+                        try
+                        {
+                            if (JObject.Parse(respStr)["responseCode"]?.ToString() == "99")
+                            {
+                                _log.Error($"Gen QR Error api/POSModule/payment_gateway_QR_Request?req_Id={reqId}&langId=1, respStr={respStr}");
+                            }
+                        }
+                        catch { }
+
                         result.Body = new
                         {
                             platformApi = baseUrl,
