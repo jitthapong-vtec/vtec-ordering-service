@@ -110,6 +110,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {reqToken}");
 
                     var merchantResponse = await httpClient.GetAsync(merchantUrl);
+                    var merchantRespStr = await merchantResponse.Content.ReadAsStringAsync();
                     if (!merchantResponse.IsSuccessStatusCode)
                         throw new VtecPOSException($"GetMerchant {merchantResponse.ReasonPhrase}");
 
