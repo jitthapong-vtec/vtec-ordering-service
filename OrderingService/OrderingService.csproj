@@ -118,6 +118,10 @@
       <Project>{f47c6806-dfb9-4e2e-bdc9-456166dd7df5}</Project>
       <Name>VerticalTec.POS.Service.Ordering.Owin</Name>
     </ProjectReference>
+    <ProjectReference Include="..\VerticalTec.POS.Service.Ordering.ThirdpartyInterface\VerticalTec.POS.Service.Ordering.ThirdpartyInterface.csproj">
+      <Project>{061b79c1-5ea8-42b9-8ffb-99f7f9866d83}</Project>
+      <Name>VerticalTec.POS.Service.Ordering.ThirdpartyInterface</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Page Include="SettingWindow.xaml">

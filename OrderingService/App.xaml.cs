@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows;
+using VerticalTec.POS.Service.Ordering.ThirdpartyInterface;
 using Form = System.Windows.Forms;
 
 namespace OrderingService
@@ -20,6 +21,7 @@ namespace OrderingService
     public partial class App : Application
     {
         private IDisposable _host;
+        private OrderServiceWorker _orderServiceWorker;
 
         private Form.NotifyIcon _notifyIcon;
         private Form.ToolStripMenuItem _menuSetting;
@@ -117,7 +119,7 @@ namespace OrderingService
             var rcAgentPath = Settings.Default.RCAgentPath;
 
             var baseAddress = $"http://127.0.0.1:{apiPort}";
-            
+
             if (IsAdministrator)
                 baseAddress = $"http://+:{apiPort}/";
 
@@ -128,6 +130,14 @@ namespace OrderingService
                 _host?.Dispose();
                 _host = WebApp.Start(baseAddress,
                     appBuilder => new VerticalTec.POS.Service.Ordering.Owin.Startup(dbServer, dbName, hangfireConStr, rcAgentPath).Configuration(appBuilder));
+
+                try
+                {
+                    _orderServiceWorker?.Dispose();
+                    _orderServiceWorker = new OrderServiceWorker(dbServer, dbName);
+                    Task.Run(() => _orderServiceWorker.InitConnectionAsync());
+                }
+                catch { }
             }
             catch (Exception ex)
             {
@@ -139,6 +149,7 @@ namespace OrderingService
         protected override void OnExit(ExitEventArgs e)
         {
             _host?.Dispose();
+            _orderServiceWorker?.Dispose();
             base.OnExit(e);
         }
     }

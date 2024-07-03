@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VerticalTec.POS.Service.Ordering.ThirdpartyInterface;
 
 namespace VerticalTec.POS.Service.Test
 {
@@ -25,13 +26,13 @@ namespace VerticalTec.POS.Service.Test
 
                 using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.Ordering.Owin.Startup(dbServer, dbName, hangfireConStr, apiUser: apiUser, apiPass: apiPassword).Configuration(appBuilder)))
                 {
+                    try
+                    {
+                        Task.Run(() => new OrderServiceWorker(dbServer, dbName).InitConnectionAsync());
+                    }
+                    catch { }
                     Console.ReadLine();
                 }
-
-                //using (WebApp.Start(baseAddress, appBuilder => new VerticalTec.POS.Service.DataSync.Owin.Startup("192.168.1.100", "vtecpos", hangfireConStr).Configuration(appBuilder)))
-                //{
-                //    Console.ReadLine();
-                //}
             }
             catch (Exception ex)
             {

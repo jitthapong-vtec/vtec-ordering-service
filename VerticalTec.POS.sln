@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.9.34723.18
+VisualStudioVersion = 17.9.34714.143
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Ordering.Owin", "VerticalTec.POS.Service.Ordering.Owin\VerticalTec.POS.Service.Ordering.Owin.csproj", "{F47C6806-DFB9-4E2E-BDC9-456166DD7DF5}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{6A117A38-FD57-41BA-827F-8657D5CDEB8C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderingService", "OrderingService\OrderingService.csproj", "{D148B25F-390F-4C01-965C-EA0E7A44B67C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Ordering.ThirdpartyInterface", "VerticalTec.POS.Service.Ordering.ThirdpartyInterface\VerticalTec.POS.Service.Ordering.ThirdpartyInterface.csproj", "{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -105,6 +107,22 @@ Global
 		{D148B25F-390F-4C01-965C-EA0E7A44B67C}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{D148B25F-390F-4C01-965C-EA0E7A44B67C}.Release|x86.ActiveCfg = Release|Any CPU
 		{D148B25F-390F-4C01-965C-EA0E7A44B67C}.Release|x86.Build.0 = Release|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Debug|x86.Build.0 = Debug|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|iPhone.Build.0 = Release|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|x86.ActiveCfg = Release|Any CPU
+		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
