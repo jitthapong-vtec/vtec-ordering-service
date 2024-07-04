@@ -11,6 +11,8 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
 {
     public class OrderServiceWorker : IDisposable
     {
+        private static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
+
         private HubConnection _connection;
 
         private string _dbServer;
@@ -26,44 +28,54 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
 
         public async Task InitConnectionAsync()
         {
-            using (var conn = new MySqlConnection(MySQLConnectionString))
+            _logger.Info("InitConnectionAsync...");
+
+            try
             {
-                await conn.OpenAsync();
-
-                var cmdText = "select a.*, b.* from shop_data a join merchant_data b on a.MerchantID=b.MerchantID where a.ShopID=(select ShopID from computername where Deleted=0 and ComputerType=0 limit 1);" +
-                    "select PropertyID, PropertyValue, PropertyTextValue from programpropertyvalue where PropertyID in (9,10,24,1011,1130);";
-
-                var dsData = await MySqlHelper.ExecuteDatasetAsync(conn, cmdText);
-                var dtShopData = dsData.Tables[0];
-                var dtProperty = dsData.Tables[1];
-
-                var shopData = dtShopData.AsEnumerable().Select(r => new
+                using (var conn = new MySqlConnection(MySQLConnectionString))
                 {
-                    MerchantKey = (string)r["MerchantKey"],
-                    ShopKey = (string)r["ShopKey"]
-                }).First();
+                    await conn.OpenAsync();
 
-                _shopKey = shopData.ShopKey;
+                    var cmdText = "select a.*, b.* from shop_data a join merchant_data b on a.MerchantID=b.MerchantID where a.ShopID=(select ShopID from computername where Deleted=0 and ComputerType=0 limit 1);" +
+                        "select PropertyID, PropertyValue, PropertyTextValue from programpropertyvalue where PropertyID in (9,10,24,1011,1130);";
 
-                var apiData = dtProperty.AsEnumerable().Where(r => (int)r["PropertyID"] == 1130).Select(r =>
-                {
-                    var textValue = (string)r["PropertyTextValue"];
+                    var dsData = await MySqlHelper.ExecuteDatasetAsync(conn, cmdText);
+                    var dtShopData = dsData.Tables[0];
+                    var dtProperty = dsData.Tables[1];
 
-                    var apiBaseUrl = textValue.Split(';').Where(key => key.StartsWith("ApiBaseServerUrl")).Select(key => key.Split('=')[1]).First();
-                    if (apiBaseUrl.EndsWith("/") == false)
-                        apiBaseUrl += "/";
-
-                    return new
+                    var shopData = dtShopData.AsEnumerable().Select(r => new
                     {
-                        ApiBaseUrl = apiBaseUrl
-                    };
-                }).First();
+                        MerchantKey = (string)r["MerchantKey"],
+                        ShopKey = (string)r["ShopKey"]
+                    }).First();
 
-                _connection = new HubConnectionBuilder().WithUrl($"{apiData.ApiBaseUrl}orderingservice").Build();
+                    _shopKey = shopData.ShopKey;
 
-                _connection.On<string>("ThirdpartySubmitOrder", OnSubmitOrder);
+                    var apiData = dtProperty.AsEnumerable().Where(r => (int)r["PropertyID"] == 1130).Select(r =>
+                    {
+                        var textValue = (string)r["PropertyTextValue"];
 
-                await StartConnectionAsync();
+                        var apiBaseUrl = textValue.Split(';').Where(key => key.StartsWith("ApiBaseServerUrl")).Select(key => key.Split('=')[1]).First();
+                        if (apiBaseUrl.EndsWith("/") == false)
+                            apiBaseUrl += "/";
+
+                        return new
+                        {
+                            ApiBaseUrl = apiBaseUrl
+                        };
+                    }).First();
+
+                    _connection = new HubConnectionBuilder().WithUrl($"{apiData.ApiBaseUrl}orderingservice").Build();
+
+                    _connection.On<string>("ThirdpartySubmitOrder", OnSubmitOrder);
+
+                    await StartConnectionAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "InitConnectionAsync");
+                throw;
             }
         }
 
@@ -73,15 +85,15 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
             {
                 try
                 {
-                    Console.WriteLine("Connecting...");
+                    _logger.Info("Connecting...");
                     await _connection.StartAsync();
                     var resp = await _connection.InvokeAsync<object>("RegisterClient", _shopKey);
-                    Console.WriteLine("Connected width connectionId {0}", _connection.ConnectionId);
+                    _logger.Info("Connected width connectionId {0}", _connection.ConnectionId);
                     break;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Connection error {0}", ex.Message);
+                    _logger.Info("Connection error {0}", ex.Message);
                     await Task.Delay(5000);
                 }
             }
@@ -89,7 +101,7 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
 
         private void OnSubmitOrder(string orderJson)
         {
-            Console.WriteLine("Received order {0}", orderJson);
+            _logger.Info("Received order {0}", orderJson);
         }
 
         public void Dispose()
