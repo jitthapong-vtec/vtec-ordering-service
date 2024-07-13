@@ -226,44 +226,51 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpGet]
-        [Route("materials")]
-        public async Task<IHttpActionResult> GetMaterials(int documentType = 0)
+        [Route("masterdata")]
+        public async Task<IHttpActionResult> GetMasterDataAsync(int documentType, int staffId, int langId = 1)
         {
             try
             {
                 using (var conn = (MySqlConnection)await _database.ConnectAsync())
                 {
-                    var docHeader = new InventObject.DocHeader
+                    var docParam = new InventObject.DocParam()
                     {
-                        ShopID = 0,
-                        DocumentDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                        DueDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                        DocumentDate = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        StaffID = staffId,
                         DocumentTypeID = documentType,
-                        DocumentNo = "-",
-                        ItemDiscount = "0.00",
-                        BillDiscount = "0.00",
-                        BillDiscPercent = "0",
-                        SubTotalAmt = "0.00",
-                        TotalAmt = "0.00",
-                        GrandTotalAmt = "0.00",
-                        TotalVAT = "0.00",
-                        TotalDiscount = "0.00"
+                        LangID = langId
                     };
 
-                    var materials = await Task.Run(() =>
-                    {
-                        var respText = "";
-                        var materialData = new InventObject.MaterialData();
-                        if (_inventModule.Material_Data(ref respText, ref materialData, docHeader, "", "", conn) == false)
-                            throw new Exception(respText);
-                        return materialData;
-                    });
+                    var documentObj = new InventObject.DocumentObj();
+                    var respText = "";
+
+                    if (_inventModule.DocumentObj(ref respText, ref documentObj, docParam, conn) == false)
+                        throw new Exception(respText);
+
+                    var cmdText = @"select * from materialdocumenttypeunitsetting;
+                        select a.MaterialID,a.MaterialCode,a.MaterialBarcode,a.MaterialName,c.UnitSmallID,c.UnitLargeID,c.MaterialUnitRatioCode,d.UnitLargeName 
+                        from materials a 
+                        inner join unitsmall b on a.UnitSmallID=b.UnitSmallID 
+                        inner join unitratio c on b.UnitSmallID=c.UnitSmallID 
+                        inner join unitlarge d on c.UnitLargeID=d.UnitLargeID
+                        where a.Deleted=0 and c.Deleted=0;";
+                    var cmd = new MySqlCommand(cmdText, conn);
+                    cmd.Parameters.Add(new MySqlParameter("@docType", documentType));
+                    var adapter = new MySqlDataAdapter(cmd);
+                    var ds = new DataSet();
+                    adapter.Fill(ds);
+                    ds.Tables[0].TableName = "UnitSettings";
+                    ds.Tables[1].TableName = "Materials";
 
                     return Ok(new
                     {
                         Status = HttpStatusCode.OK,
                         StatusCode = "200.200",
-                        Data = materials
+                        Data = new
+                        {
+                            MaterialData = ds,
+                            Vendors = documentObj.Vendors
+                        }
                     });
                 }
             }

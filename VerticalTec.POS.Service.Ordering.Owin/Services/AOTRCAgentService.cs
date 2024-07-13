@@ -25,6 +25,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
         private RCAgent _rcAgent;
         private RCConfig _rcConfig;
 
+        public RCAgent RCAgent => _rcAgent;
+
         public AOTRCAgentService(IDatabase database)
         {
             AppDomain currentDomain = AppDomain.CurrentDomain;
