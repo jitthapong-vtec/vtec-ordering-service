@@ -149,29 +149,20 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             if (_inventModule.DocumentProcess(ref respText, ref resultDocData, documentData, docParam, conn) == false)
                                 throw new Exception($"DocumentProcess: {respText}");
 
-                            if (documentData?.DocDetail?.Any() == true)
+                            resultDocData.DocDetail = documentData.DocDetail;
+
+                            if (resultDocData.DocDetail?.Any() == true)
                             {
-                                for (var i = 0; i < documentData.DocDetail.Count; i++)
+                                for (var i = 0; i < resultDocData.DocDetail.Count; i++)
                                 {
-                                    var d = documentData.DocDetail[i];
+                                    var d = resultDocData.DocDetail[i];
                                     var docDetail = new InventObject.DocDetail();
                                     if (_inventModule.DocDetailObj(ref respText, ref docDetail, d.DocDetailID, resultDocData.DocHeader.DocumentKey, d.MaterialID, "front", conn) == false)
                                         throw new Exception($"DocDetailObj: {respText}");
 
-                                    //var defaultUnit = docDetail.UnitList?.Where(u => u.UnitLargeID == docDetail.UnitLargeID).FirstOrDefault();
-                                    //if (defaultUnit == null)
-                                    //    throw new Exception($"Not found unit for material {docDetail.MaterialID}");
+                                    docDetail.TotalQty = d.TotalQty;
+                                    docDetail.PricePerUnit = d.PricePerUnit;
 
-                                    //docDetail.UnitName = defaultUnit.UnitName;
-                                    //docDetail.UnitSmallID = defaultUnit.UnitSmallID;
-                                    //docDetail.UnitLargeID = defaultUnit.UnitLargeID;
-                                    //docDetail.UnitRatio = defaultUnit.UnitRatio.ToString();
-                                    //docDetail.UnitLargeRatio = defaultUnit.UnitLargeRatio.ToString();
-
-                                    if (string.IsNullOrEmpty(docDetail.TotalQty))
-                                        docDetail.TotalQty = d.TotalQty;
-                                    if (string.IsNullOrEmpty(docDetail.PricePerUnit))
-                                        docDetail.PricePerUnit = "0";
                                     if (string.IsNullOrEmpty(docDetail.CurrentQty))
                                         docDetail.CurrentQty = "0";
                                     if (string.IsNullOrEmpty(docDetail.DiffQty))
@@ -196,10 +187,12 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                         docDetail.TotalIncVAT = "0";
                                     if (string.IsNullOrEmpty(docDetail.TotalVAT))
                                         docDetail.TotalVAT = "0";
-                                    documentData.DocDetail[i] = docDetail;
+
+                                    resultDocData.DocDetail[i] = docDetail;
                                 }
 
-                                if (_inventModule.DocDetail_Add(ref respText, ref resultDocData, documentData.DocDetail, documentData.DocHeader, conn) == false)
+                                var isAddDocDetailSucc = _inventModule.DocDetail_Add(ref respText, ref resultDocData, resultDocData.DocDetail, resultDocData.DocHeader, conn);
+                                if (!isAddDocDetailSucc || !string.IsNullOrEmpty(respText))
                                     throw new Exception($"DocDetail_Add: {respText}");
                             }
                         }
