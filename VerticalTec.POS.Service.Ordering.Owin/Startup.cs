@@ -49,7 +49,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin
                 var assembly = Assembly.GetExecutingAssembly();
                 var fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
                 var version = fvi.ProductVersion;
-                return $"v{version}";
+                return $"v{version}(AOT)";
             }
         }
 

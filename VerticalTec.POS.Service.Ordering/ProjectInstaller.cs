@@ -79,12 +79,14 @@ namespace VerticalTec.POS.Service.Ordering
             string dbServer = Context.Parameters["DBServer"];
             string dbName = Context.Parameters["DBName"];
             string apiPort = Context.Parameters["ApiPort"];
+            string rcAgentPath = Context.Parameters["RCAgentPath"];
 
             var execPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var config = ConfigurationManager.OpenExeConfiguration(execPath);
             config.AppSettings.Settings["DBServer"].Value = dbServer;
             config.AppSettings.Settings["DBName"].Value = dbName;
             config.AppSettings.Settings["ApiPort"].Value = apiPort;
+            config.AppSettings.Settings["RCAgentPath"].Value = rcAgentPath;
             config.Save();
 
             base.Install(stateSaver);
