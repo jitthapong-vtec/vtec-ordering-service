@@ -179,10 +179,24 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     rc.cancelTaxInvoiceDate = orderTran.VoidTime;
                     rc.cancelTaxInvoicePosName = rc.posName;
                     rc.voidReason = orderTran.VoidReason;
+                    rc.totalExcVat = rc.totalExcVat * -1;
                     rc.totalIncVat = rc.totalIncVat * -1;
                     rc.totalVat = rc.totalVat * -1;
                     rc.received = rc.received * -1;
                     rc.change = rc.change * -1;
+                    rc.discountIncVat = rc.discountIncVat * -1;
+                    rc.discountVat = rc.discountVat * -1;
+                    rc.discountExcVat = rc.discountExcVat * -1;
+                    rc.extraDiscountIncVat = rc.extraDiscountIncVat * -1;
+                    rc.extraDiscountVat = rc.extraDiscountVat * -1;
+                    rc.extraDiscountExcVat = rc.extraDiscountExcVat * -1;
+                    rc.serviceChargeIncVat = rc.serviceChargeIncVat * -1;
+                    rc.serviceChargeVat = rc.serviceChargeVat * -1;
+                    rc.netIncVat = rc.netIncVat * -1;
+                    rc.netExcVat = rc.netExcVat * -1;
+                    rc.netVat = rc.netVat * -1;
+                    rc.round = rc.round * -1;
+                    rc.vatRate = rc.vatRate * -1;
                 }
 
                 rc.receiptItems = dtOrderDetail.AsEnumerable().Select(r =>
@@ -214,6 +228,15 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                         receiptItem.unitPriceIncVat = receiptItem.unitPriceIncVat * -1;
                         receiptItem.totalVat = receiptItem.totalVat * -1;
                         receiptItem.serviceCharge = receiptItem.serviceCharge * -1;
+                        receiptItem.unitDiscountPercent = receiptItem.unitDiscountPercent * -1;
+                        receiptItem.unitPriceIncVat = receiptItem.unitPriceIncVat * -1;
+                        receiptItem.unitPriceVat = receiptItem.unitPriceVat * -1;
+                        receiptItem.totalIncVat = receiptItem.totalIncVat * -1;
+                        receiptItem.totalDiscountIncVat = receiptItem.totalDiscountIncVat * -1;
+                        receiptItem.totalDiscountVat = receiptItem.totalDiscountVat * -1;
+                        receiptItem.totalNetIncVat = receiptItem.totalNetIncVat * -1;
+                        receiptItem.totalDisplay = receiptItem.totalDisplay * -1;
+                        receiptItem.totalNetVat = receiptItem.totalNetVat * -1;
                     }
 
                     return receiptItem;
@@ -225,7 +248,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     {
                         paymentNo = r.GetValue<int>("PayDetailID"),
                         paymentCurrency = r.GetValue<string>("CurrencyCode"),
-                        paymentAmount = r.GetValue<double>("PayAmount"),
+                        paymentAmount = received,
                         paymentType = r.GetValue<string>("PayTypeName")
                     };
 
