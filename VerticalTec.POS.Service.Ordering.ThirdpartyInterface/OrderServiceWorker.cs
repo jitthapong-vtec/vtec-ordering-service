@@ -3,6 +3,9 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Data;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using vtecPOS.GlobalFunctions;
@@ -68,6 +71,7 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
                     _connection = new HubConnectionBuilder().WithUrl($"{apiData.ApiBaseUrl}orderingservice").Build();
 
                     _connection.On<string>("ThirdpartySubmitOrder", OnSubmitOrder);
+                    _connection.On<string>("ThirdpartyInquiryOrder", OnInquiryOrder);
 
                     await StartConnectionAsync();
                 }
@@ -99,10 +103,48 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
             }
         }
 
-        private void OnSubmitOrder(string orderJson)
+        private async void OnSubmitOrder(string jsonData)
         {
-            _logger.Info("Received order {0}", orderJson);
+            _logger.Info("Received order {0}", jsonData);
+            using (var httpClient = new HttpClient())
+            {
+                try
+                {
+                    httpClient.BaseAddress = new Uri("http://127.0.0.1:9500/");
+                    var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/orders/thirdparty")
+                    {
+                        Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
+                    };
+                    var resp = await httpClient.SendAsync(reqMsg);
+                    resp.EnsureSuccessStatusCode();
+                    var respJson = await resp.Content.ReadAsStringAsync();
+                    _logger.Info("v1/orders/thirdparty", respJson);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "v1/orders/thirdparty");
+                }
+            }
         }
+
+        private async void OnInquiryOrder(string orderId)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                try
+                {
+                    httpClient.BaseAddress = new Uri("http://127.0.0.1:9500/");
+                    var reqMsg = new HttpRequestMessage(HttpMethod.Get, $"v1/orders/thirdparty?orderId={orderId}");
+                    var resp = await httpClient.SendAsync(reqMsg);
+                    resp.EnsureSuccessStatusCode();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, $"v1/orders/thirdparty?orderId={orderId}");
+                }
+            }
+        }
+
 
         public void Dispose()
         {
