@@ -171,7 +171,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.vatRate = (double)orderTran.VATPercent;
                 rc.received = received;
                 rc.change = cashChange;
-                rc.totalText = ResCenterObjLib.ResCenterLib.AmountThaiBaht(received.ToString());
+                rc.totalText = ResCenterObjLib.ResCenterLib.AmountThaiBaht(orderTran.ReceiptNetSale.ToString());
 
                 if (isVoid)
                 {
@@ -196,7 +196,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     rc.netExcVat = rc.netExcVat * -1;
                     rc.netVat = rc.netVat * -1;
                     rc.round = rc.round * -1;
-                    rc.vatRate = rc.vatRate * -1;
                 }
 
                 rc.receiptItems = dtOrderDetail.AsEnumerable().Select(r =>
@@ -229,7 +228,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                         receiptItem.totalVat = receiptItem.totalVat * -1;
                         receiptItem.serviceCharge = receiptItem.serviceCharge * -1;
                         receiptItem.unitDiscountPercent = receiptItem.unitDiscountPercent * -1;
-                        receiptItem.unitPriceIncVat = receiptItem.unitPriceIncVat * -1;
                         receiptItem.unitPriceVat = receiptItem.unitPriceVat * -1;
                         receiptItem.totalIncVat = receiptItem.totalIncVat * -1;
                         receiptItem.totalDiscountIncVat = receiptItem.totalDiscountIncVat * -1;
@@ -248,7 +246,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                     {
                         paymentNo = r.GetValue<int>("PayDetailID"),
                         paymentCurrency = r.GetValue<string>("CurrencyCode"),
-                        paymentAmount = received,
+                        paymentAmount = (double)(r.GetValue<decimal>("PayAmount") + r.GetValue<decimal>("CashChange")),
                         paymentType = r.GetValue<string>("PayTypeName")
                     };
 
