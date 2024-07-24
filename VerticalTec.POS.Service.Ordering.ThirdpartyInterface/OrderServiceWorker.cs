@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -68,9 +69,13 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
                         };
                     }).First();
 
-                    _connection = new HubConnectionBuilder().WithUrl($"{apiData.ApiBaseUrl}orderingservice").Build();
+                    _connection = new HubConnectionBuilder()
+                        .WithUrl($"{apiData.ApiBaseUrl}orderingservice")
+                        .Build();
 
-                    _connection.On<string>("ThirdpartySubmitOrder", OnSubmitOrder);
+                    _connection.Closed += _connection_Closed;
+
+                    _connection.On("ThirdpartySubmitOrder", async (string json) => await OnSubmitOrder(json));
                     _connection.On<string>("ThirdpartyInquiryOrder", OnInquiryOrder);
 
                     await StartConnectionAsync();
@@ -81,6 +86,12 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
                 _logger.Error(ex, "InitConnectionAsync");
                 throw;
             }
+        }
+
+        private async Task _connection_Closed(Exception arg)
+        {
+            await Task.Delay(5000);
+            await StartConnectionAsync();
         }
 
         private async Task StartConnectionAsync()
@@ -103,9 +114,10 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
             }
         }
 
-        private async void OnSubmitOrder(string jsonData)
+        private async Task<string> OnSubmitOrder(string jsonData)
         {
             _logger.Info("Received order {0}", jsonData);
+            var respJson = "";
             using (var httpClient = new HttpClient())
             {
                 try
@@ -117,7 +129,7 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
                     };
                     var resp = await httpClient.SendAsync(reqMsg);
                     resp.EnsureSuccessStatusCode();
-                    var respJson = await resp.Content.ReadAsStringAsync();
+                    respJson = await resp.Content.ReadAsStringAsync();
                     _logger.Info("v1/orders/thirdparty", respJson);
                 }
                 catch (Exception ex)
@@ -125,6 +137,7 @@ namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
                     _logger.Error(ex, "v1/orders/thirdparty");
                 }
             }
+            return respJson;
         }
 
         private async void OnInquiryOrder(string orderId)

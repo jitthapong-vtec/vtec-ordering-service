@@ -59,7 +59,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin
 
             GlobalConfiguration.Configuration
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
-                .UseUnityActivator(_container)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
                 .UseLiteDbStorage(AppConfig.Instance.HangfileConnStr);
