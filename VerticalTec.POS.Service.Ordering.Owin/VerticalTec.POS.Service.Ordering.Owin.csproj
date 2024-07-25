@@ -204,12 +204,6 @@
     <Compile Include="UnityResolver.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="BouncyCastle">
-      <Version>1.8.9</Version>
-    </PackageReference>
     <PackageReference Include="Google.Protobuf">
       <Version>3.27.2</Version>
     </PackageReference>
@@ -222,19 +216,13 @@
     <PackageReference Include="Hangfire.LiteDB">
       <Version>0.4.1</Version>
     </PackageReference>
-    <PackageReference Include="Hangfire.Unity">
-      <Version>3.0.0</Version>
-    </PackageReference>
-    <PackageReference Include="LiteDB">
-      <Version>5.0.21</Version>
+    <PackageReference Include="Hangfire.Unity5">
+      <Version>5.0.0</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNet.SignalR.SelfHost">
       <Version>2.4.3</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNet.WebApi.Cors">
-      <Version>5.3.0</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.AspNet.WebApi.Owin">
+    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost">
       <Version>5.3.0</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration">
@@ -282,6 +270,9 @@
     <PackageReference Include="Unity.Container">
       <Version>5.11.11</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

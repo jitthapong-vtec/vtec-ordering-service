@@ -7,20 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.Remoting.Contexts;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web.Http;
-using System.Web.Http.Cors;
 using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
-using VerticalTec.POS.Utils;
 
 namespace VerticalTec.POS.Service.Ordering.Owin
 {
@@ -52,13 +46,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin
         {
             try
             {
-                var hangfire = System.IO.Path.Combine(System.Reflection.Assembly.GetExecutingAssembly().Location, "hangfire.db");
+                var hangfire = System.IO.Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hangfire.db");
                 System.IO.File.Delete(hangfire);
             }
             catch { }
 
             GlobalConfiguration.Configuration
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+                .UseUnityActivator(_container)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
                 .UseLiteDbStorage(AppConfig.Instance.HangfileConnStr);
@@ -69,8 +64,6 @@ namespace VerticalTec.POS.Service.Ordering.Owin
         public void Configuration(IAppBuilder appBuilder)
         {
             HttpConfiguration config = new HttpConfiguration();
-            var cors = new EnableCorsAttribute("*", "*", "*");
-            config.EnableCors(cors);
 
             _container = new UnityContainer();
             _container.RegisterType<IDatabase, MySqlDatabase>(new TransientLifetimeManager(),

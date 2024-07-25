@@ -9,11 +9,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Ordering", "VerticalTec.POS.Service.Ordering\VerticalTec.POS.Service.Ordering.csproj", "{4F41FC6E-2C03-4FF1-98FE-81D8EF565CD8}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{6A117A38-FD57-41BA-827F-8657D5CDEB8C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderingService", "OrderingService\OrderingService.csproj", "{D148B25F-390F-4C01-965C-EA0E7A44B67C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Ordering.ThirdpartyInterface", "VerticalTec.POS.Service.Ordering.ThirdpartyInterface\VerticalTec.POS.Service.Ordering.ThirdpartyInterface.csproj", "{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{59383793-3B1B-420C-A5AE-20A882C0B584}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,22 +75,6 @@ Global
 		{4F41FC6E-2C03-4FF1-98FE-81D8EF565CD8}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{4F41FC6E-2C03-4FF1-98FE-81D8EF565CD8}.Release|x86.ActiveCfg = Release|Any CPU
 		{4F41FC6E-2C03-4FF1-98FE-81D8EF565CD8}.Release|x86.Build.0 = Release|Any CPU
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|Any CPU.ActiveCfg = Debug
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|Any CPU.Build.0 = Debug
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|iPhone.ActiveCfg = Debug
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|iPhone.Build.0 = Debug
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|iPhoneSimulator.ActiveCfg = Debug
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|iPhoneSimulator.Build.0 = Debug
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|x86.ActiveCfg = Debug
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Debug|x86.Build.0 = Debug
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|Any CPU.ActiveCfg = Release
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|Any CPU.Build.0 = Release
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|iPhone.ActiveCfg = Release
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|iPhone.Build.0 = Release
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|iPhoneSimulator.ActiveCfg = Release
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|iPhoneSimulator.Build.0 = Release
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|x86.ActiveCfg = Release
-		{6A117A38-FD57-41BA-827F-8657D5CDEB8C}.Release|x86.Build.0 = Release
 		{D148B25F-390F-4C01-965C-EA0E7A44B67C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D148B25F-390F-4C01-965C-EA0E7A44B67C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D148B25F-390F-4C01-965C-EA0E7A44B67C}.Debug|iPhone.ActiveCfg = Debug|Any CPU
@@ -123,6 +107,22 @@ Global
 		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|x86.ActiveCfg = Release|Any CPU
 		{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}.Release|x86.Build.0 = Release|Any CPU
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Debug|Any CPU.ActiveCfg = Debug
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Debug|Any CPU.Build.0 = Debug
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Debug|iPhone.ActiveCfg = Debug
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Debug|iPhone.Build.0 = Debug
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Debug|iPhoneSimulator.ActiveCfg = Debug
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Debug|iPhoneSimulator.Build.0 = Debug
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Debug|x86.ActiveCfg = Debug
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Debug|x86.Build.0 = Debug
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|Any CPU.ActiveCfg = Release
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|Any CPU.Build.0 = Release
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|iPhone.ActiveCfg = Release
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|iPhone.Build.0 = Release
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|iPhoneSimulator.ActiveCfg = Release
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|iPhoneSimulator.Build.0 = Release
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|x86.ActiveCfg = Release
+		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|x86.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

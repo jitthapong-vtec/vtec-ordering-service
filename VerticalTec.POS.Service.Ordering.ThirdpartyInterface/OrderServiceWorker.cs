@@ -3,13 +3,9 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Data;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using vtecPOS.GlobalFunctions;
 
 namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
 {
