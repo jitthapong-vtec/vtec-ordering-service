@@ -17,13 +17,15 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 
         private string _dbServer;
         private string _dbName;
+        private string _orderingServiceUrl;
 
         private string _shopKey;
 
-        public OrderServiceWorker(string dbServer, string dbName)
+        public OrderServiceWorker(string dbServer, string dbName, string orderingServiceUrl="http://127.0.0.1:9500")
         {
             _dbServer = dbServer;
             _dbName = dbName;
+            _orderingServiceUrl = orderingServiceUrl;
         }
 
         public async Task InitConnectionAsync()
@@ -118,7 +120,7 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
             {
                 try
                 {
-                    httpClient.BaseAddress = new Uri("http://127.0.0.1:9500/");
+                    httpClient.BaseAddress = new Uri(_orderingServiceUrl);
                     var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/orders/thirdparty")
                     {
                         Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
@@ -142,7 +144,7 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
             {
                 try
                 {
-                    httpClient.BaseAddress = new Uri("http://127.0.0.1:9500/");
+                    httpClient.BaseAddress = new Uri(_orderingServiceUrl);
                     var reqMsg = new HttpRequestMessage(HttpMethod.Get, $"v1/orders/thirdparty?orderId={orderId}");
                     var resp = await httpClient.SendAsync(reqMsg);
                     resp.EnsureSuccessStatusCode();

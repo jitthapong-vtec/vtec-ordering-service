@@ -35,11 +35,13 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface
         {
             string dbServer = Context.Parameters["DBServer"];
             string dbName = Context.Parameters["DBName"];
+            string serviceUrl = Context.Parameters["OrderingServiceUrl"];
 
             var execPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var config = ConfigurationManager.OpenExeConfiguration(execPath);
             config.AppSettings.Settings["DBServer"].Value = dbServer;
             config.AppSettings.Settings["DBName"].Value = dbName;
+            config.AppSettings.Settings["OrderingServiceUrl"].Value = serviceUrl;
             config.Save();
 
             base.Install(stateSaver);

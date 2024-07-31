@@ -22,7 +22,7 @@
         "Entry"
         {
         "MsmKey" = "8:_006A953088546103E6423FA2B48F0966"
-        "OwnerKey" = "8:_45809342DDA9362CE01D90AFDF8FFF10"
+        "OwnerKey" = "8:_4C72A970FEDFB95206E7B91437AF3F42"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -310,7 +310,7 @@
         "Entry"
         {
         "MsmKey" = "8:_3E3140FE6817D5F1BE827B59596E6189"
-        "OwnerKey" = "8:_45809342DDA9362CE01D90AFDF8FFF10"
+        "OwnerKey" = "8:_4C72A970FEDFB95206E7B91437AF3F42"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -333,7 +333,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_45809342DDA9362CE01D90AFDF8FFF10"
+        "MsmKey" = "8:_4C72A970FEDFB95206E7B91437AF3F42"
         "OwnerKey" = "8:_E34C44A4137E439180F0C65D65A135D1"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -376,7 +376,7 @@
         "Entry"
         {
         "MsmKey" = "8:_5BE90CD471EB9491D0D76104F5095C47"
-        "OwnerKey" = "8:_45809342DDA9362CE01D90AFDF8FFF10"
+        "OwnerKey" = "8:_4C72A970FEDFB95206E7B91437AF3F42"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -520,7 +520,7 @@
         "Entry"
         {
         "MsmKey" = "8:_98FA9D4093543B7A8346B4A9D39EB50F"
-        "OwnerKey" = "8:_45809342DDA9362CE01D90AFDF8FFF10"
+        "OwnerKey" = "8:_4C72A970FEDFB95206E7B91437AF3F42"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -604,7 +604,7 @@
         "Entry"
         {
         "MsmKey" = "8:_AC78AD67B9F76469119F386139AA1488"
-        "OwnerKey" = "8:_45809342DDA9362CE01D90AFDF8FFF10"
+        "OwnerKey" = "8:_4C72A970FEDFB95206E7B91437AF3F42"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -796,7 +796,7 @@
         "Entry"
         {
         "MsmKey" = "8:_ECE859AF55B9FB644124AE773AFC6706"
-        "OwnerKey" = "8:_45809342DDA9362CE01D90AFDF8FFF10"
+        "OwnerKey" = "8:_4C72A970FEDFB95206E7B91437AF3F42"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -856,13 +856,13 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_E34C44A4137E439180F0C65D65A135D1"
+        "OwnerKey" = "8:_4C72A970FEDFB95206E7B91437AF3F42"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_45809342DDA9362CE01D90AFDF8FFF10"
+        "OwnerKey" = "8:_E34C44A4137E439180F0C65D65A135D1"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1109,7 +1109,7 @@
             "Sequence" = "3:1"
             "Identifier" = "8:_81321A6A_6555_4758_B6D5_7506C97D75BE"
             "InstallerClass" = "11:TRUE"
-            "CustomActionData" = "8:/DBServer=[DBSERVER] /DBName=[DBNAME]"
+            "CustomActionData" = "8:/DBServer=[DBSERVER] /DBName=[DBNAME] /OrderingServiceUrl=[SERVICEURL]"
             }
             "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_CB3000EBB2E742FB9833E7C45CAA1917"
             {
@@ -1489,14 +1489,14 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_45809342DDA9362CE01D90AFDF8FFF10"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_4C72A970FEDFB95206E7B91437AF3F42"
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
             "AssemblyAsmDisplayName" = "8:VerticalTec.POS.Service.ThirdpartyInterface.Worker, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_45809342DDA9362CE01D90AFDF8FFF10"
+                    "_4C72A970FEDFB95206E7B91437AF3F42"
                     {
                     "Name" = "8:VerticalTec.POS.Service.ThirdpartyInterface.Worker.dll"
                     "Attributes" = "3:512"
@@ -2259,7 +2259,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:ThirdpartyOrderInterface"
         "ProductCode" = "8:{D8809A0D-5312-437E-B68B-A77BB7BA3AFC}"
-        "PackageCode" = "8:{A0114345-40D4-444C-A2F6-99052DE97C98}"
+        "PackageCode" = "8:{CEC58120-79C0-43EE-877D-57492CDE3A33}"
         "UpgradeCode" = "8:{48FD608E-074E-4527-B573-ECADEAC81DAD}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -2793,8 +2793,8 @@
                             "Type" = "3:3"
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
-                            "Setting" = "3:1"
-                            "Value" = "8:#1248"
+                            "Setting" = "3:2"
+                            "Value" = "8:Ordering Service Url:"
                             "DefaultValue" = "8:#1248"
                             "UsePlugInResources" = "11:TRUE"
                             }
@@ -2807,7 +2807,7 @@
                             "ContextData" = "8:Public"
                             "Attributes" = "3:2"
                             "Setting" = "3:2"
-                            "Value" = "8:EDITA3"
+                            "Value" = "8:SERVICEURL"
                             "DefaultValue" = "8:EDITA3"
                             "UsePlugInResources" = "11:TRUE"
                             }
@@ -2819,8 +2819,8 @@
                             "Type" = "3:3"
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
-                            "Setting" = "3:1"
-                            "Value" = "8:"
+                            "Setting" = "3:2"
+                            "Value" = "8:http://127.0.0.1:9500"
                             "DefaultValue" = "8:"
                             "UsePlugInResources" = "11:TRUE"
                             }
@@ -2833,7 +2833,7 @@
                             "ContextData" = "8:1;True=1;False=0"
                             "Attributes" = "3:0"
                             "Setting" = "3:0"
-                            "Value" = "3:0"
+                            "Value" = "3:1"
                             "DefaultValue" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
@@ -3036,7 +3036,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E34C44A4137E439180F0C65D65A135D1"
             {
-            "SourcePath" = "8:..\\VerticalTec.POS.Service.ThirdpartyInterface\\obj\\Debug\\VerticalTec.POS.Service.ThirdpartyInterface.exe"
+            "SourcePath" = "8:..\\VerticalTec.POS.Service.ThirdpartyInterface\\obj\\Release\\VerticalTec.POS.Service.ThirdpartyInterface.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_F3D5388CE4A74B16BEFD6ABB88F1D959"

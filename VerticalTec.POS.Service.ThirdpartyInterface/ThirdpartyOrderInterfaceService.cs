@@ -20,12 +20,13 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface
         {
             var dbServer = ServiceConfig.GetDatabaseServer();
             var dbName = ServiceConfig.GetDatabaseName();
+            var orderingServiceUrl = ServiceConfig.GetOrderingServiceUrl();
 
             try
             {
                 _logger.Info("Starting service...");
                 _orderServiceWorker?.Dispose();
-                _orderServiceWorker = new OrderServiceWorker(dbServer, dbName);
+                _orderServiceWorker = new OrderServiceWorker(dbServer, dbName, orderingServiceUrl);
                 await _orderServiceWorker.InitConnectionAsync();
                 _logger.Info("Service is running");
             }

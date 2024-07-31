@@ -16,7 +16,11 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface
             var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
             return config.AppSettings.Settings["DBName"].Value;
         }
-
+        public static string GetOrderingServiceUrl()
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(GetExecPath());
+            return config.AppSettings.Settings["OrderingServiceUrl"].Value;
+        }
         public static string GetExecPath()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().Location;
