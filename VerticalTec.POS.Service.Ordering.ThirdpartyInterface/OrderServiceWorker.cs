@@ -81,6 +81,8 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     if (string.IsNullOrEmpty(apiBaseUrl))
                         throw new Exception("Please check ApiBaseServerUrl in property 1130!");
 
+                    _logger.Info("ApiPlatformBaseUrl: {0}", apiBaseUrl);
+
                     _connection = new HubConnectionBuilder()
                         .WithUrl($"{apiBaseUrl}orderingservice")
                         .Build();
@@ -110,6 +112,9 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
         {
             while (true)
             {
+                if (_connection?.State == HubConnectionState.Connected)
+                    return;
+
                 try
                 {
                     _logger.Info("Connecting...");
