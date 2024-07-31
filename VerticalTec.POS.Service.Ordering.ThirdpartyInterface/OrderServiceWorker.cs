@@ -53,22 +53,34 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 
                     _shopKey = shopData.ShopKey;
 
-                    var apiData = dtProperty.AsEnumerable().Where(r => (int)r["PropertyID"] == 1130).Select(r =>
+                    var apiConfig = dtProperty.AsEnumerable().Where(r => (int)r["PropertyID"] == 1130);
+                    if (apiConfig?.Any() == false)
+                        throw new Exception("Not found property 1130!");
+
+                    var apiBaseUrl = "";
+                    try
                     {
-                        var textValue = (string)r["PropertyTextValue"];
-
-                        var apiBaseUrl = textValue.Split(';').Where(key => key.StartsWith("ApiBaseServerUrl")).Select(key => key.Split('=')[1]).First();
-                        if (apiBaseUrl.EndsWith("/") == false)
-                            apiBaseUrl += "/";
-
-                        return new
+                        var apiData = apiConfig.Select(r =>
                         {
-                            ApiBaseUrl = apiBaseUrl
-                        };
-                    }).First();
+                            var textValue = (string)r["PropertyTextValue"];
+
+                            apiBaseUrl = textValue.Split(';').Where(key => key.StartsWith("ApiBaseServerUrl")).Select(key => key.Split('=')[1]).First();
+                            if (apiBaseUrl.EndsWith("/") == false)
+                                apiBaseUrl += "/";
+
+                            return new
+                            {
+                                ApiBaseUrl = apiBaseUrl
+                            };
+                        }).First();
+                    }
+                    catch { }
+
+                    if (string.IsNullOrEmpty(apiBaseUrl))
+                        throw new Exception("Please check ApiBaseServerUrl in property 1130!");
 
                     _connection = new HubConnectionBuilder()
-                        .WithUrl($"{apiData.ApiBaseUrl}orderingservice")
+                        .WithUrl($"{apiBaseUrl}orderingservice")
                         .Build();
 
                     _connection.Closed += _connection_Closed;
