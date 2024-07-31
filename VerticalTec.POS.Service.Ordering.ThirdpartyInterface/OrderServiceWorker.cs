@@ -15,6 +15,9 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
     {
         private static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
+        private const int MaxReconnect = 100;
+        private int _reconnectCounter;
+
         private HubConnection _connection;
 
         private string _dbServer;
@@ -23,7 +26,7 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 
         private string _shopKey;
 
-        public OrderServiceWorker(string dbServer, string dbName, string orderingServiceUrl="http://127.0.0.1:9500")
+        public OrderServiceWorker(string dbServer, string dbName, string orderingServiceUrl = "http://127.0.0.1:9500")
         {
             _dbServer = dbServer;
             _dbName = dbName;
@@ -90,7 +93,7 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     _connection.Closed += _connection_Closed;
 
                     _connection.On("ThirdpartySubmitOrder", async (string order) => await OnSubmitOrder(order));
-                    _connection.On("ThirdpartyInquiryOrder", async(string orderId) => await OnInquiryOrder(orderId));
+                    _connection.On("ThirdpartyInquiryOrder", async (string orderId) => await OnInquiryOrder(orderId));
 
                     await StartConnectionAsync();
                 }
@@ -127,6 +130,12 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                 {
                     _logger.Info("Connection error {0}", ex.Message);
                     await Task.Delay(5000);
+                }
+
+                if (++_reconnectCounter == MaxReconnect)
+                {
+                    _logger.Info($"Cannot connect to server after reconnect {_reconnectCounter} times.");
+                    return;
                 }
             }
         }
