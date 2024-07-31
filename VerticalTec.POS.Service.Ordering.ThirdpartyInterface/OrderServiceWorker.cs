@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Data;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
@@ -85,8 +87,8 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 
                     _connection.Closed += _connection_Closed;
 
-                    _connection.On("ThirdpartySubmitOrder", async (string json) => await OnSubmitOrder(json));
-                    _connection.On<string>("ThirdpartyInquiryOrder", OnInquiryOrder);
+                    _connection.On("ThirdpartySubmitOrder", async (string order) => await OnSubmitOrder(order));
+                    _connection.On("ThirdpartyInquiryOrder", async(string orderId) => await OnInquiryOrder(orderId));
 
                     await StartConnectionAsync();
                 }
@@ -145,27 +147,44 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "v1/orders/thirdparty");
+                    var err = new
+                    {
+                        Code = "500.000",
+                        Message = ex.Message
+                    };
+                    respJson = JsonConvert.SerializeObject(err);
                 }
             }
             return respJson;
         }
 
-        private async void OnInquiryOrder(string orderId)
+        private async Task<string> OnInquiryOrder(string orderId)
         {
+            var respJson = "";
             using (var httpClient = new HttpClient())
             {
                 try
                 {
                     httpClient.BaseAddress = new Uri(_orderingServiceUrl);
-                    var reqMsg = new HttpRequestMessage(HttpMethod.Get, $"v1/orders/thirdparty?orderId={orderId}");
+                    var reqMsg = new HttpRequestMessage(HttpMethod.Get, $"v1/orders/thirdparty/inquiry?orderId={orderId}");
                     var resp = await httpClient.SendAsync(reqMsg);
                     resp.EnsureSuccessStatusCode();
+                    respJson = await resp.Content.ReadAsStringAsync();
+                    _logger.Info($"v1/orders/thirdparty/inquiry?orderId={orderId}", respJson);
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, $"v1/orders/thirdparty?orderId={orderId}");
+                    _logger.Error(ex, $"v1/orders/thirdparty/inquiry?orderId={orderId}");
+
+                    var err = new
+                    {
+                        Code = "500.000",
+                        Message = ex.Message
+                    };
+                    respJson = JsonConvert.SerializeObject(err);
                 }
             }
+            return respJson;
         }
 
 

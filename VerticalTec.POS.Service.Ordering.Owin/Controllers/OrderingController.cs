@@ -164,17 +164,26 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             if (reader.Read())
                             {
                                 sessionId = reader.GetValue<int>("SessionID");
+                            }
+                        }
+
+                        cmd = _database.CreateCommand("select ComputerID from computername where ComputerType=10", conn);
+                        using (var reader = _database.ExecuteReaderAsync(cmd).Result)
+                        {
+                            if (reader.Read())
+                            {
                                 terminalId = reader.GetValue<int>("ComputerID");
                             }
                         }
-                        if (sessionId == 0)
+
+                        if(terminalId == 0)
                         {
                             result.StatusCode = HttpStatusCode.OK;
-                            result.Message = "There is no open session";
+                            result.Message = "Online computer configuration is invalid";
                             result.Body = new
                             {
                                 Code = "403.002",
-                                Message = $"POS cashier must be open session first!"
+                                Message = "Please config ComputerType 10"
                             };
                             return result;
                         }

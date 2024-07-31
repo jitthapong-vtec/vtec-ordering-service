@@ -48,6 +48,9 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             {
                 var hangfire = System.IO.Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hangfire.db");
                 System.IO.File.Delete(hangfire);
+
+                hangfire = System.IO.Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hangfire-log.db");
+                System.IO.File.Delete(hangfire);
             }
             catch { }
 
