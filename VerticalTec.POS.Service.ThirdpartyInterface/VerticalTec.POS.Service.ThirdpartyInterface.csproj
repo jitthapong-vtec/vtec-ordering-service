@@ -4,15 +4,14 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4F41FC6E-2C03-4FF1-98FE-81D8EF565CD8}</ProjectGuid>
+    <ProjectGuid>{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>VerticalTec.POS.Service.Ordering</RootNamespace>
-    <AssemblyName>VerticalTec.POS.Service.Ordering</AssemblyName>
+    <RootNamespace>VerticalTec.POS.Service.ThirdpartyInterface</RootNamespace>
+    <AssemblyName>VerticalTec.POS.Service.ThirdpartyInterface</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,66 +33,54 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>..\packages\NLog.5.3.2\lib\net46\NLog.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Management" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ServiceConfig.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ProjectInstaller.Designer.cs">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </Compile>
-    <Compile Include="VtecOrderingService.cs">
+    <Compile Include="ServiceConfig.cs" />
+    <Compile Include="ThirdpartyOrderInterfaceService.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="VtecOrderingService.Designer.cs">
-      <DependentUpon>VtecOrderingService.cs</DependentUpon>
+    <Compile Include="ThirdpartyOrderInterfaceService.Designer.cs">
+      <DependentUpon>ThirdpartyOrderInterfaceService.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="INSTALL.bat" />
-    <None Include="nlog.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VerticalTec.POS.Service.Ordering.ThirdpartyInterface\VerticalTec.POS.Service.ThirdpartyInterface.Worker.csproj">
+      <Project>{061b79c1-5ea8-42b9-8ffb-99f7f9866d83}</Project>
+      <Name>VerticalTec.POS.Service.ThirdpartyInterface.Worker</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ProjectInstaller.resx">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="VtecOrderingService.resx">
-      <DependentUpon>VtecOrderingService.cs</DependentUpon>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\VerticalTec.POS.Service.Ordering.Owin\VerticalTec.POS.Service.Ordering.Owin.csproj">
-      <Project>{f47c6806-dfb9-4e2e-bdc9-456166dd7df5}</Project>
-      <Name>VerticalTec.POS.Service.Ordering.Owin</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Services.Client">
-      <Version>19.225.1</Version>
-    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

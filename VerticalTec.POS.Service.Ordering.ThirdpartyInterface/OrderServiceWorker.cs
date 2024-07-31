@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VerticalTec.POS.Service.Ordering.ThirdpartyInterface
+namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 {
     public class OrderServiceWorker : IDisposable
     {

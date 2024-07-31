@@ -8,8 +8,6 @@ namespace VerticalTec.POS.Service.Ordering
 {
     public partial class VtecOrderingService : ServiceBase
     {
-        static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
-
         IDisposable _server;
 
         public VtecOrderingService()
@@ -25,8 +23,6 @@ namespace VerticalTec.POS.Service.Ordering
             var apiUser = ServiceConfig.GetApiUser();
             var apiPassword = ServiceConfig.GetApiPassword();
             string baseAddress = $"http://+:{apiPort}/";
-
-            _logger.Info("Start OrderingService Api");
 
             var hangfireConStr = Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)) + "\\hangfire.db";
             _server = WebApp.Start(baseAddress, appBuilder => new Startup(dbServer, dbName, hangfireConStr, apiUser: apiUser, apiPass: apiPassword).Configuration(appBuilder));

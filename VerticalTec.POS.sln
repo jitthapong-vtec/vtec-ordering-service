@@ -11,9 +11,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Ord
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderingService", "OrderingService\OrderingService.csproj", "{D148B25F-390F-4C01-965C-EA0E7A44B67C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.Ordering.ThirdpartyInterface", "VerticalTec.POS.Service.Ordering.ThirdpartyInterface\VerticalTec.POS.Service.Ordering.ThirdpartyInterface.csproj", "{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.ThirdpartyInterface.Worker", "VerticalTec.POS.Service.Ordering.ThirdpartyInterface\VerticalTec.POS.Service.ThirdpartyInterface.Worker.csproj", "{061B79C1-5EA8-42B9-8FFB-99F7F9866D83}"
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OrderingServiceSetup", "OrderingServiceSetup\OrderingServiceSetup.vdproj", "{59383793-3B1B-420C-A5AE-20A882C0B584}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerticalTec.POS.Service.ThirdpartyInterface", "VerticalTec.POS.Service.ThirdpartyInterface\VerticalTec.POS.Service.ThirdpartyInterface.csproj", "{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "ThirdpartyInterfaceSetup", "ThirdpartyInterfaceSetup\ThirdpartyInterfaceSetup.vdproj", "{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -123,6 +127,30 @@ Global
 		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|iPhoneSimulator.Build.0 = Release
 		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|x86.ActiveCfg = Release
 		{59383793-3B1B-420C-A5AE-20A882C0B584}.Release|x86.Build.0 = Release
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Debug|x86.Build.0 = Debug|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Release|iPhone.Build.0 = Release|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Release|x86.ActiveCfg = Release|Any CPU
+		{93CBED3B-7D02-4439-8D9E-E46AE3F0FC17}.Release|x86.Build.0 = Release|Any CPU
+		{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}.Debug|Any CPU.ActiveCfg = Debug
+		{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}.Debug|iPhone.ActiveCfg = Debug
+		{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}.Debug|iPhoneSimulator.ActiveCfg = Debug
+		{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}.Debug|x86.ActiveCfg = Debug
+		{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}.Release|Any CPU.ActiveCfg = Release
+		{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}.Release|iPhone.ActiveCfg = Release
+		{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}.Release|iPhoneSimulator.ActiveCfg = Release
+		{7EBAEE12-F320-4ADD-82D1-CD40258DC0D7}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
