@@ -171,7 +171,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Services
                 rc.vatRate = (double)orderTran.VATPercent;
                 rc.received = received;
                 rc.change = cashChange;
-                rc.totalText = ResCenterObjLib.ResCenterLib.AmountThaiBaht(orderTran.ReceiptNetSale.ToString());
+                rc.totalText = ResCenterObjLib.ResCenterLib.AmountThaiBaht(orderTran.ReceiptPayPrice.ToString());
 
                 if (isVoid)
                 {
