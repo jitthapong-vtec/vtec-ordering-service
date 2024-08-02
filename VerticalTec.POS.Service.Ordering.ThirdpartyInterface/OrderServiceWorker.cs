@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Data;
 using System.Linq;
@@ -143,7 +144,8 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
         private async Task<string> OnSubmitOrder(string jsonData)
         {
             _logger.Info("Received order {0}", jsonData);
-            var respJson = "";
+
+            var result = "";
             using (var httpClient = new HttpClient())
             {
                 try
@@ -155,8 +157,30 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     };
                     var resp = await httpClient.SendAsync(reqMsg);
                     resp.EnsureSuccessStatusCode();
-                    respJson = await resp.Content.ReadAsStringAsync();
+                    var respJson = await resp.Content.ReadAsStringAsync();
                     _logger.Info("v1/orders/thirdparty", respJson);
+
+                    var billHtml = "";
+                    try
+                    {
+                        var jObj = JObject.Parse(respJson);
+                        billHtml = jObj["Data"]["BillHtml"].ToString();
+                    }
+                    catch
+                    {
+                        throw new Exception("Cannot parse response");
+                    }
+
+                    var respObj = new
+                    {
+                        Code = "200.200",
+                        Data = new
+                        {
+                            billHtml = billHtml
+                        }
+                    };
+
+                    result = JsonConvert.SerializeObject(respObj);
                 }
                 catch (Exception ex)
                 {
@@ -166,10 +190,10 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                         Code = "500.000",
                         Message = ex.Message
                     };
-                    respJson = JsonConvert.SerializeObject(err);
+                    result = JsonConvert.SerializeObject(err);
                 }
             }
-            return respJson;
+            return result;
         }
 
         private async Task<string> OnInquiryOrder(string orderId)

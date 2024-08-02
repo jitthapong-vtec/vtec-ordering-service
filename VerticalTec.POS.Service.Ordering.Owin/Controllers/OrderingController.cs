@@ -109,7 +109,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("v1/orders/thirdparty")]
-        public IHttpActionResult ThirdPartyOrder(POSObject.OrderObj payload)
+        public IHttpActionResult ThirdPartyOrder(object payload)
         {
             lock (Owner)
             {
@@ -176,7 +176,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             }
                         }
 
-                        if(terminalId == 0)
+                        if (terminalId == 0)
                         {
                             result.StatusCode = HttpStatusCode.OK;
                             result.Message = "Online computer configuration is invalid";
@@ -199,6 +199,16 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                         if (success)
                         {
+                            var billHtml = "";
+                            try
+                            {
+                                billHtml = _orderingService.GetBillHtmlAsync(conn, transactionId, computerId, shopId).Result;
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error(ex, "BillDetail error");
+                            }
+
                             if (isPrint)
                             {
                                 var tableId = 0;
@@ -241,7 +251,10 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             result.Body = new
                             {
                                 Code = "200.000",
-                                Message = $"POS received your orders"
+                                Data = new
+                                {
+                                    BillHtml = billHtml
+                                }
                             };
                         }
                         else
