@@ -168,7 +168,7 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     }
                     catch
                     {
-                        throw new Exception("Cannot parse response");
+                        throw new Exception("Cannot parse response, Please check ordering service");
                     }
 
                     var respObj = new
