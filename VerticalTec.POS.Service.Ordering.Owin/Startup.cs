@@ -1,6 +1,11 @@
-﻿using Hangfire;
+﻿using Google.Protobuf.WellKnownTypes;
+using Hangfire;
 using Hangfire.LiteDB;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.SignalR;
+using Microsoft.Owin;
+using Microsoft.Owin.Extensions;
+using Microsoft.Owin.Security.Cookies;
 using Owin;
 using Swashbuckle.Application;
 using System;
@@ -8,7 +13,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Web;
 using System.Web.Http;
+using System.Web.SessionState;
 using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
@@ -90,10 +97,14 @@ namespace VerticalTec.POS.Service.Ordering.Owin
             config.Formatters.Remove(config.Formatters.XmlFormatter);
             config.Filters.Add(new GlobalExceptionHandler());
             config.MapHttpAttributeRoutes();
-
             appBuilder.MapSignalR("/signalkds", new HubConfiguration() { EnableDetailedErrors = true });
             appBuilder.UseHangfireAspNet(GetHangfireServers);
             appBuilder.UseHangfireDashboard("/jobs");
+            appBuilder.UseCookieAuthentication(new CookieAuthenticationOptions
+            {
+                AuthenticationType = DefaultAuthenticationTypes.ApplicationCookie,
+                CookieSecure = CookieSecureOption.Always
+            });
             appBuilder.UseWebApi(config);
 
             GlobalHost.Configuration.MaxIncomingWebSocketMessageSize = null;
