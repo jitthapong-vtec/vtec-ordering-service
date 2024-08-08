@@ -8,6 +8,13 @@ using VerticalTec.POS.Utils;
 using VerticalTec.POS.Service.Ordering.Owin.Models;
 using MySql.Data.MySqlClient;
 using System;
+using System.Security.Claims;
+using System.Web;
+using System.Web.Http.Routing;
+using System.Net.Http;
+using System.ServiceModel.Channels;
+using Microsoft.AspNet.Identity;
+using System.Security.Principal;
 
 namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 {
@@ -41,11 +48,28 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     new MySqlParameter("@terminalId", terminalId)
                 });
                 await cmd.ExecuteNonQueryAsync();
+
+                var ctx = Request.GetOwinContext();
+                ctx.Authentication.SignOut();
             }
             return result;
         }
 
-        //TODO: 1019 LoginWhenClockin
+        [HttpGet]
+        [Route("v1/staffs/verify")]
+        public IHttpActionResult VerifyLogin()
+        {
+            var claims = Request.GetOwinContext().Authentication?.User?.Claims;
+            if (claims == null)
+                return Unauthorized();
+
+            return Ok(new
+            {
+                StaffID = claims.Where(c => c.Type == "StaffID").Select(c => c.Value).FirstOrDefault(),
+                StaffName = claims.Where(c => c.Type == ClaimTypes.Name).Select(c => c.Value).FirstOrDefault()
+            });
+        }
+
         [HttpPost]
         [Route("v1/staffs/identify")]
         public IHttpActionResult IdentifyStaff(string staffCode = "", string password = "", int shopId = 0, int terminalId = 0)
@@ -82,6 +106,13 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                                             }).ToList()
                                          }).FirstOrDefault();
 
+                            var identity = new ClaimsIdentity(DefaultAuthenticationTypes.ApplicationCookie);
+                            identity.AddClaim(new Claim("StaffID", staffId.ToString()));
+                            identity.AddClaim(new Claim(ClaimTypes.Role, staff.StaffRoleID.ToString()));
+                            identity.AddClaim(new Claim(ClaimTypes.Name, staff.StaffFirstName));
+
+                            var ctx = Request.GetOwinContext();
+                            ctx.Authentication.SignIn(identity);
 
                             var dtProperty = _posRepo.GetProgramPropertyAsync(conn, 1097).Result;
                             var isSingleLogin = dtProperty.AsEnumerable().Select(r => r.GetValue<int>("PropertyValue") == 1).FirstOrDefault();
