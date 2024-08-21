@@ -253,6 +253,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 Code = "200.000",
                                 Data = new
                                 {
+                                    TranKey = $"{transactionId}:{computerId}",
                                     BillHtml = billHtml
                                 }
                             };

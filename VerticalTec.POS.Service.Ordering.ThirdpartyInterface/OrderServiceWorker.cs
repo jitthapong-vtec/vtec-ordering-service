@@ -158,24 +158,21 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     var resp = await httpClient.SendAsync(reqMsg);
                     resp.EnsureSuccessStatusCode();
                     var respJson = await resp.Content.ReadAsStringAsync();
-                    _logger.Info("v1/orders/thirdparty", respJson);
+                    _logger.Info("v1/orders/thirdparty {0}", respJson);
 
-                    var billHtml = "";
-                    try
-                    {
-                        var jObj = JObject.Parse(respJson);
-                        billHtml = jObj["Data"]["BillHtml"].ToString();
-                    }
-                    catch
-                    {
-                        throw new Exception("Cannot parse response, Please check ordering service");
-                    }
+                    var jObj = JObject.Parse(respJson);
+                    if (jObj["Code"]?.ToString().StartsWith("200") == false)
+                        throw new Exception(jObj["Message"]?.ToString() ?? "");
 
+                    var billHtml = jObj["Data"]["BillHtml"].ToString();
+                    var tranKey = jObj["Data"]["TranKey"].ToString();
+                    
                     var respObj = new
                     {
                         Code = "200.200",
                         Data = new
                         {
+                            tranKey = tranKey,
                             billHtml = billHtml
                         }
                     };
