@@ -4,10 +4,14 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
@@ -167,6 +171,15 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     var billHtml = jObj["Data"]["BillHtml"].ToString();
                     var tranKey = jObj["Data"]["TranKey"].ToString();
                     
+                    try
+                    {
+                        var tid = Convert.ToInt32(tranKey.Split(':')[0]);
+                        var cid = Convert.ToInt32(tranKey.Split(':')[1]);
+
+                        SendMessageSyncClient(tid, cid);
+                    }
+                    catch { }
+
                     var respObj = new
                     {
                         Code = "200.200",
@@ -191,6 +204,42 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                 }
             }
             return result;
+        }
+
+        public void SendMessageSyncClient(int iTransID, int iCompID)
+        {
+            try
+            {
+                var iSyncClientPort = 7001;
+                IPAddress ServerIP = ServerIP = IPAddress.Parse("127.0.0.1");
+
+                var netClient = new TcpClient();
+                var result = netClient.BeginConnect(ServerIP.ToString(), iSyncClientPort, null, null);
+                result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2));
+                if (netClient.Connected)
+                {
+                    NetworkStream clientSockStream = netClient.GetStream();
+                    var clientStreamWriter = new StreamWriter(clientSockStream);
+
+                    if (clientSockStream.CanWrite)
+                    {
+                        var InvC = System.Globalization.CultureInfo.InvariantCulture;
+                        string szSaleDate = DateTime.Today.ToString("yyyy-MM-dd", InvC);
+                        var szSndMsg = "100|" + iCompID + "|ThirdpartyInterface|" + iTransID + "|" + iCompID + "|" + szSaleDate + "|" + "\0";
+
+                        clientStreamWriter.WriteLine(szSndMsg);
+                        clientStreamWriter.Flush();
+                    }
+
+                    clientStreamWriter.Close();
+                    clientSockStream.Close();
+                    netClient.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Call sync client");
+            }
         }
 
         private async Task<string> OnInquiryOrder(string orderId)
