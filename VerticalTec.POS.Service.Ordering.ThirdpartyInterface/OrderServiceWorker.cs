@@ -170,12 +170,11 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 
                     var billHtml = jObj["Data"]["BillHtml"].ToString();
                     var tranKey = jObj["Data"]["TranKey"].ToString();
-                    
+
                     try
                     {
                         var tid = Convert.ToInt32(tranKey.Split(':')[0]);
                         var cid = Convert.ToInt32(tranKey.Split(':')[1]);
-
                         SendMessageSyncClient(tid, cid);
                     }
                     catch { }
@@ -208,38 +207,41 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 
         public void SendMessageSyncClient(int iTransID, int iCompID)
         {
-            try
+            Task.Run(() =>
             {
-                var iSyncClientPort = 7001;
-                IPAddress ServerIP = ServerIP = IPAddress.Parse("127.0.0.1");
-
-                var netClient = new TcpClient();
-                var result = netClient.BeginConnect(ServerIP.ToString(), iSyncClientPort, null, null);
-                result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2));
-                if (netClient.Connected)
+                try
                 {
-                    NetworkStream clientSockStream = netClient.GetStream();
-                    var clientStreamWriter = new StreamWriter(clientSockStream);
+                    var iSyncClientPort = 7001;
+                    IPAddress ServerIP = ServerIP = IPAddress.Parse("127.0.0.1");
 
-                    if (clientSockStream.CanWrite)
+                    var netClient = new TcpClient();
+                    var result = netClient.BeginConnect(ServerIP.ToString(), iSyncClientPort, null, null);
+                    result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2));
+                    if (netClient.Connected)
                     {
-                        var InvC = System.Globalization.CultureInfo.InvariantCulture;
-                        string szSaleDate = DateTime.Today.ToString("yyyy-MM-dd", InvC);
-                        var szSndMsg = "100|" + iCompID + "|ThirdpartyInterface|" + iTransID + "|" + iCompID + "|" + szSaleDate + "|" + "\0";
+                        NetworkStream clientSockStream = netClient.GetStream();
+                        var clientStreamWriter = new StreamWriter(clientSockStream);
 
-                        clientStreamWriter.WriteLine(szSndMsg);
-                        clientStreamWriter.Flush();
+                        if (clientSockStream.CanWrite)
+                        {
+                            var InvC = System.Globalization.CultureInfo.InvariantCulture;
+                            string szSaleDate = DateTime.Today.ToString("yyyy-MM-dd", InvC);
+                            var szSndMsg = "100|" + iCompID + "|ThirdpartyInterface|" + iTransID + "|" + iCompID + "|" + szSaleDate + "|" + "\0";
+
+                            clientStreamWriter.WriteLine(szSndMsg);
+                            clientStreamWriter.Flush();
+                        }
+
+                        clientStreamWriter.Close();
+                        clientSockStream.Close();
+                        netClient.Close();
                     }
-
-                    clientStreamWriter.Close();
-                    clientSockStream.Close();
-                    netClient.Close();
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Call sync client");
-            }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Call sync client");
+                }
+            });
         }
 
         private async Task<string> OnInquiryOrder(string orderId)
