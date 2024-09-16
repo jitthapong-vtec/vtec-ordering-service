@@ -200,6 +200,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         if (success)
                         {
                             var billHtml = "";
+                            var receiptNo = "";
+
                             try
                             {
                                 billHtml = _orderingService.GetBillHtmlAsync(conn, transactionId, computerId, shopId).Result;
@@ -207,6 +209,19 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                             catch (Exception ex)
                             {
                                 _logger.Error(ex, "BillDetail error");
+                            }
+
+                            try
+                            {
+                                cmd.CommandText = "select ReceiptNumber from ordertransactionfront where TransactionID=@tid and ComputerID=@cid";
+                                cmd.Parameters.Clear();
+                                cmd.Parameters.Add(_database.CreateParameter("@tid", transactionId));
+                                cmd.Parameters.Add(_database.CreateParameter("@cid", computerId));
+                                receiptNo = (string)cmd.ExecuteScalar();
+                            }
+                            catch(Exception ex)
+                            {
+                                _logger.Error(ex, "Get receiptno");
                             }
 
                             if (isPrint)
@@ -254,7 +269,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                                 Data = new
                                 {
                                     TranKey = $"{transactionId}:{computerId}",
-                                    BillHtml = billHtml
+                                    BillHtml = billHtml,
+                                    ReceiptNumber = receiptNo
                                 }
                             };
                         }

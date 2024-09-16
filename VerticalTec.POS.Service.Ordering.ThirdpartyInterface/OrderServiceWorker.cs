@@ -170,6 +170,7 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 
                     var billHtml = jObj["Data"]["BillHtml"].ToString();
                     var tranKey = jObj["Data"]["TranKey"].ToString();
+                    var receiptNumber = jObj["Data"]["ReceiptNumber"].ToString();
 
                     try
                     {
@@ -185,7 +186,8 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                         Data = new
                         {
                             tranKey = tranKey,
-                            billHtml = billHtml
+                            billHtml = billHtml,
+                            receiptNumber = receiptNumber
                         }
                     };
 
