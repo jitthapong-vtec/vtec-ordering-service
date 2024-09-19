@@ -23,6 +23,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
     public class InventoryController : ApiController
     {
+        static readonly NLog.Logger _log = NLog.LogManager.GetLogger("logglobal");
+
         private IDatabase _database;
         private VtecPOSRepo _vtecRepo;
         private InventModule _inventModule;
@@ -82,6 +84,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             catch (Exception ex)
             {
+                _log.Error(ex, "Inventory Login");
+
                 return Ok(new
                 {
                     Status = HttpStatusCode.InternalServerError,
@@ -115,6 +119,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             catch (Exception ex)
             {
+                _log.Error(ex, "Inventory GetShop");
+
                 return Ok(new
                 {
                     Status = HttpStatusCode.InternalServerError,
@@ -209,6 +215,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             catch (Exception ex)
             {
+                _log.Error(ex, "Inventory CreateDocument");
+
                 return Ok(new
                 {
                     Status = HttpStatusCode.InternalServerError,
@@ -281,6 +289,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             catch (Exception ex)
             {
+                _log.Error(ex, "Inventory GetProductInfo");
+
                 return Ok(new
                 {
                     Status = HttpStatusCode.InternalServerError,
@@ -312,7 +322,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     if (_inventModule.DocumentObj(ref respText, ref documentObj, docParam, conn) == false)
                         throw new Exception(respText);
 
-                    var cmdText = @"select * from materialdocumenttypeunitsetting;
+                    var cmdText = @"select a.*, b.UnitLargeName from materialdocumenttypeunitsetting a left join unitlarge b on a.UnitLargeID=b.UnitLargeID;
                         select a.MaterialID,a.MaterialCode,a.MaterialBarcode,a.MaterialName,c.UnitSmallID,c.UnitLargeID,c.MaterialUnitRatioCode,d.UnitLargeName 
                         from materials a 
                         inner join unitsmall b on a.UnitSmallID=b.UnitSmallID 
@@ -341,6 +351,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             }
             catch (Exception ex)
             {
+                _log.Error(ex, "Inventory GetMasterData");
 
                 return Ok(new
                 {
