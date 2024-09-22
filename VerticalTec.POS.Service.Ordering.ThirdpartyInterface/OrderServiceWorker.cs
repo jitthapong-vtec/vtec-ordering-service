@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -20,9 +21,6 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
     {
         private static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private const int MaxReconnect = 100;
-        private int _reconnectCounter;
-
         private HubConnection _connection;
 
         private string _dbServer;
@@ -31,11 +29,18 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
 
         private string _shopKey;
 
+        private HttpClient _orderingServiceClient;
+
         public OrderServiceWorker(string dbServer, string dbName, string orderingServiceUrl = "http://127.0.0.1:9500")
         {
             _dbServer = dbServer;
             _dbName = dbName;
             _orderingServiceUrl = orderingServiceUrl;
+
+            _orderingServiceClient = new HttpClient
+            {
+                BaseAddress = new UriBuilder(_orderingServiceUrl).Uri
+            };
         }
 
         public async Task InitConnectionAsync()
@@ -100,6 +105,11 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     _connection.On("ThirdpartySubmitOrder", async (string order) => await OnSubmitOrder(order));
                     _connection.On("ThirdpartyInquiryOrder", async (string orderId) => await OnInquiryOrder(orderId));
 
+                    _connection.On("IOrderCheckDevice", async (string deviceId) => await CheckDeviceAsync(deviceId));
+                    _connection.On("IOrderListTable", async (string shopId, string terminalId) => await ListTableAsync(shopId, terminalId));
+                    _connection.On("IOrderListProduct", async (string shopId, string terminalId) => await ListProductAsync(shopId, terminalId));
+                    _connection.On("IOrderOpenTable", async (string data) => await OpenTableAsync(data));
+
                     await StartConnectionAsync();
                 }
             }
@@ -136,73 +146,158 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     _logger.Info("Connection error {0}", ex.Message);
                     await Task.Delay(5000);
                 }
-
-                if (++_reconnectCounter == MaxReconnect)
-                {
-                    _logger.Info($"Cannot connect to server after reconnect {_reconnectCounter} times.");
-                    return;
-                }
             }
         }
+
+        private async Task<string> CheckDeviceAsync(string deviceId)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                respMsg = await _orderingServiceClient.GetAsync($"v1/devices/mobile?deviceId={deviceId}");
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "CheckDevice");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+        private async Task<string> ListTableAsync(string shopId, string terminalId)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                respMsg = await _orderingServiceClient.GetAsync($"v1/tables?shopId={shopId}&terminalId={terminalId}");
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "ListTable");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+        private async Task<string> OpenTableAsync(string data)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/tables/open")
+                {
+                    Content = new StringContent(data, Encoding.UTF8, "application/json")
+                };
+                respMsg = await _orderingServiceClient.SendAsync(reqMsg);
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "OpenTable");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+        private async Task<string> ListProductAsync(string shopId, string terminalId)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                respMsg = await _orderingServiceClient.GetAsync($"v1/products?shopId={shopId}&terminalId={terminalId}");
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "ListProduct");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+        private static string CreateOrderingServiceErrorObj(string result, HttpResponseMessage respMsg, Exception ex)
+        {
+            var errMsg = "";
+            try
+            {
+                errMsg = JObject.Parse(result)["message"].ToString();
+            }
+            catch { }
+
+            result = JsonConvert.SerializeObject(new
+            {
+                isError = true,
+                statusCode = respMsg.StatusCode,
+                message = string.IsNullOrEmpty(errMsg) ? ex.Message : errMsg
+            });
+            return result;
+        }
+
 
         private async Task<string> OnSubmitOrder(string jsonData)
         {
             _logger.Info("Received order {0}", jsonData);
 
             var result = "";
-            using (var httpClient = new HttpClient())
+            try
             {
+                var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/orders/thirdparty")
+                {
+                    Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
+                };
+                var resp = await _orderingServiceClient.SendAsync(reqMsg);
+                resp.EnsureSuccessStatusCode();
+                var respJson = await resp.Content.ReadAsStringAsync();
+                _logger.Info("v1/orders/thirdparty {0}", respJson);
+
+                var jObj = JObject.Parse(respJson);
+                if (jObj["Code"]?.ToString().StartsWith("200") == false)
+                    throw new Exception(jObj["Message"]?.ToString() ?? "");
+
+                var billHtml = jObj["Data"]["BillHtml"].ToString();
+                var tranKey = jObj["Data"]["TranKey"].ToString();
+                var receiptNumber = jObj["Data"]["ReceiptNumber"].ToString();
+
                 try
                 {
-                    httpClient.BaseAddress = new Uri(_orderingServiceUrl);
-                    var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/orders/thirdparty")
-                    {
-                        Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
-                    };
-                    var resp = await httpClient.SendAsync(reqMsg);
-                    resp.EnsureSuccessStatusCode();
-                    var respJson = await resp.Content.ReadAsStringAsync();
-                    _logger.Info("v1/orders/thirdparty {0}", respJson);
-
-                    var jObj = JObject.Parse(respJson);
-                    if (jObj["Code"]?.ToString().StartsWith("200") == false)
-                        throw new Exception(jObj["Message"]?.ToString() ?? "");
-
-                    var billHtml = jObj["Data"]["BillHtml"].ToString();
-                    var tranKey = jObj["Data"]["TranKey"].ToString();
-                    var receiptNumber = jObj["Data"]["ReceiptNumber"].ToString();
-
-                    try
-                    {
-                        var tid = Convert.ToInt32(tranKey.Split(':')[0]);
-                        var cid = Convert.ToInt32(tranKey.Split(':')[1]);
-                        SendMessageSyncClient(tid, cid);
-                    }
-                    catch { }
-
-                    var respObj = new
-                    {
-                        Code = "200.200",
-                        Data = new
-                        {
-                            tranKey = tranKey,
-                            billHtml = billHtml,
-                            receiptNumber = receiptNumber
-                        }
-                    };
-
-                    result = JsonConvert.SerializeObject(respObj);
+                    var tid = Convert.ToInt32(tranKey.Split(':')[0]);
+                    var cid = Convert.ToInt32(tranKey.Split(':')[1]);
+                    SendMessageSyncClient(tid, cid);
                 }
-                catch (Exception ex)
+                catch { }
+
+                var respObj = new
                 {
-                    _logger.Error(ex, "v1/orders/thirdparty");
-                    var err = new
+                    Code = "200.200",
+                    Data = new
                     {
-                        Code = "500.000",
-                        Message = ex.Message
-                    };
-                    result = JsonConvert.SerializeObject(err);
-                }
+                        tranKey = tranKey,
+                        billHtml = billHtml,
+                        receiptNumber = receiptNumber
+                    }
+                };
+
+                result = JsonConvert.SerializeObject(respObj);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "v1/orders/thirdparty");
+                var err = new
+                {
+                    Code = "500.000",
+                    Message = ex.Message
+                };
+                result = JsonConvert.SerializeObject(err);
             }
             return result;
         }
@@ -249,28 +344,24 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
         private async Task<string> OnInquiryOrder(string orderId)
         {
             var respJson = "";
-            using (var httpClient = new HttpClient())
+            try
             {
-                try
-                {
-                    httpClient.BaseAddress = new Uri(_orderingServiceUrl);
-                    var reqMsg = new HttpRequestMessage(HttpMethod.Get, $"v1/orders/thirdparty/inquiry?orderId={orderId}");
-                    var resp = await httpClient.SendAsync(reqMsg);
-                    resp.EnsureSuccessStatusCode();
-                    respJson = await resp.Content.ReadAsStringAsync();
-                    _logger.Info($"v1/orders/thirdparty/inquiry?orderId={orderId}", respJson);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, $"v1/orders/thirdparty/inquiry?orderId={orderId}");
+                var reqMsg = new HttpRequestMessage(HttpMethod.Get, $"v1/orders/thirdparty/inquiry?orderId={orderId}");
+                var resp = await _orderingServiceClient.SendAsync(reqMsg);
+                resp.EnsureSuccessStatusCode();
+                respJson = await resp.Content.ReadAsStringAsync();
+                _logger.Info($"v1/orders/thirdparty/inquiry?orderId={orderId}", respJson);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, $"v1/orders/thirdparty/inquiry?orderId={orderId}");
 
-                    var err = new
-                    {
-                        Code = "500.000",
-                        Message = ex.Message
-                    };
-                    respJson = JsonConvert.SerializeObject(err);
-                }
+                var err = new
+                {
+                    Code = "500.000",
+                    Message = ex.Message
+                };
+                respJson = JsonConvert.SerializeObject(err);
             }
             return respJson;
         }
