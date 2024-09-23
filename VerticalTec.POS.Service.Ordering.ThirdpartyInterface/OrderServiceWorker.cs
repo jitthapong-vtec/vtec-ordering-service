@@ -109,6 +109,11 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
                     _connection.On("IOrderListTable", async (string shopId, string terminalId) => await ListTableAsync(shopId, terminalId));
                     _connection.On("IOrderListProduct", async (string shopId, string terminalId) => await ListProductAsync(shopId, terminalId));
                     _connection.On("IOrderOpenTable", async (string data) => await OpenTableAsync(data));
+                    _connection.On("IOrderAddOrder", async (string data) => await AddOrderAsync(data));
+                    _connection.On("IOrderUpdateOrder", async (string data) => await UpdateOrderAsync(data));
+                    _connection.On("IOrderDeleteOrder", async (string data) => await DeleteOrderAsync(data));
+                    _connection.On("IOrderSubmitOrder", async (string data) => await SubmitOrderAsync(data));
+                    _connection.On("IOrderListOrder", async (string shopId, string transactionId, string computerId) => await ListOrderAsync(shopId, transactionId, computerId));
 
                     await StartConnectionAsync();
                 }
@@ -225,6 +230,113 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
             return result;
         }
 
+        private async Task<string> AddOrderAsync(string data)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/orders")
+                {
+                    Content = new StringContent(data, Encoding.UTF8, "application/json")
+                };
+                respMsg = await _orderingServiceClient.SendAsync(reqMsg);
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "AddOrder");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+        private async Task<string> UpdateOrderAsync(string data)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/orders/update")
+                {
+                    Content = new StringContent(data, Encoding.UTF8, "application/json")
+                };
+                respMsg = await _orderingServiceClient.SendAsync(reqMsg);
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "UpdateOrder");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+        private async Task<string> DeleteOrderAsync(string data)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/orders/delete")
+                {
+                    Content = new StringContent(data, Encoding.UTF8, "application/json")
+                };
+                respMsg = await _orderingServiceClient.SendAsync(reqMsg);
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "DeleteOrder");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+        private async Task<string> SubmitOrderAsync(string data)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                var reqMsg = new HttpRequestMessage(HttpMethod.Post, "v1/orders/submit")
+                {
+                    Content = new StringContent(data, Encoding.UTF8, "application/json")
+                };
+                respMsg = await _orderingServiceClient.SendAsync(reqMsg);
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "DeleteOrder");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+        private async Task<string> ListOrderAsync(string shopId, string transactionId, string computerId)
+        {
+            var result = "";
+            HttpResponseMessage respMsg = null;
+            try
+            {
+                respMsg = await _orderingServiceClient.GetAsync($"v1/orders?transactionId={transactionId}&computerId={computerId}&shopId={shopId}");
+                result = await respMsg.Content.ReadAsStringAsync();
+                respMsg.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "ListOrder");
+                result = CreateOrderingServiceErrorObj(result, respMsg, ex);
+            }
+            return result;
+        }
+
+
         private static string CreateOrderingServiceErrorObj(string result, HttpResponseMessage respMsg, Exception ex)
         {
             var errMsg = "";
@@ -242,7 +354,6 @@ namespace VerticalTec.POS.Service.ThirdpartyInterface.Worker
             });
             return result;
         }
-
 
         private async Task<string> OnSubmitOrder(string jsonData)
         {
