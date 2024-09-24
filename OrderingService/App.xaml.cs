@@ -10,7 +10,6 @@ using System.Reflection;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows;
-using VerticalTec.POS.Service.Ordering.ThirdpartyInterface;
 using Form = System.Windows.Forms;
 
 namespace OrderingService
@@ -21,7 +20,7 @@ namespace OrderingService
     public partial class App : Application
     {
         private IDisposable _host;
-        private OrderServiceWorker _orderServiceWorker;
+        private VerticalTec.POS.Service.ThirdpartyInterface.Worker.OrderServiceWorker _orderServiceWorker;
 
         private Form.NotifyIcon _notifyIcon;
         private Form.ToolStripMenuItem _menuSetting;
@@ -134,7 +133,7 @@ namespace OrderingService
                 try
                 {
                     _orderServiceWorker?.Dispose();
-                    _orderServiceWorker = new OrderServiceWorker(dbServer, dbName);
+                    _orderServiceWorker = new VerticalTec.POS.Service.ThirdpartyInterface.Worker.OrderServiceWorker(dbServer, dbName);
                     Task.Run(() => _orderServiceWorker.InitConnectionAsync());
                 }
                 catch { }
