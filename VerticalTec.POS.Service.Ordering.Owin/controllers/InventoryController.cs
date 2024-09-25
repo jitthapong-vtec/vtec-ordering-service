@@ -301,6 +301,46 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         }
 
         [HttpGet]
+        [Route("promotion")]
+        public async Task<IHttpActionResult> GetPromotionInfoAsync(int productId)
+        {
+            try
+            {
+                using (var conn = (MySqlConnection)await _database.ConnectAsync())
+                {
+                    var cmd = new MySqlCommand();
+                    cmd.Connection = conn;
+                    cmd.CommandText = @"select a.*, b.TypeID, b.DiscountAmount as ItemDiscAmount, b.DiscountPercent as ItemDiscPercent 
+                        from promotion a join promotionproducts b 
+                        on a.PromotionID=b.PromotionID where a.Deleted=0 and a.Activated=1 and b.ProductID=@productId";
+                    cmd.Parameters.Add(new MySqlParameter("@productId", productId));
+                    var dt = new DataTable();
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        dt.Load(reader);
+                    }
+
+                    return Ok(new
+                    {
+                        Status = HttpStatusCode.OK,
+                        StatusCode = "200.200",
+                        Data = dt
+                    });
+                }
+            }catch(Exception ex)
+            {
+                _log.Error(ex, "Inventory GetPromotion");
+
+                return Ok(new
+                {
+                    Status = HttpStatusCode.InternalServerError,
+                    StatusCode = "500.500",
+                    Message = ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
         [Route("masterdata")]
         public async Task<IHttpActionResult> GetMasterDataAsync(int documentType, int staffId, int langId = 1)
         {
