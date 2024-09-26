@@ -726,7 +726,7 @@ namespace VerticalTec.POS
                 " on b.ProductID = c.ProductID" +
                 " left join" +
                 " (select ProductID, ProductPrice from productprice where FromDate <= @saleDate and ToDate >= @saleDate and SaleMode=@dfSaleMode) d" +
-                " on b.ProductID = d.ProductID" + 
+                " on b.ProductID = d.ProductID" +
                 " left join productcountdownstock e" +
                 " on b.ProductID=e.ProductID" +
                 " and b.ShopID=e.ShopID" +
@@ -907,10 +907,10 @@ namespace VerticalTec.POS
                             throw new VtecPOSException("The front program did not open sale day!");
 
                         // incase bypass check open day must use last date
-                        if (lastSaleDateEarlyNow)
-                            saleDate = currentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                        else
-                            saleDate = lastSaleDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        //if (lastSaleDateEarlyNow)
+                        //    saleDate = currentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        //else
+                        saleDate = lastSaleDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     }
                 }
             }
