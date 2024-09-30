@@ -914,9 +914,9 @@ namespace VerticalTec.POS
                             throw new VtecPOSException("The front program did not open sale day!");
 
                         // incase bypass check open day must use last date
-                        if (lastSaleDateEarlyNow)
-                            saleDate = currentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                        else
+                        //if (lastSaleDateEarlyNow)
+                        //    saleDate = currentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        //else
                             saleDate = lastSaleDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     }
                 }
