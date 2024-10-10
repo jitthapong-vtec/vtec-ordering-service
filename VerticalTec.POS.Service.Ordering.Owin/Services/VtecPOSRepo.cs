@@ -1036,6 +1036,14 @@ namespace VerticalTec.POS
             return dtResult;
         }
 
+        public async Task<string> GetPlatformApiAsync(IDbConnection conn)
+        {
+            var baseUrl = await GetPropertyValueAsync(conn, 1130, "ApiBaseServerUrl");
+            if (!baseUrl.EndsWith("/"))
+                baseUrl += "/";
+            return baseUrl;
+        }
+
         public async Task<string> GetLoyaltyApiAsync(IDbConnection conn)
         {
             var baseUrl = await GetPropertyValueAsync(conn, 1013, "LoyaltyWebServiceUrl");

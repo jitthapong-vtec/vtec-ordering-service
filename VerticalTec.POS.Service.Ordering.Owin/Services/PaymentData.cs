@@ -9,6 +9,7 @@ namespace VerticalTec.POS
         public int PayTypeID { get; set; }
         public int PayDetailID { get; set; }
         public int EDCType { get; set; }
+        public string EDCPort { get; set; }
         public int TransactionID { get; set; }
         public int ComputerID { get; set; }
         public int TerminalID { get; set; }
@@ -45,6 +46,13 @@ namespace VerticalTec.POS
         public string ReferenceNo { get; set; }
         public string EncryptedCardInfo { get; set; }
         public decimal PayAmount { get; set; }
+        public string PlatformApiUrl { get; set; }
+        public string ShopKey { get; set; }
+        public string ShopCode { get; set; }
+        public string ShopName { get; set; }
+        public string Token { get; set; }
+        public string EDCIPAddress { get; set; }
+        public int EDCTcpPort { get; set; }
         public decimal CashChange
         {
             get
