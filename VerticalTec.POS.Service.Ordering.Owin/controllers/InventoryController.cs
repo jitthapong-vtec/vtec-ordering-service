@@ -42,7 +42,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
         [Route("product_label")]
         public async Task<IHttpActionResult> DeleteAllProductLabel()
         {
-            using(var conn = (MySqlConnection) await _database.ConnectAsync())
+            using (var conn = (MySqlConnection)await _database.ConnectAsync())
             {
                 var cmd = new MySqlCommand("truncate table product_label", conn);
                 await cmd.ExecuteNonQueryAsync();
@@ -68,7 +68,7 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
         [HttpPost]
         [Route("product_label")]
-        public async Task<IHttpActionResult> AddProductLabel(DataTable data)
+        public async Task<IHttpActionResult> AddProductLabel(object[] data)
         {
             using (var conn = (MySqlConnection)await _database.ConnectAsync())
             {
@@ -76,21 +76,26 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                 try
                 {
                     var strBuilder = new StringBuilder();
-                    strBuilder.Append("insert into product_label values ");
-
-                    for (var i = 0; i < data.Rows.Count; i++)
+                    if (data.Length > 0)
                     {
-                        DataRow row = data.Rows[i];
-                        strBuilder.Append($"('{row["ProductCode"]}')");
-                        if (i < data.Rows.Count - 1)
-                            strBuilder.Append(",");
+                        strBuilder.Append("insert into product_label values ");
+
+                        for (var i = 0; i < data.Length; i++)
+                        {
+                            var code = data[i];
+                            strBuilder.Append($"('{code}')");
+                            if (i < data.Length - 1)
+                                strBuilder.Append(",");
+                        }
                     }
-                    
                     trn = conn.BeginTransaction();
-                    var cmd = new MySqlCommand("delete from product_label", conn);
+                    var cmd = new MySqlCommand("truncate table product_label", conn);
                     await cmd.ExecuteNonQueryAsync();
-                    cmd.CommandText = strBuilder.ToString();
-                    await cmd.ExecuteNonQueryAsync();
+                    if (strBuilder.Length > 0)
+                    {
+                        cmd.CommandText = strBuilder.ToString();
+                        await cmd.ExecuteNonQueryAsync();
+                    }
                     trn.Commit();
                     return Ok();
                 }
