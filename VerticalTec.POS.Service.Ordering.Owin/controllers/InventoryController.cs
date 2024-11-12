@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -35,6 +36,70 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _vtecRepo = vtecRepo;
 
             _inventModule = new InventModule();
+        }
+
+        [HttpDelete]
+        [Route("product_label")]
+        public async Task<IHttpActionResult> DeleteAllProductLabel()
+        {
+            using(var conn = (MySqlConnection) await _database.ConnectAsync())
+            {
+                var cmd = new MySqlCommand("truncate table product_label", conn);
+                await cmd.ExecuteNonQueryAsync();
+                return Ok();
+            }
+        }
+
+        [HttpGet]
+        [Route("product_label")]
+        public async Task<IHttpActionResult> GetProductLabel()
+        {
+            using (var conn = (MySqlConnection)await _database.ConnectAsync())
+            {
+                var cmd = new MySqlCommand("select * from product_label", conn);
+                var dt = new DataTable();
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    dt.Load(reader);
+                }
+                return Ok(dt);
+            }
+        }
+
+        [HttpPost]
+        [Route("product_label")]
+        public async Task<IHttpActionResult> AddProductLabel(DataTable data)
+        {
+            using (var conn = (MySqlConnection)await _database.ConnectAsync())
+            {
+                var trn = (MySqlTransaction)null;
+                try
+                {
+                    var strBuilder = new StringBuilder();
+                    strBuilder.Append("insert into product_label values ");
+
+                    for (var i = 0; i < data.Rows.Count; i++)
+                    {
+                        DataRow row = data.Rows[i];
+                        strBuilder.Append($"('{row["ProductCode"]}')");
+                        if (i < data.Rows.Count - 1)
+                            strBuilder.Append(",");
+                    }
+                    
+                    trn = conn.BeginTransaction();
+                    var cmd = new MySqlCommand("delete from product_label", conn);
+                    await cmd.ExecuteNonQueryAsync();
+                    cmd.CommandText = strBuilder.ToString();
+                    await cmd.ExecuteNonQueryAsync();
+                    trn.Commit();
+                    return Ok();
+                }
+                catch (Exception ex)
+                {
+                    trn?.Rollback();
+                    return Content(HttpStatusCode.InternalServerError, ex.Message);
+                }
+            }
         }
 
         [HttpPost]
@@ -327,7 +392,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                         Data = dt
                     });
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 _log.Error(ex, "Inventory GetPromotion");
 
