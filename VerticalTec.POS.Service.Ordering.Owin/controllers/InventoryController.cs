@@ -238,6 +238,8 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
 
                                     docDetail.TotalQty = d.TotalQty;
                                     docDetail.PricePerUnit = d.PricePerUnit;
+                                    docDetail.DiscountType = d.DiscountType;
+                                    docDetail.DiscountValue = d.DiscountValue;
 
                                     if (string.IsNullOrEmpty(docDetail.CurrentQty))
                                         docDetail.CurrentQty = "0";
