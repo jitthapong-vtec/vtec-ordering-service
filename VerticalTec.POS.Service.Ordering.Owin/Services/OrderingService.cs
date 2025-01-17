@@ -138,8 +138,8 @@ namespace VerticalTec.POS
             string responseText = "";
             var decimalDigit = await _posRepo.GetDefaultDecimalDigitAsync(conn);
 
-            _posModule.OrderDetail_RefreshPromo(ref responseText, "front", transactionId, computerId, decimalDigit, myConn);
-            _posModule.OrderDetail_CalBill(ref responseText, transactionId, computerId, shopId, decimalDigit, "front", myConn);
+            //_posModule.OrderDetail_RefreshPromo(ref responseText, "front", transactionId, computerId, decimalDigit, myConn);
+            //_posModule.OrderDetail_CalBill(ref responseText, transactionId, computerId, shopId, decimalDigit, "front", myConn);
 
             DataSet resultData = new DataSet();
             var isSuccess = _posModule.BillDetail(ref responseText, ref receiptHtml, ref copyReceiptString, ref noCopy, ref resultData,
