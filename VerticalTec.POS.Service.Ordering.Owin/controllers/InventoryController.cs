@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Results;
 using VerticalTec.POS.Database;
 using VerticalTec.POS.Service.Ordering.Owin.Services;
 using vtecPOS.GlobalFunctions;
@@ -36,6 +37,49 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
             _vtecRepo = vtecRepo;
 
             _inventModule = new InventModule();
+        }
+
+        [HttpGet]
+        [Route("barcode_product_name")]
+        public async Task<IHttpActionResult> GetBarcodeProductName(string code)
+        {
+            if (string.IsNullOrEmpty(code))
+                return BadRequest();
+
+            var cmdText = "select b.ProductID, b.ProductName, b.ProductName1, b.ProductName2, b.ProductName3 \r\nfrom materials a\r\njoin products b\r\non a.MaterialID=b.ProductID\r\nwhere a.Deleted=0 and b.Deleted=0";
+            if (code.Length == 13 && code.StartsWith("88"))
+                cmdText += " and a.MaterialBarCode=@code";
+            else
+                cmdText += " and a.MaterialCode=@code";
+
+            using (var conn = (MySqlConnection)await _database.ConnectAsync())
+            {
+                var cmd = new MySqlCommand(cmdText, conn);
+                cmd.Parameters.Add(new MySqlParameter("@code", code.Trim()));
+
+                var dt = new DataTable();
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    dt.Load(reader);
+                }
+
+                if (dt.Rows.Count > 0)
+                {
+                    var data = dt.AsEnumerable().Select(r => new
+                    {
+                        ProductID = r["ProductID"],
+                        ProductName = r["ProductName"],
+                        ProductName1 = r["ProductName1"],
+                        ProductName2 = r["ProductName2"],
+                        ProductName3 = r["ProductName3"],
+                    }).First();
+                    return Ok(data);
+                }
+                else
+                {
+                    return new NotFoundResult(Request);
+                }
+            }
         }
 
         [HttpDelete]
@@ -63,6 +107,50 @@ namespace VerticalTec.POS.Service.Ordering.Owin.Controllers
                     dt.Load(reader);
                 }
                 return Ok(dt);
+            }
+        }
+
+        [HttpPost]
+        [Route("v2/product_label")]
+        public async Task<IHttpActionResult> AddProductLabelV2(List<object> datas)
+        {
+            using (var conn = (MySqlConnection)await _database.ConnectAsync())
+            {
+                var trn = (MySqlTransaction)null;
+                try
+                {
+                    var strBuilder = new StringBuilder();
+                    if (datas?.Any() == true)
+                    {
+                        strBuilder.Append("insert into product_label values ");
+
+                        for (var i = 0; i < datas.Count(); i++)
+                        {
+                            var data = JObject.Parse(datas[i].ToString());
+                            var code = data["ProductCode"];
+                            var name = data["ProductName"];
+
+                            strBuilder.Append($"('{code}', '{name}')");
+                            if (i < datas.Count() - 1)
+                                strBuilder.Append(",");
+                        }
+                    }
+                    trn = conn.BeginTransaction();
+                    var cmd = new MySqlCommand("truncate table product_label", conn);
+                    await cmd.ExecuteNonQueryAsync();
+                    if (strBuilder.Length > 0)
+                    {
+                        cmd.CommandText = strBuilder.ToString();
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                    trn.Commit();
+                    return Ok();
+                }
+                catch (Exception ex)
+                {
+                    trn?.Rollback();
+                    return Content(HttpStatusCode.InternalServerError, ex.Message);
+                }
             }
         }
 
